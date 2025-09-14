@@ -1,0 +1,329 @@
+# MonicaHQ MCP Server - Phase 2 Entity Configuration
+# This configuration defines the 17 remaining entities for Phase 2 implementation
+# Each entity will have its own plugin implementation extending AbstractEntityPlugin
+
+phase2_entities:
+  # CRM Core Entities
+  company:
+    enabled: true
+    endpoint: "/companies"
+    description: "Company/Organization management"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["name"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.CompanyPlugin"
+
+  relationship:
+    enabled: true
+    endpoint: "/relationships"
+    description: "Contact relationship management"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "relatedContactId", "relationshipTypeId"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.RelationshipPlugin"
+
+  # Personal Information
+  address:
+    enabled: true
+    endpoint: "/addresses"
+    description: "Address management for contacts"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "street"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.AddressPlugin"
+
+  pet:
+    enabled: true
+    endpoint: "/pets"
+    description: "Pet information management"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "name"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.PetPlugin"
+
+  # Special Occasions
+  gift:
+    enabled: true
+    endpoint: "/gifts"
+    description: "Gift tracking and management"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "name"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.GiftPlugin"
+
+  special_date:
+    enabled: true
+    endpoint: "/specialdates"
+    description: "Special date management (birthdays, anniversaries, etc.)"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "date", "specialDateTypeId"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.SpecialDatePlugin"
+
+  # Financial
+  debt:
+    enabled: true
+    endpoint: "/debts"
+    description: "Debt/loan tracking between contacts"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "amount", "reason"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.DebtPlugin"
+
+  # Life Events
+  life_event:
+    enabled: true
+    endpoint: "/lifeevents"
+    description: "Life event tracking (marriage, birth, death, etc.)"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "lifeEventTypeId", "happenedAt"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.LifeEventPlugin"
+
+  # Documents & Media
+  document:
+    enabled: true
+    endpoint: "/documents"
+    description: "Document management for contacts"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "originalFilename"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.DocumentPlugin"
+
+  photo:
+    enabled: true
+    endpoint: "/photos"
+    description: "Photo management for contacts"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "originalFilename"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.PhotoPlugin"
+
+  # Goals & Aspirations
+  goal:
+    enabled: true
+    endpoint: "/goals"
+    description: "Goal tracking for contacts"
+    operations:
+      - create
+      - get
+      - update
+      - delete
+      - list
+    required_fields:
+      create: ["contactId", "title"]
+      update: ["id"]
+      get: ["id"]
+      delete: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.GoalPlugin"
+
+  # Settings & Configuration
+  gender:
+    enabled: true
+    endpoint: "/genders"
+    description: "Gender type management"
+    operations:
+      - get
+      - list
+    required_fields:
+      get: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.GenderPlugin"
+
+  contact_field_type:
+    enabled: true
+    endpoint: "/contactfieldtypes"
+    description: "Contact field type definitions"
+    operations:
+      - get
+      - list
+    required_fields:
+      get: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.ContactFieldTypePlugin"
+
+  activity_type:
+    enabled: true
+    endpoint: "/activitytypes"
+    description: "Activity type definitions"
+    operations:
+      - get
+      - list
+    required_fields:
+      get: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.ActivityTypePlugin"
+
+  relationship_type:
+    enabled: true
+    endpoint: "/relationshiptypes"
+    description: "Relationship type definitions"
+    operations:
+      - get
+      - list
+    required_fields:
+      get: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.RelationshipTypePlugin"
+
+  life_event_type:
+    enabled: true
+    endpoint: "/lifeeventtypes"
+    description: "Life event type definitions"
+    operations:
+      - get
+      - list
+    required_fields:
+      get: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.LifeEventTypePlugin"
+
+  currency:
+    enabled: true
+    endpoint: "/currencies"
+    description: "Currency definitions for financial tracking"
+    operations:
+      - get
+      - list
+    required_fields:
+      get: ["id"]
+    plugin_class: "com.monicahq.mcp.plugin.CurrencyPlugin"
+
+# Plugin Discovery Configuration
+plugin_discovery:
+  enabled: true
+  base_package: "com.monicahq.mcp.plugin"
+  auto_register: true
+  scan_on_startup: true
+
+# Phase 2 Implementation Strategy
+implementation:
+  priority_order:
+    - company          # High business value
+    - gift             # Popular feature
+    - special_date     # Core functionality
+    - relationship     # Social graph
+    - address          # Contact details
+    - life_event       # Life tracking
+    - debt             # Financial
+    - document         # File management
+    - photo            # Media
+    - pet              # Personal
+    - goal             # Aspirations
+    # Configuration entities (lower priority)
+    - gender
+    - contact_field_type
+    - activity_type
+    - relationship_type
+    - life_event_type
+    - currency
+
+  batch_size: 3  # Implement 3 entities per iteration
+  validation_required: true
+  tests_first: true  # TDD approach
+
+# Framework Configuration
+framework:
+  plugin_timeout: 30s
+  validation_timeout: 5s
+  health_check_interval: 60s
+  circuit_breaker:
+    enabled: true
+    failure_rate_threshold: 50
+    wait_duration: 10s
+    sliding_window_size: 10
+
+# MCP Tool Registration
+mcp_tools:
+  auto_register: true
+  naming_convention: "{entity_type}_{operation}"
+  description_template: "{operation} {entity_type} in MonicaHQ"
+  schema_validation: true
+
+# Monitoring & Observability
+monitoring:
+  enabled: true
+  metrics:
+    - plugin_execution_time
+    - plugin_success_rate
+    - plugin_error_rate
+    - active_plugins
+  health_checks:
+    - plugin_initialization
+    - api_connectivity
+    - schema_validation

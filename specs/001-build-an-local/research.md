@@ -20,14 +20,15 @@ Research conducted to resolve technical decisions for implementing an MCP server
 - GraphQL: Overcomplicated for this use case
 
 ### 2. MonicaHQ Authentication
-**Decision**: API Token authentication (Bearer token)  
+**Decision**: OAuth2 Bearer token authentication  
 **Rationale**:
-- MonicaHQ supports personal access tokens for API access
-- Simpler than OAuth for single-instance deployment
+- MonicaHQ API requires OAuth2 Bearer tokens in Authorization header
+- Format: "Authorization: Bearer OAUTH-TOKEN"
+- Supports both OAuth2 personal access tokens and server-to-server
 - Tokens can be configured via environment variables
 **Alternatives Considered**:
-- OAuth 2.0: Unnecessary complexity for local server
-- Basic Auth: Less secure than token-based approach
+- Simple API key: Not supported by MonicaHQ API
+- Basic Auth: Less secure and not supported
 
 ### 3. Spring Boot Architecture
 **Decision**: Reactive WebFlux for async operations  
@@ -116,24 +117,48 @@ Research conducted to resolve technical decisions for implementing an MCP server
 - Base URL format: `https://{instance}/api`
 - Rate limits: Typically 60 requests per minute
 
-### Available Endpoints Mapping
-| Entity | Operations | API Endpoints |
-|--------|-----------|---------------|
-| Contact | CRUD + List | /api/contacts |
-| Activity | CRUD + List | /api/activities |
-| Call | CRUD + List | /api/calls |
-| Note | CRUD + List | /api/notes |
-| Task | CRUD + List | /api/tasks |
-| Tag | CRUD + List | /api/tags |
-| Reminder | CRUD + List | /api/reminders |
-| Journal Entry | CRUD + List | /api/journal |
-| Conversation | CRUD | /api/conversations |
-| Contact Field | CRUD | /api/contactfields |
+### Complete MonicaHQ API Endpoints (2024)
+**29 Entity Types with Full API Support:**
+
+| Entity | API Endpoint | Status |
+|--------|-------------|---------|
+| Activities | /api/activities | ✅ Confirmed |
+| Activity Types | /api/activitytypes | ✅ Confirmed |
+| Activity Type Categories | /api/activitytypecategories | ✅ Confirmed |
+| Addresses | /api/addresses | ✅ Confirmed |
+| Audit Logs | /api/auditlogs | ✅ Confirmed |
+| Calls | /api/calls | ✅ Confirmed |
+| Companies | /api/companies | ✅ Confirmed |
+| Contacts | /api/contacts | ✅ Confirmed |
+| Contact Fields | /api/contactfields | ✅ Confirmed |
+| Contact Field Types | /api/contactfieldtypes | ✅ Confirmed |
+| Conversations | /api/conversations | ✅ Confirmed |
+| Countries | /api/countries | ✅ Confirmed |
+| Currencies | /api/currencies | ✅ Confirmed |
+| Debts | /api/debts | ✅ Confirmed |
+| Documents | /api/documents | ✅ Confirmed |
+| Genders | /api/genders | ✅ Confirmed |
+| Gifts | /api/gifts | ✅ Confirmed |
+| Groups | /api/groups | ✅ Confirmed |
+| Journal Entries | /api/journal | ✅ Confirmed |
+| Notes | /api/notes | ✅ Confirmed |
+| Occupations | /api/occupations | ✅ Confirmed |
+| Photos | /api/photos | ✅ Confirmed |
+| Relationships | /api/relationships | ✅ Confirmed |
+| Relationship Types | /api/relationshiptypes | ✅ Confirmed |
+| Relationship Type Groups | /api/relationshiptypegroups | ✅ Confirmed |
+| Reminders | /api/reminders | ✅ Confirmed |
+| Tags | /api/tags | ✅ Confirmed |
+| Tasks | /api/tasks | ✅ Confirmed |
+| Users | /api/users | ✅ Confirmed |
+
+**Total: 29 API endpoints supporting standard HTTP methods (GET, POST, PUT, DELETE)**
 
 ### Pagination Support
-- Limit/offset parameters
-- Default page size: 15
+- Standard page/limit parameters  
+- Default page size: 10 (not 15)
 - Maximum page size: 100
+- Response includes links and meta objects for navigation
 
 ### Response Format
 - JSON with consistent structure
@@ -142,7 +167,7 @@ Research conducted to resolve technical decisions for implementing an MCP server
 
 ## Spring Boot Implementation Patterns
 
-### Project Structure (Maven)
+### Project Structure (Gradle)
 ```
 src/main/java/com/monicahq/mcp/
 ├── config/          # Configuration classes
@@ -152,17 +177,28 @@ src/main/java/com/monicahq/mcp/
 ├── dto/            # Data transfer objects
 ├── mapper/         # MapStruct mappers
 └── exception/      # Custom exceptions
+
+build.gradle         # Gradle build configuration
+settings.gradle      # Gradle settings
 ```
 
-### Dependencies Required
-- spring-boot-starter-webflux
-- spring-boot-starter-websocket
-- spring-boot-starter-validation
-- resilience4j-spring-boot2
-- mapstruct
-- lombok
-- spring-boot-starter-test
-- mockwebserver
+### Dependencies Required (Gradle Groovy DSL)
+```groovy
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+    implementation 'org.mapstruct:mapstruct'
+    implementation 'org.projectlombok:lombok'
+    
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.squareup.okhttp3:mockwebserver'
+    
+    annotationProcessor 'org.mapstruct:mapstruct-processor'
+    annotationProcessor 'org.projectlombok:lombok'
+}
+```
 
 ## Security Considerations
 
@@ -216,9 +252,28 @@ src/main/java/com/monicahq/mcp/
 7. Create Docker packaging
 8. Write deployment documentation
 
-## Unresolved Questions
+## Unresolved Questions - UPDATED 2024
 
-None - all clarifications from the specification have been addressed through research and reasonable defaults established.
+**RESOLVED:**
+- Authentication method: ✅ OAuth2 Bearer tokens confirmed
+- Rate limiting: ✅ 60 requests/minute confirmed  
+- Pagination: ✅ Default 10 items, max 100 confirmed
+
+**RESOLVED - COMPLETE API DISCOVERY:**
+- ✅ All 29 MonicaHQ API endpoints discovered and documented
+- ✅ Core entities (contacts, activities, notes, reminders, calls, tasks, tags, journal, conversations) confirmed
+- ✅ Extended entities identified (companies, gifts, documents, photos, addresses, relationships, debts, groups, users, etc.)
+- ✅ Authentication flow confirmed (OAuth2 Bearer tokens)
+
+**IMPLEMENTATION APPROACH:**
+- **Phase 1**: Implement 12 core entities for essential MCP functionality
+- **Phase 2**: Add extended entities based on user demand
+- **Total Potential**: 29 entities × 5 operations each = 145+ MCP tools available
+
+**IMMEDIATE REQUIREMENTS:**
+- Update MCP contract to reflect complete capabilities
+- Design modular architecture to support all 29 endpoints
+- Prioritize most commonly used entities for initial release
 
 ---
 *Research completed successfully. Ready for Phase 1: Design & Contracts*

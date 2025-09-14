@@ -30,10 +30,14 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Build a local MCP (Model Context Protocol) server that provides comprehensive interaction with a MonicaHQ CRM instance. The server will expose 52 operations across 12 entity types (contacts, activities, calls, notes, tasks, etc.) through a standardized MCP interface, enabling automation and integration capabilities.
+Build a local MCP (Model Context Protocol) server that provides comprehensive interaction with a MonicaHQ CRM instance. MonicaHQ exposes 29 different entity types through its API. The server will implement a modular approach:
+- **Phase 1**: 12 core entities with 60 operations for essential CRM functionality
+- **Phase 2**: Extended entities supporting 145+ total operations
+- **Target**: Complete MonicaHQ API coverage through standardized MCP interface
 
 ## Technical Context
 **Language/Version**: Java 17+ with Spring Boot 3.x (user preference: Spring Boot via start.spring.io)  
+**Build Tool**: Gradle with Groovy DSL
 **Primary Dependencies**: Spring Boot Web, Spring Boot WebFlux (for async operations), RestTemplate/WebClient for MonicaHQ API calls  
 **Storage**: N/A (stateless proxy to MonicaHQ)  
 **Testing**: JUnit 5, Spring Boot Test, MockWebServer  
@@ -41,7 +45,7 @@ Build a local MCP (Model Context Protocol) server that provides comprehensive in
 **Project Type**: single (MCP server implementation)  
 **Performance Goals**: <500ms response time for CRUD operations, support for concurrent requests  
 **Constraints**: Must handle MonicaHQ API rate limits gracefully, authentication token security  
-**Scale/Scope**: 52 API operations, 12 entity types, single MonicaHQ instance initially
+**Scale/Scope**: 145+ potential API operations, 29 entity types available, starting with 12 core entities (60 operations), single MonicaHQ instance initially
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*

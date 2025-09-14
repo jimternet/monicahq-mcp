@@ -1,0 +1,35 @@
+server:
+  port: 0  # Use random port for tests
+
+monica:
+  api:
+    url: http://localhost:8888/api
+    token: test-token-12345-abcdefghijklmnopqrstuvwxyz123456
+    timeout: 30s
+    max-retries: 1
+
+mcp:
+  websocket:
+    allowed-origins: "*"
+    buffer-size: 8192
+    path: /mcp
+  auth:
+    enabled: false  # Disable authentication by default in tests
+
+logging:
+  level:
+    com.monicahq.mcp: DEBUG
+    reactor.netty: WARN
+    org.springframework.web.socket: DEBUG
+  
+spring:
+  main:
+    banner-mode: off
+
+# Disable actuator endpoints in tests
+management:
+  endpoints:
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true

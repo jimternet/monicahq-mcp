@@ -9,7 +9,7 @@ Building a Model Context Protocol (MCP) server that interfaces with MonicaHQ CRM
 ## Tech Stack
 - **Language**: Java 17+
 - **Framework**: Spring Boot 3.x (initialized via start.spring.io)
-- **Build Tool**: Maven
+- **Build Tool**: Gradle (Groovy DSL)
 - **Key Dependencies**:
   - spring-boot-starter-webflux (reactive programming)
   - spring-boot-starter-websocket (MCP protocol)
@@ -64,14 +64,14 @@ src/test/java/
 ## Testing Commands
 ```bash
 # Run all tests
-./mvnw test
+./gradlew test
 
 # Run specific test category
-./mvnw test -Dgroups=contract
-./mvnw test -Dgroups=integration
+./gradlew test --tests "*contract*"
+./gradlew test --tests "*integration*"
 
 # Performance validation
-./mvnw test -Dtest=PerformanceTest
+./gradlew test --tests PerformanceTest
 ```
 
 ## Environment Setup
