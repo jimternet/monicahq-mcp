@@ -1,7 +1,24 @@
 {
   "protocol": "MCP",
   "version": "1.0.0",
-  "description": "Model Context Protocol contract for MonicaHQ integration",
+  "description": "Model Context Protocol contract for MonicaHQ integration - Phase 1 (Core Entities)",
+  "scope": {
+    "phase1": {
+      "entities": 12,
+      "operations": 52,
+      "description": "Core CRM functionality: contacts, activities, calls, notes, tasks, tags, reminders, journal, conversations, contact fields"
+    },
+    "phase2": {
+      "entities": 17,
+      "operations": 93,
+      "description": "Extended functionality: companies, gifts, documents, photos, addresses, relationships, debts, groups, users, etc."
+    },
+    "total_potential": {
+      "entities": 29,
+      "operations": 145,
+      "description": "Complete MonicaHQ API coverage"
+    }
+  },
   "server": {
     "name": "monicahq-mcp-server",
     "version": "0.1.0",
@@ -28,6 +45,25 @@
             "description": "Contact's last name",
             "maxLength": 255
           },
+          "genderId": {
+            "type": "integer",
+            "description": "Gender identifier (required by MonicaHQ)"
+          },
+          "isBirthdateKnown": {
+            "type": "boolean",
+            "description": "Whether birthdate is known",
+            "default": false
+          },
+          "isDeceased": {
+            "type": "boolean", 
+            "description": "Whether person is deceased",
+            "default": false
+          },
+          "isDeceasedDateKnown": {
+            "type": "boolean",
+            "description": "Whether death date is known", 
+            "default": false
+          },
           "email": {
             "type": "string",
             "format": "email",
@@ -51,7 +87,7 @@
             "maxLength": 255
           }
         },
-        "required": ["firstName"]
+        "required": ["firstName", "genderId", "isBirthdateKnown", "isDeceased", "isDeceasedDateKnown"]
       }
     },
     {
@@ -85,6 +121,22 @@
           "lastName": {
             "type": "string",
             "maxLength": 255
+          },
+          "genderId": {
+            "type": "integer",
+            "description": "Gender identifier"
+          },
+          "isBirthdateKnown": {
+            "type": "boolean",
+            "description": "Whether birthdate is known"
+          },
+          "isDeceased": {
+            "type": "boolean", 
+            "description": "Whether person is deceased"
+          },
+          "isDeceasedDateKnown": {
+            "type": "boolean",
+            "description": "Whether death date is known"
           },
           "email": {
             "type": "string",
@@ -136,7 +188,7 @@
           },
           "limit": {
             "type": "integer",
-            "default": 15,
+            "default": 10,
             "minimum": 1,
             "maximum": 100
           },
@@ -260,7 +312,7 @@
           },
           "limit": {
             "type": "integer",
-            "default": 15
+            "default": 10
           }
         }
       }
@@ -377,7 +429,7 @@
           },
           "limit": {
             "type": "integer",
-            "default": 15
+            "default": 10
           }
         }
       }
@@ -483,7 +535,7 @@
           },
           "limit": {
             "type": "integer",
-            "default": 15
+            "default": 10
           }
         }
       }
@@ -565,7 +617,7 @@
           },
           "limit": {
             "type": "integer",
-            "default": 15
+            "default": 10
           }
         }
       }
@@ -669,7 +721,7 @@
           },
           "limit": {
             "type": "integer",
-            "default": 15
+            "default": 10
           }
         }
       }
@@ -771,7 +823,7 @@
           },
           "limit": {
             "type": "integer",
-            "default": 15
+            "default": 10
           }
         }
       }
@@ -1061,7 +1113,7 @@
           },
           "limit": {
             "type": "integer",
-            "default": 15
+            "default": 10
           }
         }
       }

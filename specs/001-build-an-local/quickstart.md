@@ -14,8 +14,9 @@ This guide provides step-by-step instructions to get the MonicaHQ MCP server run
    ```
 
 2. **MonicaHQ Instance** accessible
-   - URL: Your MonicaHQ instance URL (e.g., https://app.monicahq.com)
-   - API Token: Generated from MonicaHQ Settings → API
+   - URL: Your MonicaHQ instance URL (e.g., https://app.monicahq.com)  
+   - OAuth2 Bearer Token: Generated from MonicaHQ Settings → API
+   - Authentication: OAuth2 Bearer token in Authorization header
 
 3. **MCP Client** (for testing)
    - Any MCP-compatible client or the included test client
@@ -29,7 +30,7 @@ wget https://github.com/yourusername/monicahq-mcp/releases/latest/download/monic
 
 # Set environment variables
 export MONICA_API_URL=https://your-monica-instance.com/api
-export MONICA_API_TOKEN=your-api-token-here
+export MONICA_API_TOKEN=your-oauth2-bearer-token-here
 
 # Run the server
 java -jar monicahq-mcp-server.jar
@@ -41,11 +42,11 @@ java -jar monicahq-mcp-server.jar
 git clone https://github.com/yourusername/monicahq-mcp.git
 cd monicahq-mcp
 
-# Build with Maven
-./mvnw clean package
+# Build with Gradle
+./gradlew clean build
 
 # Run
-java -jar target/monicahq-mcp-server-0.1.0.jar
+java -jar build/libs/monicahq-mcp-server-0.1.0.jar
 ```
 
 ## Configuration
@@ -70,7 +71,7 @@ mcp:
 
 logging:
   level:
-    com.monicahq.mcp: DEBUG
+    com.noofinc.monicahqmcp: DEBUG
 ```
 
 ## Basic Usage
@@ -113,6 +114,10 @@ Send MCP request:
     "arguments": {
       "firstName": "John",
       "lastName": "Doe",
+      "genderId": 1,
+      "isBirthdateKnown": false,
+      "isDeceased": false,
+      "isDeceasedDateKnown": false,
       "email": "john.doe@example.com",
       "phone": "+1-555-0123"
     }
@@ -136,6 +141,10 @@ Expected response:
       "id": 12345,
       "firstName": "John",
       "lastName": "Doe",
+      "genderId": 1,
+      "isBirthdateKnown": false,
+      "isDeceased": false,
+      "isDeceasedDateKnown": false,
       "email": "john.doe@example.com",
       "phone": "+1-555-0123",
       "createdAt": "2025-09-13T10:30:00Z"
@@ -263,7 +272,7 @@ send_request() {
 
 # Test 1: Create contact
 echo "1. Creating contact..."
-RESPONSE=$(send_request "contact_create" '{"firstName":"Test","lastName":"User","email":"test@example.com"}')
+RESPONSE=$(send_request "contact_create" '{"firstName":"Test","lastName":"User","genderId":1,"isBirthdateKnown":false,"isDeceased":false,"isDeceasedDateKnown":false,"email":"test@example.com"}')
 CONTACT_ID=$(echo $RESPONSE | jq -r '.result.data.id')
 echo "Created contact ID: $CONTACT_ID"
 
@@ -290,8 +299,9 @@ echo "All tests completed!"
 - Check firewall settings
 
 ### Authentication Failed
-- Verify API token is correct
-- Check token has necessary permissions in MonicaHQ
+- Verify OAuth2 Bearer token is correct
+- Check token has necessary permissions in MonicaHQ  
+- Ensure token is properly formatted: "Authorization: Bearer TOKEN"
 - Ensure environment variables are set
 
 ### Rate Limiting
@@ -308,7 +318,7 @@ echo "All tests completed!"
 
 Run the included performance test:
 ```bash
-./mvnw test -Dtest=PerformanceTest
+./gradlew test --tests PerformanceTest
 ```
 
 Expected results:

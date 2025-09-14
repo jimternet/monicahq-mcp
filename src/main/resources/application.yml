@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: monicahq-mcp-server
+
+monica:
+  api:
+    url: ${MONICA_API_URL:https://app.monicahq.com/api}
+    token: ${MONICA_API_TOKEN}
+    timeout: 30s
+    max-retries: 3
+    rate-limit:
+      requests-per-minute: 60
+
+mcp:
+  websocket:
+    path: /mcp
+    max-sessions: 10
+    ping-interval: 30s
+    pong-timeout: 10s
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      monicaApi:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 5s
+  retry:
+    instances:
+      monicaApi:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.monicahq.mcp: DEBUG
+    org.springframework.web: INFO
+    org.springframework.websocket: DEBUG
+  pattern:
+    console: "%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n"

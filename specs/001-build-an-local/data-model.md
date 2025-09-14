@@ -7,6 +7,8 @@
 ## Overview
 This document defines the data entities, their relationships, and validation rules for the MCP server that interfaces with MonicaHQ CRM.
 
+**Scope**: MonicaHQ provides 29 different API endpoints. This specification focuses on the most commonly used entities for MCP integration, with the ability to expand to all endpoints as needed.
+
 ## Core Entities
 
 ### 1. Contact
@@ -19,7 +21,11 @@ This document defines the data entities, their relationships, and validation rul
 | firstName | String | Yes | Max 255 chars | Person's first name |
 | lastName | String | No | Max 255 chars | Person's last name |
 | nickname | String | No | Max 255 chars | Preferred name |
-| email | String | No | Valid email format | Primary email address |
+| genderId | Long | Yes | Valid gender ID | Gender identifier (required) |
+| isBirthdateKnown | Boolean | Yes | Default false | Whether birthdate is known |
+| isDeceased | Boolean | Yes | Default false | Whether person is deceased |
+| isDeceasedDateKnown | Boolean | Yes | Default false | Whether death date is known |
+| email | String | No | Valid email, unique | Primary email address |
 | phone | String | No | Valid phone format | Primary phone number |
 | birthdate | Date | No | Past date | Date of birth |
 | address | Address | No | Valid address | Physical address |
@@ -164,6 +170,46 @@ This document defines the data entities, their relationships, and validation rul
 | tagId | Long | Yes | Valid tag ID | Tag reference |
 | createdAt | DateTime | Yes (response) | Auto-generated | Association timestamp |
 
+## Extended Entities (Available but not in core MCP)
+
+### 13. Company
+**Purpose**: Business entities associated with contacts  
+**Source**: MonicaHQ API `/api/companies`
+
+### 14. Gift
+**Purpose**: Track gifts given/received  
+**Source**: MonicaHQ API `/api/gifts`
+
+### 15. Document
+**Purpose**: File attachments for contacts  
+**Source**: MonicaHQ API `/api/documents`
+
+### 16. Photo
+**Purpose**: Images associated with contacts  
+**Source**: MonicaHQ API `/api/photos`
+
+### 17. Address
+**Purpose**: Physical locations for contacts  
+**Source**: MonicaHQ API `/api/addresses`
+
+### 18. Relationship
+**Purpose**: How contacts are related to each other  
+**Source**: MonicaHQ API `/api/relationships`
+
+### 19. Debt
+**Purpose**: Track money owed/borrowed  
+**Source**: MonicaHQ API `/api/debts`
+
+### 20. Group
+**Purpose**: Organize contacts into groups  
+**Source**: MonicaHQ API `/api/groups`
+
+### 21. User
+**Purpose**: System users and permissions  
+**Source**: MonicaHQ API `/api/users`
+
+**Note**: These extended entities are available through MonicaHQ's API but not included in the initial MCP implementation scope. They can be added as additional MCP tools in future versions.
+
 ## Entity Relationships
 
 ```mermaid
@@ -217,7 +263,7 @@ Each entity supports standard MCP operations:
 - `get_{entity}`: GET by ID
 - `update_{entity}`: PUT/PATCH 
 - `delete_{entity}`: DELETE
-- `list_{entity}`: GET with pagination
+- `list_{entity}`: GET with pagination (default 10 items, max 100)
 
 ### Error Codes
 | Code | Description | MCP Response |
@@ -228,6 +274,27 @@ Each entity supports standard MCP operations:
 | 429 | Rate limit exceeded | `rate_limit` |
 | 500 | Server error | `internal_error` |
 
+## API Specification Updates (2024)
+
+### Verified Endpoints
+- ✅ `/api/contacts` - Full CRUD + List operations
+- ✅ `/api/activities` - Full CRUD + List operations  
+- ✅ `/api/notes` - Full CRUD + List operations
+- ✅ `/api/reminders` - Full CRUD + List operations
+
+### Requires Verification
+- ⚠️ `/api/calls` - Endpoint existence needs confirmation
+- ⚠️ `/api/tasks` - Endpoint existence needs confirmation
+- ⚠️ `/api/tags` - Endpoint existence needs confirmation
+- ⚠️ `/api/journal` - Endpoint existence needs confirmation
+- ⚠️ `/api/conversations` - Endpoint existence needs confirmation
+- ⚠️ `/api/contactfields` - Endpoint existence needs confirmation
+
+### Authentication Requirements
+- OAuth2 Bearer token in Authorization header
+- Format: "Authorization: Bearer OAUTH-TOKEN"
+- Rate limit: 60 requests per minute
+
 ## Data Migration Considerations
 
 ### Future Enhancements
@@ -237,4 +304,4 @@ Each entity supports standard MCP operations:
 4. **Attachment Support**: File upload/download for contacts
 
 ---
-*Data model defined. Ready for contract generation.*
+*Data model updated with 2024 API specifications. Some endpoints require verification before implementation.*
