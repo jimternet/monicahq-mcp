@@ -1,14 +1,11 @@
 package com.monicahq.mcp.integration;
 
 import com.monicahq.mcp.controller.McpToolRegistry;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.Map;
 
@@ -16,34 +13,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+    "spring.profiles.active=test"
+})
 public class ContactCreationTest {
 
     @Autowired
     private McpToolRegistry toolRegistry;
 
-    private MockWebServer mockWebServer;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        mockWebServer = new MockWebServer();
-        mockWebServer.start(8888);
-    }
-
-    @AfterEach
-    void tearDown() throws Exception {
-        if (mockWebServer != null) {
-            mockWebServer.shutdown();
-        }
-    }
-
     @Test
     void shouldCreateContactWithOAuth2Authentication() {
-        // Mock successful MonicaHQ API response
-        mockWebServer.enqueue(new MockResponse()
-            .setBody("{\"data\":{\"id\":12345,\"first_name\":\"John\",\"last_name\":\"Doe\",\"gender_id\":1}}")
-            .setResponseCode(200)
-            .setHeader("Content-Type", "application/json"));
-
+        // Test using TestMonicaHqClient in test profile
         Map<String, Object> arguments = Map.of(
             "firstName", "John",
             "lastName", "Doe",

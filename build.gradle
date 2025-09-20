@@ -18,6 +18,11 @@ repositories {
 	mavenCentral()
 }
 
+// Specify main class for Spring Boot
+springBoot {
+	mainClass = 'com.monicahq.mcp.MonicaHqMcpApplication'
+}
+
 dependencies {
 	// Spring Boot Core
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'

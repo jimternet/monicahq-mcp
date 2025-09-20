@@ -22,6 +22,9 @@ public class ResilienceConfig {
 
     @Value("${monica.api.timeout:30s}")
     private Duration timeout;
+    
+    @Value("${monica.api.url}")
+    private String apiUrl;
 
     private final AuthInterceptor authInterceptor;
 
@@ -33,6 +36,7 @@ public class ResilienceConfig {
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
+            .baseUrl(apiUrl)
             .filter(authInterceptor.addAuthentication())
             .filter(authInterceptor.logRequests())
             .filter(authInterceptor.logResponses())

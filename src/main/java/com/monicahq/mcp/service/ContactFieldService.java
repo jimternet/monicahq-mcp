@@ -162,7 +162,7 @@ public class ContactFieldService {
 
     private Long extractContactId(Map<String, Object> arguments) {
         if (arguments == null || !arguments.containsKey("contactId")) {
-            throw new IllegalArgumentException("Contact ID is required");
+            throw new IllegalArgumentException("contactId is required - please provide the ID of an existing contact to list its fields");
         }
         
         Object idValue = arguments.get("contactId");

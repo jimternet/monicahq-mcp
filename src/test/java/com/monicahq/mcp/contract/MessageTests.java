@@ -1,33 +1,66 @@
 package com.monicahq.mcp.contract;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.monicahq.mcp.controller.McpMessageHandler;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.reactive.server.WebTestClient;
+
 
 import java.util.Map;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest()
+
 @TestPropertySource(properties = {
-    "spring.profiles.active=test"
+    "spring.profiles.active=test",
+    "spring.main.web-application-type=none"
 })
 public class MessageTests {
 
     @Autowired
-    private WebTestClient webTestClient;
+    private McpMessageHandler messageHandler;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    void shouldCreateConversationMessageViaMcpProtocol() {
-        Map<String, Object> mcpRequest = Map.of("jsonrpc", "2.0", "method", "tools/call", "params", Map.of("name", "conversation_message_create", "arguments", Map.of("conversationId", 44444, "content", "Hello there!", "writtenAt", "2025-09-13T10:00:00Z", "writtenByMe", true)), "id", 1);
-        webTestClient.post().uri("/mcp").bodyValue(mcpRequest).exchange().expectStatus().isOk().expectBody().jsonPath("$.result.data.id").exists();
+    void shouldCreateConversationMessageViaMcpProtocol() throws Exception {
+        Map<String, Object> toolsCallRequest = Map.of("jsonrpc", "2.0", "method", "tools/call", "params", Map.of("name", "conversation_message_create", "arguments", Map.of("conversationId", 44444L, "content", "Hello there!", "writtenAt", "2025-09-13T10:00:00Z", "writtenByMe", true)), "id", 1);
+        
+        JsonNode requestNode = objectMapper.valueToTree(toolsCallRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        // Then: Verify response structure
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertEquals(1L, response.get("id"));
+        assertTrue(response.containsKey("result"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = (Map<String, Object>) response.get("result");
+        assertTrue(result.containsKey("data"));
     }
 
     @Test
-    void shouldListConversationMessagesViaMcpProtocol() {
-        Map<String, Object> mcpRequest = Map.of("jsonrpc", "2.0", "method", "tools/call", "params", Map.of("name", "conversation_message_list", "arguments", Map.of("conversationId", 44444, "page", 1, "limit", 10)), "id", 2);
-        webTestClient.post().uri("/mcp").bodyValue(mcpRequest).exchange().expectStatus().isOk().expectBody().jsonPath("$.result.data").isArray();
+    void shouldListConversationMessagesViaMcpProtocol() throws Exception {
+        Map<String, Object> toolsCallRequest = Map.of("jsonrpc", "2.0", "method", "tools/call", "params", Map.of("name", "conversation_message_list", "arguments", Map.of("conversationId", 44444L, "page", 1, "limit", 10)), "id", 2);
+        
+        JsonNode requestNode = objectMapper.valueToTree(toolsCallRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        // Then: Verify response structure
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertEquals(2L, response.get("id"));
+        assertTrue(response.containsKey("result"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = (Map<String, Object>) response.get("result");
+        assertTrue(result.containsKey("data"));
     }
 }

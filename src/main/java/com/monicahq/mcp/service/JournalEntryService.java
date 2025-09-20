@@ -22,7 +22,7 @@ public class JournalEntryService {
             validateJournalEntryCreateArguments(arguments);
             Map<String, Object> apiRequest = mapToApiFormat(arguments);
             
-            return monicaClient.post("/journal-entries", apiRequest)
+            return monicaClient.post("/entries", apiRequest)
                 .map(this::formatJournalEntryResponse)
                 .doOnSuccess(result -> log.info("Journal entry created successfully: {}", result))
                 .doOnError(error -> log.error("Failed to create journal entry: {}", error.getMessage()));
@@ -39,7 +39,7 @@ public class JournalEntryService {
         try {
             Long entryId = extractJournalEntryId(arguments);
             
-            return monicaClient.get("/journal-entries/" + entryId, null)
+            return monicaClient.get("/entries/" + entryId, null)
                 .map(this::formatJournalEntryResponse)
                 .doOnSuccess(result -> log.info("Journal entry retrieved successfully: {}", entryId))
                 .doOnError(error -> log.error("Failed to get journal entry {}: {}", entryId, error.getMessage()));
@@ -61,7 +61,7 @@ public class JournalEntryService {
             
             Map<String, Object> apiRequest = mapToApiFormat(updateData);
             
-            return monicaClient.put("/journal-entries/" + entryId, apiRequest)
+            return monicaClient.put("/entries/" + entryId, apiRequest)
                 .map(this::formatJournalEntryResponse)
                 .doOnSuccess(result -> log.info("Journal entry updated successfully: {}", entryId))
                 .doOnError(error -> log.error("Failed to update journal entry {}: {}", entryId, error.getMessage()));
@@ -78,7 +78,7 @@ public class JournalEntryService {
         try {
             Long entryId = extractJournalEntryId(arguments);
             
-            return monicaClient.delete("/journal-entries/" + entryId)
+            return monicaClient.delete("/entries/" + entryId)
                 .map(response -> {
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
@@ -105,7 +105,7 @@ public class JournalEntryService {
         try {
             Map<String, String> queryParams = buildListQueryParams(arguments);
             
-            return monicaClient.get("/journal-entries", queryParams)
+            return monicaClient.get("/entries", queryParams)
                 .map(this::formatJournalEntryListResponse)
                 .doOnSuccess(result -> log.info("Journal entries listed successfully"))
                 .doOnError(error -> log.error("Failed to list journal entries: {}", error.getMessage()));

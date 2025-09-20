@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: monicahq-mcp-server
+
+# Docker-specific configuration
+server:
+  port: 8080
+  # Allow all origins in container (configure reverse proxy for security)
+  servlet:
+    context-path: /
+
+monica:
+  api:
+    url: ${MONICA_API_URL:https://app.monicahq.com/api}
+    token: ${MONICA_API_TOKEN}
+    timeout: ${MONICA_API_TIMEOUT:30s}
+    max-retries: ${MONICA_API_MAX_RETRIES:3}
+    rate-limit:
+      requests-per-minute: ${MONICA_API_RATE_LIMIT:60}
+
+mcp:
+  websocket:
+    path: /mcp
+    max-sessions: ${MCP_WEBSOCKET_MAX_SESSIONS:10}
+    ping-interval: ${MCP_WEBSOCKET_PING_INTERVAL:30s}
+    pong-timeout: ${MCP_WEBSOCKET_PONG_TIMEOUT:10s}
+    allowed-origins: ${MCP_WEBSOCKET_ALLOWED_ORIGINS:*}
+    buffer-size: ${MCP_WEBSOCKET_BUFFER_SIZE:8192}
+  auth:
+    enabled: ${MCP_AUTH_ENABLED:true}
+
+# Circuit breaker configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      monicaApi:
+        register-health-indicator: true
+        sliding-window-size: ${CIRCUIT_BREAKER_WINDOW_SIZE:10}
+        minimum-number-of-calls: ${CIRCUIT_BREAKER_MIN_CALLS:5}
+        permitted-number-of-calls-in-half-open-state: 3
+        wait-duration-in-open-state: ${CIRCUIT_BREAKER_WAIT_DURATION:10s}
+        failure-rate-threshold: ${CIRCUIT_BREAKER_FAILURE_RATE:50}
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 5s
+  retry:
+    instances:
+      monicaApi:
+        max-attempts: ${RETRY_MAX_ATTEMPTS:3}
+        wait-duration: ${RETRY_WAIT_DURATION:1s}
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+
+# Health and monitoring endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,configprops
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
+
+# Logging configuration optimized for containers
+logging:
+  level:
+    com.monicahq.mcp: ${LOG_LEVEL_MCP:INFO}
+    org.springframework.web: ${LOG_LEVEL_SPRING_WEB:WARN}
+    org.springframework.websocket: ${LOG_LEVEL_WEBSOCKET:INFO}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:WARN}
+  pattern:
+    # JSON format for better log aggregation in container environments
+    console: "%d{ISO8601} [%thread] %-5level [%X{correlationId:-}] %logger{36} - %msg%n"
+  file:
+    name: /app/logs/monicahq-mcp.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 7
+      total-size-cap: 1GB

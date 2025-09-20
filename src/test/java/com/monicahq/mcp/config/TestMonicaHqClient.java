@@ -21,8 +21,8 @@ public class TestMonicaHqClient extends MonicaHqClient {
     private static volatile boolean simulateApiError = false;
     private static volatile boolean simulateMonicaAuthFailure = false;
 
-    public TestMonicaHqClient() {
-        super(createDummyWebClient());
+    public TestMonicaHqClient(org.springframework.web.reactive.function.client.WebClient webClient) {
+        super(webClient);
         // Pre-populate with test data for duplicate detection tests
         tagAssignments.add("12345:99999"); // contactId:tagId used in duplicate test
     }
@@ -35,9 +35,6 @@ public class TestMonicaHqClient extends MonicaHqClient {
         simulateMonicaAuthFailure = simulate;
     }
     
-    private static org.springframework.web.reactive.function.client.WebClient createDummyWebClient() {
-        return org.springframework.web.reactive.function.client.WebClient.builder().build();
-    }
 
     @Override
     public Mono<Map<String, Object>> get(String endpoint, Map<String, String> queryParams) {
@@ -214,7 +211,7 @@ public class TestMonicaHqClient extends MonicaHqClient {
         boolean isListEndpoint = method.equals("GET") && (
             endpoint.equals("/contacts") || endpoint.equals("/activities") 
             || endpoint.equals("/calls") || endpoint.equals("/notes") || endpoint.equals("/tasks")
-            || endpoint.equals("/tags") || endpoint.equals("/reminders") || endpoint.equals("/journal-entries")
+            || endpoint.equals("/tags") || endpoint.equals("/reminders") || endpoint.equals("/entries")
             || endpoint.equals("/contactfields") || endpoint.equals("/conversations") || endpoint.equals("/messages")
             || (endpoint.contains("/contactfields") && endpoint.endsWith("/contactfields"))
             || (endpoint.contains("/messages") && endpoint.endsWith("/messages"))
@@ -232,28 +229,28 @@ public class TestMonicaHqClient extends MonicaHqClient {
         
         // Create sample list items based on endpoint
         if (endpoint.equals("/contacts")) {
-            items.add(Map.of("id", 123, "first_name", "John", "last_name", "Doe", "email", "john.doe@example.com"));
-            items.add(Map.of("id", 124, "first_name", "Jane", "last_name", "Smith", "email", "jane.smith@example.com"));
+            items.add(Map.of("id", 123L, "first_name", "John", "last_name", "Doe", "email", "john.doe@example.com"));
+            items.add(Map.of("id", 124L, "first_name", "Jane", "last_name", "Smith", "email", "jane.smith@example.com"));
         } else if (endpoint.equals("/activities")) {
-            items.add(Map.of("id", 456, "contact_id", 123, "summary", "Had coffee", "happened_at", "2025-09-13T10:30:00Z"));
+            items.add(Map.of("id", 456L, "contact_id", 123L, "summary", "Had coffee", "happened_at", "2025-09-13T10:30:00Z"));
         } else if (endpoint.equals("/calls")) {
-            items.add(Map.of("id", 789, "contact_id", 123, "duration", 25, "called_at", "2025-09-13T14:30:00Z"));
+            items.add(Map.of("id", 789L, "contact_id", 123L, "duration", 25, "called_at", "2025-09-13T14:30:00Z"));
         } else if (endpoint.equals("/notes")) {
-            items.add(Map.of("id", 101, "contact_id", 123, "body", "Important note", "is_favorited", false));
+            items.add(Map.of("id", 101L, "contact_id", 123L, "body", "Important note", "is_favorited", false));
         } else if (endpoint.equals("/tasks")) {
-            items.add(Map.of("id", 202, "contact_id", 123, "title", "Task title", "completed", false));
+            items.add(Map.of("id", 202L, "contact_id", 123L, "title", "Task title", "completed", false));
         } else if (endpoint.equals("/tags")) {
-            items.add(Map.of("id", 303, "name", "Important", "created_at", "2025-09-13T07:00:00Z"));
+            items.add(Map.of("id", 303L, "name", "Important", "created_at", "2025-09-13T07:00:00Z"));
         } else if (endpoint.equals("/reminders")) {
-            items.add(Map.of("id", 404, "contact_id", 123, "title", "Birthday reminder", "next_expected_date", "2025-12-25"));
-        } else if (endpoint.equals("/journal-entries")) {
-            items.add(Map.of("id", 505, "contact_id", 123, "title", "Journal Entry", "post", "Content"));
+            items.add(Map.of("id", 404L, "contact_id", 123L, "title", "Birthday reminder", "next_expected_date", "2025-12-25"));
         } else if (endpoint.equals("/contactfields") || endpoint.contains("/contactfields")) {
-            items.add(Map.of("id", 606, "contact_id", 123, "contact_field_type_id", 1, "data", "Field data"));
+            items.add(Map.of("id", 606L, "contact_id", 123L, "contact_field_type_id", 1L, "data", "Field data"));
         } else if (endpoint.equals("/conversations")) {
-            items.add(Map.of("id", 707, "contact_id", 123, "happened_at", "2025-09-13T15:00:00Z"));
+            items.add(Map.of("id", 707L, "contact_id", 123L, "happened_at", "2025-09-13T15:00:00Z"));
         } else if (endpoint.equals("/messages") || endpoint.contains("/messages")) {
-            items.add(Map.of("id", 808, "conversation_id", 707, "content", "Message content"));
+            items.add(Map.of("id", 808L, "conversation_id", 707L, "content", "Message content"));
+        } else if (endpoint.equals("/entries")) {
+            items.add(Map.of("id", 909L, "title", "My Journal Entry", "post", "Today was a great day!", "date", "2025-09-13"));
         }
         
         // Extract pagination params

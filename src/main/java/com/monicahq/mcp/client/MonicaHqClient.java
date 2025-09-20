@@ -38,7 +38,7 @@ public class MonicaHqClient {
         WebClient.RequestHeadersSpec<?> request = webClient
             .get()
             .uri(uriBuilder -> {
-                uriBuilder.path(apiUrl + endpoint);
+                uriBuilder.path(endpoint);
                 if (queryParams != null) {
                     queryParams.forEach(uriBuilder::queryParam);
                 }
@@ -71,7 +71,7 @@ public class MonicaHqClient {
         
         return webClient
             .post()
-            .uri(apiUrl + endpoint)
+            .uri(endpoint)
             .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .bodyValue(requestBody != null ? requestBody : Map.of())
@@ -98,7 +98,7 @@ public class MonicaHqClient {
         
         return webClient
             .put()
-            .uri(apiUrl + endpoint)
+            .uri(endpoint)
             .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .bodyValue(requestBody != null ? requestBody : Map.of())
@@ -125,7 +125,7 @@ public class MonicaHqClient {
         
         return webClient
             .delete()
-            .uri(apiUrl + endpoint)
+            .uri(endpoint)
             .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
             .retrieve()
             .onStatus(status -> status.is4xxClientError(), response -> {

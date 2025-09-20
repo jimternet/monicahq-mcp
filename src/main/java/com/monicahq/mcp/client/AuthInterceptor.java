@@ -20,7 +20,7 @@ public class AuthInterceptor {
     @Value("${monica.api.token}")
     private String apiToken;
 
-    private static final Pattern BEARER_TOKEN_PATTERN = Pattern.compile("^[A-Za-z0-9\\-._~+/]+=*$");
+    private static final Pattern BEARER_TOKEN_PATTERN = Pattern.compile("^[A-Za-z0-9\\-._~+/=]+$");
 
     public ExchangeFilterFunction addAuthentication() {
         return ExchangeFilterFunction.ofRequestProcessor(this::addAuthHeader);
@@ -79,6 +79,16 @@ public class AuthInterceptor {
                 return Mono.error(new RuntimeException("Access forbidden: Insufficient permissions"));
             }
             
+            if (response.statusCode().value() == 404) {
+                log.warn("Resource not found: {}", response.request().getURI());
+                return Mono.error(new RuntimeException("Resource not found: The requested item does not exist in your MonicaHQ account"));
+            }
+            
+            if (response.statusCode().value() == 422) {
+                log.warn("Validation error for request: {}", response.request().getURI());
+                return Mono.error(new RuntimeException("Validation error: Please check the required fields and try again"));
+            }
+            
             if (response.statusCode().value() == 429) {
                 log.warn("Rate limit exceeded for MonicaHQ API");
                 return Mono.error(new RuntimeException("Rate limit exceeded"));
@@ -95,15 +105,21 @@ public class AuthInterceptor {
 
     private boolean isValidBearerToken(String token) {
         if (token == null || token.trim().isEmpty()) {
+            log.debug("Token validation failed: token is null or empty");
             return false;
         }
         
         // Basic validation - Bearer tokens should not contain spaces or special characters
-        // and should have reasonable length (between 20 and 500 characters)
+        // and should have reasonable length (between 20 and 2000 characters for JWT tokens)
         String trimmedToken = token.trim();
-        return trimmedToken.length() >= 20 && 
-               trimmedToken.length() <= 500 && 
-               BEARER_TOKEN_PATTERN.matcher(trimmedToken).matches();
+        boolean lengthValid = trimmedToken.length() >= 20 && trimmedToken.length() <= 2000;
+        boolean patternValid = BEARER_TOKEN_PATTERN.matcher(trimmedToken).matches();
+        
+        log.debug("Token validation - length: {} (valid: {}), pattern: {} (valid: {})", 
+                 trimmedToken.length(), lengthValid, 
+                 trimmedToken.substring(0, Math.min(20, trimmedToken.length())) + "...", patternValid);
+        
+        return lengthValid && patternValid;
     }
 
     public boolean validateToken() {

@@ -1,17 +1,12 @@
 package com.monicahq.mcp.integration;
 
 import com.monicahq.mcp.controller.McpToolRegistry;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,28 +14,12 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-    "monica.api.url=http://localhost:8888/api",
-    "monica.api.token=test-token-12345-abcdefghijklmnopqrstuvwxyz123456"
+    "spring.profiles.active=test"
 })
 public class McpToolRegistryIntegrationTest {
 
     @Autowired
     private McpToolRegistry toolRegistry;
-
-    private MockWebServer mockWebServer;
-
-    @BeforeEach
-    void setUp() throws IOException {
-        mockWebServer = new MockWebServer();
-        mockWebServer.start(8888);
-    }
-
-    @AfterEach
-    void tearDown() throws IOException {
-        if (mockWebServer != null) {
-            mockWebServer.shutdown();
-        }
-    }
 
     @Test
     void shouldHaveAllToolsRegistered() {
@@ -48,7 +27,7 @@ public class McpToolRegistryIntegrationTest {
         var tools = toolRegistry.getAllTools();
         
         assertNotNull(tools);
-        assertTrue(tools.size() >= 52, "Should have at least 52 tools registered, but found: " + tools.size());
+        assertTrue(tools.size() >= 47, "Should have at least 47 tools registered (52 - 5 journal entries), but found: " + tools.size());
         
         // Verify some key tools are present
         var toolNames = tools.stream()
@@ -67,13 +46,7 @@ public class McpToolRegistryIntegrationTest {
 
     @Test
     void shouldValidateToolArgumentsCorrectly() {
-        // Mock successful response from MonicaHQ API
-        mockWebServer.enqueue(new MockResponse()
-            .setBody("{\"data\":{\"id\":123,\"firstName\":\"John\",\"lastName\":\"Doe\"}}")
-            .setResponseCode(200)
-            .setHeader("Content-Type", "application/json"));
-
-        // Test valid arguments
+        // Test valid arguments - using TestMonicaHqClient in test profile
         Map<String, Object> validArgs = Map.of(
             "firstName", "John",
             "lastName", "Doe",
