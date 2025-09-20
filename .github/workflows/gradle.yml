@@ -138,6 +138,11 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      issues: write
+      pull-requests: write
+      checks: write
+      actions: write
+      statuses: write
 
     steps:
     - name: Checkout code
