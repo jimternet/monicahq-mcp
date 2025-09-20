@@ -186,6 +186,8 @@ jmeter.log
 # MCP specific
 mcp-sessions/
 mcp-logs/
+mcp-inspector-config.json
+mcp-server
 
 # MonicaHQ specific
 monica-cache/

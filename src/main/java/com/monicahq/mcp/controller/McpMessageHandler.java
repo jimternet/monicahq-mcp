@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -42,7 +43,16 @@ public class McpMessageHandler {
                 case "tools/list" -> handleToolsList(message, id);
                 case "tools/call" -> handleToolsCall(message, id, authHeader);
                 case "ping" -> handlePing(message, id);
-                default -> createErrorResponse(id, -32601, "Method not found", "Unknown method: " + method);
+                case "notifications/initialized" -> handleNotificationInitialized(message);
+                case "prompts/list" -> handlePromptsList(message, id);
+                case "resources/list" -> handleResourcesList(message, id);
+                default -> {
+                    // For notifications (no id), don't send a response
+                    if (id == null) {
+                        yield null; // No response for notifications
+                    }
+                    yield createErrorResponse(id, -32601, "Method not found", "Unknown method: " + method);
+                }
             };
             
         } catch (Exception e) {
@@ -75,8 +85,7 @@ public class McpMessageHandler {
         Map<String, Object> capabilities = Map.of(
             "tools", Map.of(
                 "listChanged", false
-            ),
-            "logging", Map.of()
+            )
         );
         
         Map<String, Object> result = Map.of(
@@ -136,9 +145,6 @@ public class McpMessageHandler {
             
             // Format the response according to MCP protocol expectations
             Map<String, Object> formattedResult = new HashMap<>();
-            formattedResult.put("content", new Object[] {
-                Map.of("type", "text", "text", "Operation completed successfully")
-            });
             
             // Preserve all fields from the service response
             if (toolResult instanceof Map<?, ?> resultMap) {
@@ -148,9 +154,18 @@ public class McpMessageHandler {
                         formattedResult.put((String) key, value);
                     }
                 });
+                
+                // Create informative content message based on the data
+                String contentMessage = createContentMessage(toolName, resultMap);
+                formattedResult.put("content", new Object[] {
+                    Map.of("type", "text", "text", contentMessage)
+                });
             } else {
                 // If it's not a Map, wrap it as data
                 formattedResult.put("data", toolResult != null ? toolResult : Map.of());
+                formattedResult.put("content", new Object[] {
+                    Map.of("type", "text", "text", "Operation completed successfully")
+                });
             }
             
             return createSuccessResponse(id, formattedResult);
@@ -178,6 +193,32 @@ public class McpMessageHandler {
     private Map<String, Object> handlePing(JsonNode message, Object id) {
         log.debug("Handling ping request");
         return createSuccessResponse(id, Map.of("status", "pong"));
+    }
+    
+    private Map<String, Object> handleNotificationInitialized(JsonNode message) {
+        // Notifications don't require a response
+        log.debug("Received initialization notification");
+        return null;
+    }
+    
+    private Map<String, Object> handlePromptsList(JsonNode message, Object id) {
+        log.debug("Listing available prompts (empty list - not supported)");
+        
+        Map<String, Object> result = Map.of(
+            "prompts", new Object[0]
+        );
+        
+        return createSuccessResponse(id, result);
+    }
+    
+    private Map<String, Object> handleResourcesList(JsonNode message, Object id) {
+        log.debug("Listing available resources (empty list - not supported)");
+        
+        Map<String, Object> result = Map.of(
+            "resources", new Object[0]
+        );
+        
+        return createSuccessResponse(id, result);
     }
 
     private Object getMessageId(JsonNode message) {
@@ -237,5 +278,70 @@ public class McpMessageHandler {
         response.put("error", error);
         response.put("id", id);
         return response;
+    }
+    
+    private String createContentMessage(String toolName, Map<?, ?> resultMap) {
+        try {
+            // Check if this is a list operation
+            if (toolName.contains("_list")) {
+                Object data = resultMap.get("data");
+                if (data instanceof List<?> list) {
+                    if (list.isEmpty()) {
+                        return "No items found.";
+                    }
+                    
+                    String entityType = toolName.replace("_list", "").replace("_", " ");
+                    return String.format("Found %d %s(s).", list.size(), entityType);
+                }
+            }
+            
+            // Check if this is a create operation
+            if (toolName.contains("_create")) {
+                Object data = resultMap.get("data");
+                if (data instanceof Map<?, ?> createdItem) {
+                    String entityType = toolName.replace("_create", "").replace("_", " ");
+                    Object id = createdItem.get("id");
+                    Object name = createdItem.get("name");
+                    
+                    if (name != null) {
+                        return String.format("Created %s '%s' (ID: %s).", entityType, name, id);
+                    } else {
+                        return String.format("Created %s with ID: %s.", entityType, id);
+                    }
+                }
+            }
+            
+            // Check if this is a get operation
+            if (toolName.contains("_get")) {
+                Object data = resultMap.get("data");
+                if (data instanceof Map<?, ?> item) {
+                    String entityType = toolName.replace("_get", "").replace("_", " ");
+                    Object name = item.get("name");
+                    Object title = item.get("title");
+                    Object firstName = item.get("firstName");
+                    
+                    if (name != null) {
+                        return String.format("Retrieved %s: %s", entityType, name);
+                    } else if (title != null) {
+                        return String.format("Retrieved %s: %s", entityType, title);
+                    } else if (firstName != null) {
+                        return String.format("Retrieved %s: %s", entityType, firstName);
+                    }
+                }
+            }
+            
+            // Check if this is a delete operation
+            if (toolName.contains("_delete")) {
+                String entityType = toolName.replace("_delete", "").replace("_", " ");
+                return String.format("Successfully deleted %s.", entityType);
+            }
+            
+            // Default fallback
+            return "Operation completed successfully.";
+            
+        } catch (Exception e) {
+            log.warn("Failed to create content message for tool {}: {}", toolName, e.getMessage());
+            return "Operation completed successfully.";
+        }
     }
 }

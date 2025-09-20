@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- STDIO mode logging - ALL output goes to STDERR to keep STDOUT clean for JSON-RPC -->
+    
+    <!-- Console appender that writes to STDERR -->
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    
+    <!-- Root logger - minimal output to stderr -->
+    <root level="WARN">
+        <appender-ref ref="STDERR"/>
+    </root>
+    
+    <!-- Application logger - only errors -->
+    <logger name="com.monicahq.mcp" level="ERROR" additivity="false">
+        <appender-ref ref="STDERR"/>
+    </logger>
+    
+    <!-- Spring framework - only errors -->
+    <logger name="org.springframework" level="ERROR" additivity="false">
+        <appender-ref ref="STDERR"/>
+    </logger>
+    
+    <!-- Disable all other loggers -->
+    <logger name="org.apache" level="OFF"/>
+    <logger name="com.zaxxer" level="OFF"/>
+    <logger name="org.hibernate" level="OFF"/>
+    <logger name="io.netty" level="OFF"/>
+    <logger name="reactor" level="OFF"/>
+    <logger name="io.github.resilience4j" level="OFF"/>
+</configuration>

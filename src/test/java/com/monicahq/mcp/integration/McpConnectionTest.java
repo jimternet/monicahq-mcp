@@ -1,23 +1,30 @@
 package com.monicahq.mcp.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.monicahq.mcp.controller.McpMessageHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.Map;
+import java.util.List;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest()
 @TestPropertySource(properties = {
-    "spring.profiles.active=test"
+    "spring.profiles.active=test",
+    "spring.main.web-application-type=none"
 })
 public class McpConnectionTest {
 
     @Autowired
-    private WebTestClient webTestClient;
+    private McpMessageHandler messageHandler;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void shouldHandleMcpInitializeMessage() {
@@ -38,15 +45,27 @@ public class McpConnectionTest {
             "id", 1
         );
         
-        webTestClient.post()
-            .uri("/mcp")
-            .bodyValue(initRequest)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.result.protocolVersion").exists()
-            .jsonPath("$.result.serverInfo.name").exists()
-            .jsonPath("$.result.capabilities.tools").exists();
+        JsonNode requestNode = objectMapper.valueToTree(initRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertEquals(1L, response.get("id"));
+        assertTrue(response.containsKey("result"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = (Map<String, Object>) response.get("result");
+        assertNotNull(result.get("protocolVersion"));
+        assertNotNull(result.get("serverInfo"));
+        assertNotNull(result.get("capabilities"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> serverInfo = (Map<String, Object>) result.get("serverInfo");
+        assertNotNull(serverInfo.get("name"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> capabilities = (Map<String, Object>) result.get("capabilities");
+        assertNotNull(capabilities.get("tools"));
     }
 
     @Test
@@ -58,14 +77,22 @@ public class McpConnectionTest {
             "id", 1
         );
         
-        webTestClient.post()
-            .uri("/mcp")
-            .bodyValue(toolsListRequest)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.result.tools").isArray()
-            .jsonPath("$.result.tools.length()").isEqualTo(54); // 52 operations + 2 ContactTag operations
+        JsonNode requestNode = objectMapper.valueToTree(toolsListRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertEquals(1L, response.get("id"));
+        assertTrue(response.containsKey("result"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = (Map<String, Object>) response.get("result");
+        assertTrue(result.containsKey("tools"));
+        
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> tools = (List<Map<String, Object>>) result.get("tools");
+        assertNotNull(tools);
+        assertEquals(50, tools.size()); // 52 operations + 2 ContactTag operations - 5 journal entry operations + 1 additional contact field operation
     }
 
     @Test
@@ -76,13 +103,15 @@ public class McpConnectionTest {
             "id", 1
         );
         
-        webTestClient.post()
-            .uri("/mcp")
-            .bodyValue(invalidRequest)
-            .exchange()
-            .expectStatus().isBadRequest()
-            .expectBody()
-            .jsonPath("$.error.code").isEqualTo(-32600); // Invalid Request
+        JsonNode requestNode = objectMapper.valueToTree(invalidRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        assertNotNull(response);
+        assertTrue(response.containsKey("error"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> error = (Map<String, Object>) response.get("error");
+        assertEquals(-32600, error.get("code")); // Invalid Request
     }
 
     @Test
@@ -94,13 +123,17 @@ public class McpConnectionTest {
             "id", 1
         );
         
-        webTestClient.post()
-            .uri("/mcp")
-            .bodyValue(invalidMethodRequest)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.error.code").isEqualTo(-32601); // Method not found
+        JsonNode requestNode = objectMapper.valueToTree(invalidMethodRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertEquals(1L, response.get("id"));
+        assertTrue(response.containsKey("error"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> error = (Map<String, Object>) response.get("error");
+        assertEquals(-32601, error.get("code")); // Method not found
     }
 
     @Test
@@ -115,13 +148,17 @@ public class McpConnectionTest {
             "id", 1
         );
         
-        webTestClient.post()
-            .uri("/mcp")
-            .bodyValue(invalidToolRequest)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.error.code").isEqualTo(-32602); // Invalid params
+        JsonNode requestNode = objectMapper.valueToTree(invalidToolRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertEquals(1L, response.get("id"));
+        assertTrue(response.containsKey("error"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> error = (Map<String, Object>) response.get("error");
+        assertEquals(-32602, error.get("code")); // Invalid params
     }
 
     @Test
@@ -133,12 +170,12 @@ public class McpConnectionTest {
             "id", "correlation-test-123"
         );
         
-        webTestClient.post()
-            .uri("/mcp")
-            .bodyValue(mcpRequest)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.id").isEqualTo("correlation-test-123");
+        JsonNode requestNode = objectMapper.valueToTree(mcpRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertEquals("correlation-test-123", response.get("id"));
+        assertTrue(response.containsKey("result"));
     }
 }

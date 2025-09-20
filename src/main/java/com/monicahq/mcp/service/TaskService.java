@@ -122,7 +122,17 @@ public class TaskService {
         }
         
         if (!arguments.containsKey("contactId") || arguments.get("contactId") == null) {
-            throw new IllegalArgumentException("contactId is required");
+            throw new IllegalArgumentException("contactId is required - please provide the ID of an existing contact");
+        }
+        
+        // Validate contactId is a valid number
+        Object contactIdValue = arguments.get("contactId");
+        if (!(contactIdValue instanceof Number)) {
+            try {
+                Long.parseLong(contactIdValue.toString());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("contactId must be a valid number");
+            }
         }
         
         if (!arguments.containsKey("title") || 

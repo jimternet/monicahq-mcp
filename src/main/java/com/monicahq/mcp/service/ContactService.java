@@ -132,11 +132,11 @@ public class ContactService {
         if (!arguments.containsKey("firstName") || 
             arguments.get("firstName") == null || 
             arguments.get("firstName").toString().trim().isEmpty()) {
-            throw new IllegalArgumentException("firstName is required");
+            throw new IllegalArgumentException("firstName is required - please provide a first name for the contact");
         }
         
         if (!arguments.containsKey("genderId") || arguments.get("genderId") == null) {
-            throw new IllegalArgumentException("genderId is required");
+            throw new IllegalArgumentException("genderId is required - please provide a gender ID (1=Man, 2=Woman, 3=Other)");
         }
         
         // Set defaults for required boolean fields if not provided

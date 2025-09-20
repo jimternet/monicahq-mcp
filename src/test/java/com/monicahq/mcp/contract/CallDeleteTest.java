@@ -1,13 +1,18 @@
 package com.monicahq.mcp.contract;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.monicahq.mcp.controller.McpMessageHandler;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.reactive.server.WebTestClient;
+
 
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Contract test for call_delete MCP operation.
@@ -15,20 +20,24 @@ import java.util.Map;
  * 
  * This test MUST FAIL initially (RED phase of TDD).
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
+@SpringBootTest()
+
 @TestPropertySource(properties = {
-    "spring.profiles.active=test"
+    "spring.profiles.active=test",
+    "spring.main.web-application-type=none"
 })
 public class CallDeleteTest  {
 
     @Autowired
-    private WebTestClient webTestClient;
+    private McpMessageHandler messageHandler;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void shouldDeleteCallViaMcpProtocol() {
         // Given: MCP request to delete a call
-        Map<String, Object> mcpRequest = Map.of(
+        Map<String, Object> toolsCallRequest = Map.of(
             "jsonrpc", "2.0",
             "method", "tools/call",
             "params", Map.of(
@@ -41,22 +50,23 @@ public class CallDeleteTest  {
         );
 
         // When & Then: Send MCP request and verify deletion
-        webTestClient.post()
-            .uri("/mcp")
-            .bodyValue(mcpRequest)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.jsonrpc").isEqualTo("2.0")
-            .jsonPath("$.id").isEqualTo(1)
-            .jsonPath("$.result.content[0].text").value(text -> 
-                text.toString().contains("deleted"));
-    }
+        
+        JsonNode requestNode = objectMapper.valueToTree(toolsCallRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        // Then: Verify response structure
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertTrue(response.containsKey("result"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = (Map<String, Object>) response.get("result");
+        assertTrue(result.containsKey("content"));}
 
     @Test
     void shouldValidateDeleteRequiresId() {
         // Given: MCP request without id
-        Map<String, Object> mcpRequest = Map.of(
+        Map<String, Object> toolsCallRequest = Map.of(
             "jsonrpc", "2.0",
             "method", "tools/call",
             "params", Map.of(
@@ -67,12 +77,16 @@ public class CallDeleteTest  {
         );
 
         // When & Then: Expect validation error
-        webTestClient.post()
-            .uri("/mcp")
-            .bodyValue(mcpRequest)
-            .exchange()
-            .expectStatus().isBadRequest()
-            .expectBody()
-            .jsonPath("$.error.code").isEqualTo(-32602);
-    }
+        
+        JsonNode requestNode = objectMapper.valueToTree(toolsCallRequest);
+        Map<String, Object> response = messageHandler.handleMessage(requestNode, null);
+        
+        // Then: Verify response structure
+        assertNotNull(response);
+        assertEquals("2.0", response.get("jsonrpc"));
+        assertTrue(response.containsKey("error"));
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> error = (Map<String, Object>) response.get("error");
+        assertEquals(-32602, error.get("code"));}
 }

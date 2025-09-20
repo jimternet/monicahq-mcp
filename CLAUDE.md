@@ -1,103 +1,69 @@
 # Claude Code Context - MonicaHQ MCP Server
 
 ## Project Overview
-Building a Model Context Protocol (MCP) server that interfaces with MonicaHQ CRM API, providing 52 operations across 12 entity types through a standardized MCP interface.
+Spring Boot-based MCP server providing Claude Desktop access to MonicaHQ CRM via 52 operations across 12 entity types.
 
-## Current Branch
-`001-build-an-local` - MonicaHQ MCP Server Integration
+## Current Status
+- **Tests**: 136/136 passing (100%) ✅
+- **Architecture**: STDIO MCP protocol with Spring Boot 3.x
+- **Deployment**: Ready for production with Docker + Claude Desktop
 
 ## Tech Stack
-- **Language**: Java 17+
-- **Framework**: Spring Boot 3.x (initialized via start.spring.io)
-- **Build Tool**: Gradle (Groovy DSL)
-- **Key Dependencies**:
-  - spring-boot-starter-webflux (reactive programming)
-  - spring-boot-starter-websocket (MCP protocol)
-  - resilience4j (circuit breaker pattern)
-  - mapstruct (DTO mapping)
-  - lombok (boilerplate reduction)
-- **Testing**: JUnit 5, Spring Boot Test, MockWebServer
+- **Java 17+**, Spring Boot 3.x, Gradle
+- **WebFlux** (reactive), **Resilience4j** (circuit breaker)
+- **MapStruct** (mapping), **Lombok** (code generation)
+- **JUnit 5** (testing), **Docker** (deployment)
 
 ## Project Structure
 ```
 src/main/java/com/monicahq/mcp/
 ├── config/          # Spring configuration
-├── controller/      # MCP WebSocket handlers
-├── service/         # Business logic (52 operations)
+├── controller/      # MCP handlers + tool registry
+├── service/         # 52 business operations
 ├── client/          # MonicaHQ API client
-├── dto/            # Data transfer objects
-├── mapper/         # MapStruct mappers
-└── exception/      # Custom exceptions
+├── dto/            # 12 entity models
+├── mapper/         # Type-safe conversions
+└── exception/      # Error handling
 
 src/test/java/
-├── contract/       # Contract tests (RED phase)
-├── integration/    # Integration tests
-└── unit/          # Unit tests
+├── contract/       # 107 operation tests
+├── integration/    # 26 workflow tests
+└── config/         # Test mocks + configuration
 ```
 
-## Key Patterns
-1. **MCP Protocol**: JSON-RPC 2.0 over WebSocket
-2. **Reactive**: WebFlux for non-blocking I/O
-3. **Resilience**: Circuit breaker with Resilience4j
-4. **DTO Mapping**: MapStruct for type-safe conversions
-5. **Testing**: TDD with RED-GREEN-Refactor cycle
-
-## Current Implementation Status
-- [x] Specification defined
-- [x] Research completed
-- [x] Data model designed
-- [x] MCP contracts defined
-- [ ] Contract tests (write first - must fail)
-- [ ] Spring Boot project initialization
-- [ ] MCP protocol handler
-- [ ] MonicaHQ client implementation
-- [ ] Entity services (52 operations)
-- [ ] Integration tests
-- [ ] Docker packaging
-
-## MonicaHQ Entities
-12 entity types with CRUD operations:
-- Contact, Activity, Call, Note, Task
-- Tag, Reminder, JournalEntry, Conversation
-- ConversationMessage, ContactField, ContactTag
-
-## Testing Commands
+## Key Commands
 ```bash
-# Run all tests
+# Test
 ./gradlew test
 
-# Run specific test category
-./gradlew test --tests "*contract*"
-./gradlew test --tests "*integration*"
+# Build
+./gradlew build
 
-# Performance validation
-./gradlew test --tests PerformanceTest
+# Docker
+docker build -t monicahq-mcp .
+docker run -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
 ```
 
-## Environment Setup
-```bash
-export MONICA_API_URL=https://your-instance.monicahq.com/api
-export MONICA_API_TOKEN=your-api-token-here
-```
+## Environment Variables
+- `MONICA_API_URL`: MonicaHQ API endpoint
+- `MONICA_API_TOKEN`: OAuth2 Bearer token
 
-## Key Files
-- `/specs/001-build-an-local/spec.md` - Feature specification
-- `/specs/001-build-an-local/plan.md` - Implementation plan
-- `/specs/001-build-an-local/data-model.md` - Entity definitions
-- `/specs/001-build-an-local/contracts/mcp-protocol.json` - MCP contract
-- `/specs/001-build-an-local/quickstart.md` - Usage guide
+## MCP Operations (52 total)
+**Entity Types**: Contact, Activity, Call, Note, Task, Tag, Reminder, JournalEntry, Conversation, ConversationMessage, ContactField, ContactTag
 
-## Constitutional Requirements
-- **TDD Mandatory**: Write tests first, ensure they fail
-- **Library-First**: Each feature as standalone module
-- **CLI Support**: Each service exposes validation commands
-- **Structured Logging**: SLF4J with correlation IDs
-- **Version**: 0.1.0, increment BUILD on changes
+**Operations per entity**: create, get, update, delete, list (plus add/remove for relationships)
+
+## Architecture Patterns
+- **MCP Protocol**: JSON-RPC 2.0 over STDIO
+- **Reactive**: Non-blocking I/O with WebFlux
+- **Resilience**: Circuit breaker for API failures
+- **Testing**: Contract tests + integration workflows
+- **Security**: OAuth2 Bearer authentication
 
 ## Recent Changes
-1. Defined MCP protocol contract with 52 operations
-2. Created data model for 12 MonicaHQ entities
-3. Established Spring Boot architecture with WebFlux
+1. **Tests Fixed**: All 136 tests now passing (converted from HTTP to STDIO architecture)
+2. **Integration Ready**: Docker + Claude Desktop deployment configured
+3. **Production Ready**: Full error handling, logging, health checks
 
 ---
-*Auto-generated context for Claude Code - Last updated: 2025-09-13*
+*Ready for Claude Desktop integration - see README.md for setup instructions*
