@@ -3,6 +3,17 @@
 
 name: CI/CD Pipeline
 
+permissions:
+  contents: read
+  checks: write
+  actions: write
+  pull-requests: write
+  issues: write
+  packages: write
+  security-events: write
+  statuses: write
+  deployments: write
+  
 on:
   push:
     branches: [ "main", "develop" ]
