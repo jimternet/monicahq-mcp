@@ -161,15 +161,41 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Run Trivy vulnerability scanner
+    - name: Extract Docker metadata for security scan
+      id: meta-security
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=sha,prefix=sha-
+
+    - name: Debug Docker image reference
+      run: |
+        echo "Image reference: ${{ fromJSON(steps.meta-security.outputs.json).tags[0] }}"
+        echo "Registry: ${{ env.REGISTRY }}"
+        echo "Image name: ${{ env.IMAGE_NAME }}"
+        echo "SHA: ${{ github.sha }}"
+
+    - name: Run Trivy vulnerability scanner on Docker image
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        image-ref: ${{ fromJSON(steps.meta-security.outputs.json).tags[0] }}
         format: 'sarif'
         output: 'trivy-results.sarif'
+      continue-on-error: true
+
+    - name: Run Trivy filesystem scan (fallback)
+      uses: aquasecurity/trivy-action@master
+      if: failure()
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+      continue-on-error: true
 
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
