@@ -1,10 +1,10 @@
 # Claude Code Context - MonicaHQ MCP Server
 
 ## Project Overview
-Spring Boot-based MCP server providing Claude Desktop access to MonicaHQ CRM via 52 operations across 12 entity types.
+Spring Boot-based MCP server providing Claude Desktop access to MonicaHQ CRM via 68 operations across 16 entity types.
 
 ## Current Status
-- **Tests**: 147/147 passing (100%) ✅
+- **Tests**: 173/173 passing (100%) ✅
 - **Constitution**: v1.3.0 with enhanced Principle VI (Complete Monica API Data Access) ✅
 - **Architecture**: STDIO MCP protocol with Spring Boot 3.x with complete field visibility
 - **Deployment**: Ready for production with Docker + Claude Desktop
@@ -20,9 +20,9 @@ Spring Boot-based MCP server providing Claude Desktop access to MonicaHQ CRM via
 src/main/java/com/monicahq/mcp/
 ├── config/          # Spring configuration
 ├── controller/      # MCP handlers + tool registry
-├── service/         # 52 business operations
+├── service/         # 68 business operations
 ├── client/          # MonicaHQ API client
-├── dto/            # 12 entity models
+├── dto/            # 16 entity models
 ├── mapper/         # Type-safe conversions
 └── exception/      # Error handling
 
@@ -61,8 +61,8 @@ docker run -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
 - `MONICA_API_URL`: MonicaHQ API endpoint
 - `MONICA_API_TOKEN`: OAuth2 Bearer token
 
-## MCP Operations (52 total)
-**Entity Types**: Contact, Activity, Call, Note, Task, Tag, Reminder, JournalEntry, Conversation, ConversationMessage, ContactField, ContactTag
+## MCP Operations (68 total)
+**Entity Types**: Contact, Activity, Call, Note, Task, Tag, Reminder, JournalEntry, Conversation, ConversationMessage, ContactField, ContactTag, Relationship, Company, RelationshipType, RelationshipTypeGroup
 
 **Operations per entity**: create, get, update, delete, list (plus add/remove for relationships)
 
@@ -76,7 +76,7 @@ docker run -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
 ## Constitutional Governance Framework
 **Core Principles** (Constitution v1.3.0):
 1. **MCP Protocol First**: JSON-RPC 2.0 over STDIO, Claude Desktop integration priority
-2. **Test-Driven Development**: 100% test coverage mandatory (147/147 tests)
+2. **Test-Driven Development**: 100% test coverage mandatory (173/173 tests)
 3. **Spring Boot Architecture Excellence**: WebFlux for external APIs, proper reactive patterns
 4. **Production-Ready Deployment**: Docker + Claude Desktop from day one
 5. **Type Safety & Code Generation**: MapStruct + Lombok for reliability
@@ -91,7 +91,8 @@ docker run -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
 1. **Enhanced Constitutional Principle VI**: Complete Monica API data visibility (v1.3.0)
 2. **Generic Content Formatter**: ALL Monica API fields now visible in MCP content responses
 3. **Universal Field Coverage**: Raw API data formatting ensures no data loss for Claude Desktop
-4. **Test Suite Enhanced**: All 147 tests passing with comprehensive field validation
+4. **Test Suite Enhanced**: All 173 tests passing with comprehensive field validation
+5. **Critical Gap Implementation**: Added relationship management (9 operations) and company tracking (5 operations)
 
 ---
 *Ready for Claude Desktop integration - see README.md for setup instructions*

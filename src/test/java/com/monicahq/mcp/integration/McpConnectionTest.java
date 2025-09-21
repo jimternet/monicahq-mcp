@@ -92,7 +92,7 @@ public class McpConnectionTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> tools = (List<Map<String, Object>>) result.get("tools");
         assertNotNull(tools);
-        assertEquals(54, tools.size()); // Now includes discovery tools + conversation/message delete operations
+        assertEquals(68, tools.size()); // Updated to include relationship management (9) + company management (5) + existing 54 tools
     }
 
     @Test
