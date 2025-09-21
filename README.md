@@ -1,12 +1,12 @@
 # MonicaHQ MCP Server
 
-A Spring Boot-based Model Context Protocol (MCP) server that provides Claude Desktop and other MCP clients with direct access to your MonicaHQ CRM instance. Features 50 categorized operations across 12 entity types with enhanced tool organization.
+A Spring Boot-based Model Context Protocol (MCP) server that provides Claude Desktop and other MCP clients with direct access to your MonicaHQ CRM instance. Features 122 categorized operations across 23 entity types with comprehensive API coverage.
 
 ## ✅ Status: Production Ready
 
-- **Tests**: 136/136 passing (100%)
-- **Architecture**: Dual-mode Spring Boot 3.x (STDIO + Web Server)
-- **Tool Organization**: 50 operations in 3 logical categories
+- **Tests**: 188/188 passing (100%)
+- **Architecture**: Spring Boot 3.x with STDIO MCP protocol
+- **Tool Organization**: 122 operations across comprehensive entity coverage
 - **Deployment**: Multiple options (Spring Boot JAR, Docker, Claude Desktop)
 
 ## Quick Start

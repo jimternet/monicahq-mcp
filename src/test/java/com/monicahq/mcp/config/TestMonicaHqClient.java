@@ -218,6 +218,69 @@ public class TestMonicaHqClient extends MonicaHqClient {
             data.put("website", getValueFromRequest(requestBody, "website", "website", "https://example.com"));
             data.put("number_of_employees", getValueFromRequest(requestBody, "numberOfEmployees", "number_of_employees", 50));
             data.put("created_at", "2025-09-13T17:00:00Z");
+        } else if (endpoint.contains("/debts")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1001);
+            data.put("contact_id", getValueFromRequest(requestBody, "contactId", "contact_id", 123));
+            data.put("amount", getValueFromRequest(requestBody, "amount", "amount", 500.00));
+            data.put("currency", getValueFromRequest(requestBody, "currency", "currency", "USD"));
+            data.put("in_debt", getValueFromRequest(requestBody, "inDebt", "in_debt", "contact"));
+            data.put("status", getValueFromRequest(requestBody, "status", "status", "pending"));
+            data.put("reason", getValueFromRequest(requestBody, "reason", "reason", "Test debt"));
+            data.put("created_at", "2025-09-13T18:00:00Z");
+        } else if (endpoint.contains("/documents")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1002);
+            data.put("contact_id", getValueFromRequest(requestBody, "contactId", "contact_id", 123));
+            data.put("filename", getValueFromRequest(requestBody, "filename", "filename", "document.pdf"));
+            data.put("original_filename", getValueFromRequest(requestBody, "originalFilename", "original_filename", "test_document.pdf"));
+            data.put("mime_type", getValueFromRequest(requestBody, "mimeType", "mime_type", "application/pdf"));
+            data.put("size", getValueFromRequest(requestBody, "size", "size", 204800));
+            data.put("description", getValueFromRequest(requestBody, "description", "description", "Test document"));
+            data.put("created_at", "2025-09-13T19:00:00Z");
+        } else if (endpoint.contains("/photos")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1003);
+            data.put("contact_id", getValueFromRequest(requestBody, "contactId", "contact_id", 123));
+            data.put("filename", getValueFromRequest(requestBody, "filename", "filename", "photo.jpg"));
+            data.put("original_filename", getValueFromRequest(requestBody, "originalFilename", "original_filename", "test_photo.jpg"));
+            data.put("width", getValueFromRequest(requestBody, "width", "width", 800));
+            data.put("height", getValueFromRequest(requestBody, "height", "height", 600));
+            data.put("filesize", getValueFromRequest(requestBody, "filesize", "filesize", 102400));
+            data.put("mime_type", getValueFromRequest(requestBody, "mimeType", "mime_type", "image/jpeg"));
+            data.put("created_at", "2025-09-13T20:00:00Z");
+        } else if (endpoint.contains("/gifts")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1004);
+            data.put("contact_id", getValueFromRequest(requestBody, "contactId", "contact_id", 123));
+            data.put("name", getValueFromRequest(requestBody, "name", "name", "Gift name"));
+            data.put("comment", getValueFromRequest(requestBody, "comment", "comment", "Gift comment"));
+            data.put("url", getValueFromRequest(requestBody, "url", "url", "https://example.com/gift"));
+            data.put("value", getValueFromRequest(requestBody, "value", "value", 99.99));
+            data.put("status", getValueFromRequest(requestBody, "status", "status", "idea"));
+            data.put("date", getValueFromRequest(requestBody, "date", "date", "2025-12-25"));
+            data.put("is_for", getValueFromRequest(requestBody, "isFor", "is_for", "Birthday"));
+            data.put("created_at", "2025-09-13T21:00:00Z");
+        } else if (endpoint.contains("/auditlogs")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1005);
+            data.put("action", "create");
+            data.put("auditable_type", "Contact");
+            data.put("auditable_id", 123);
+            data.put("user_id", 1);
+            data.put("user_name", "Test User");
+            data.put("ip_address", "192.168.1.1");
+            data.put("user_agent", "Mozilla/5.0");
+            data.put("old_values", Map.of());
+            data.put("new_values", Map.of("name", "John Doe"));
+            data.put("created_at", "2025-09-13T22:00:00Z");
+        } else if (endpoint.contains("/countries")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1006);
+            data.put("name", "United States");
+            data.put("country_code", "US");
+            data.put("created_at", "2025-09-13T23:00:00Z");
+        } else if (endpoint.contains("/currencies")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1007);
+            data.put("code", "USD");
+            data.put("name", "US Dollar");
+            data.put("symbol", "$");
+            data.put("exchange_rate", 1.0);
+            data.put("created_at", "2025-09-13T23:30:00Z");
         } else {
             // Generic response for other endpoints
             data.put("id", 999);
@@ -238,6 +301,9 @@ public class TestMonicaHqClient extends MonicaHqClient {
             || endpoint.equals("/contactfields") || endpoint.equals("/conversations") || endpoint.equals("/messages")
             || endpoint.equals("/relationships") || endpoint.equals("/relationshiptypes") || endpoint.equals("/relationshiptypegroups")
             || endpoint.equals("/companies")
+            || endpoint.equals("/debts") || endpoint.equals("/documents") || endpoint.equals("/photos")
+            || endpoint.equals("/gifts") || endpoint.equals("/auditlogs") || endpoint.equals("/countries")
+            || endpoint.equals("/currencies")
             || (endpoint.contains("/contactfields") && endpoint.endsWith("/contactfields"))
             || (endpoint.contains("/messages") && endpoint.endsWith("/messages"))
         );
@@ -284,6 +350,20 @@ public class TestMonicaHqClient extends MonicaHqClient {
             items.add(Map.of("id", 1L, "name", "Family"));
         } else if (endpoint.equals("/companies")) {
             items.add(Map.of("id", 902L, "name", "Test Company", "website", "https://example.com", "number_of_employees", 50));
+        } else if (endpoint.equals("/debts")) {
+            items.add(Map.of("id", 1001L, "contact_id", 123L, "amount", 500.00, "currency", "USD", "in_debt", "contact", "status", "pending"));
+        } else if (endpoint.equals("/documents")) {
+            items.add(Map.of("id", 1002L, "contact_id", 123L, "filename", "document.pdf", "mime_type", "application/pdf", "size", 204800));
+        } else if (endpoint.equals("/photos")) {
+            items.add(Map.of("id", 1003L, "contact_id", 123L, "filename", "photo.jpg", "width", 800, "height", 600, "filesize", 102400));
+        } else if (endpoint.equals("/gifts")) {
+            items.add(Map.of("id", 1004L, "contact_id", 123L, "name", "Gift name", "value", 99.99, "status", "idea", "date", "2025-12-25"));
+        } else if (endpoint.equals("/auditlogs")) {
+            items.add(Map.of("id", 1005L, "action", "create", "auditable_type", "Contact", "auditable_id", 123L, "user_id", 1L, "user_name", "Test User"));
+        } else if (endpoint.equals("/countries")) {
+            items.add(Map.of("id", 1006L, "name", "United States", "country_code", "US"));
+        } else if (endpoint.equals("/currencies")) {
+            items.add(Map.of("id", 1007L, "code", "USD", "name", "US Dollar", "symbol", "$", "exchange_rate", 1.0));
         }
         
         // Extract pagination params
