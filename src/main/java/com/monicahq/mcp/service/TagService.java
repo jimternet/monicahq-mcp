@@ -1,6 +1,7 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.util.*;
 public class TagService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> createTag(Map<String, Object> arguments) {
         log.info("Creating tag with arguments: {}", arguments);
@@ -80,11 +82,16 @@ public class TagService {
             
             return monicaClient.delete("/tags/" + tagId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Delete", "Tag", tagId, true, 
+                        "Tag with ID " + tagId + " has been deleted successfully"
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Tag with ID " + tagId + " has been deleted successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -148,8 +155,13 @@ public class TagService {
     private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
         Map<String, Object> apiRequest = new HashMap<>();
         
+        // Map camelCase to snake_case for MonicaHQ API
         arguments.forEach((key, value) -> {
-            apiRequest.put(key, value);
+            switch (key) {
+                case "nameSlug" -> apiRequest.put("name_slug", value);
+                case "contactCount" -> apiRequest.put("contact_count", value);
+                default -> apiRequest.put(key, value);
+            }
         });
         
         return apiRequest;
@@ -179,15 +191,35 @@ public class TagService {
     }
 
     private Map<String, Object> formatTagResponse(Map<String, Object> apiResponse) {
+        Map<String, Object> tagData;
         if (apiResponse.containsKey("data")) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> tagData = (Map<String, Object>) apiResponse.get("data");
-            return Map.of(
-                "data", mapFromApiFormat(tagData)
-            );
+            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
+            tagData = mapFromApiFormat(rawData);
+        } else {
+            tagData = mapFromApiFormat(apiResponse);
         }
         
-        return Map.of("data", mapFromApiFormat(apiResponse));
+        // Use raw API data for complete field coverage as per Constitutional Principle VI
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+            (Map<String, Object>) apiResponse.get("data") : apiResponse;
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", tagData);
+        
+        // Format content for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
     }
 
     private Map<String, Object> formatTagListResponse(Map<String, Object> apiResponse) {
@@ -198,15 +230,26 @@ public class TagService {
             .map(this::mapFromApiFormat)
             .toList();
         
+        // Format content for Claude Desktop visibility using raw API response
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
         Map<String, Object> result = new HashMap<>();
         result.put("data", formattedTags);
         
-        // Add meta fields directly to result for MCP protocol
         @SuppressWarnings("unchecked")
         Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
         if (meta != null) {
             result.put("meta", meta);
         }
+        
+        // Add content field for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
         
         return result;
     }
@@ -214,8 +257,11 @@ public class TagService {
     private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
         Map<String, Object> result = new HashMap<>();
         
+        // Map snake_case to camelCase
         apiData.forEach((key, value) -> {
             switch (key) {
+                case "name_slug" -> result.put("nameSlug", value);
+                case "contact_count" -> result.put("contactCount", value);
                 case "created_at" -> result.put("createdAt", value);
                 case "updated_at" -> result.put("updatedAt", value);
                 default -> result.put(key, value);

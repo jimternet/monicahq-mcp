@@ -1,6 +1,8 @@
 package com.monicahq.mcp.controller;
 
 import com.monicahq.mcp.service.*;
+import com.monicahq.mcp.service.GenderService;
+import com.monicahq.mcp.service.ContactFieldTypeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,10 +32,14 @@ public class McpToolRegistry {
     private final ConversationMessageService conversationMessageService;
     private final ContactFieldService contactFieldService;
     private final ContactTagService contactTagService;
+    
+    // Discovery services - Constitutional Principle VII
+    private final GenderService genderService;
+    private final ContactFieldTypeService contactFieldTypeService;
 
     @PostConstruct
     public void initializeTools() {
-        log.info("Initializing MCP tool registry with 52 operations");
+        log.info("Initializing MCP tool registry with 54 operations");
         
         // === CONTACT MANAGEMENT (12 operations) ===
         // Core contact operations (5)
@@ -53,6 +59,10 @@ public class McpToolRegistry {
         // Contact tag operations (2)
         registerTool("contacttag_add", "[Contact Tag] Add a tag to a contact", createContactTagSchema(), "Contact Management");
         registerTool("contacttag_remove", "[Contact Tag] Remove a tag from a contact", createContactTagSchema(), "Contact Management");
+        
+        // === DISCOVERY TOOLS (Constitutional Principle VII) ===
+        registerTool("gender_list", "[Discovery] List all available genders", createListOnlySchema(), "Discovery & Reference");
+        registerTool("contact_field_type_list", "[Discovery] List all available contact field types", createListOnlySchema(), "Discovery & Reference");
         
         // === PRODUCTIVITY & ORGANIZATION (20 operations) ===
         // Note operations (5) - frequently used with contacts
@@ -105,16 +115,18 @@ public class McpToolRegistry {
         registerTool("call_delete", "[Call] Delete a call", createIdSchema("Call ID"), "Activity & Communication");
         registerTool("call_list", "[Call] List calls with pagination", createListSchema(), "Activity & Communication");
         
-        // Conversation operations (4)
+        // Conversation operations (5)
         registerTool("conversation_create", "[Conversation] Create a new conversation", createConversationSchema(), "Activity & Communication");
         registerTool("conversation_get", "[Conversation] Get a conversation by ID", createIdSchema("Conversation ID"), "Activity & Communication");
         registerTool("conversation_update", "[Conversation] Update an existing conversation", createConversationUpdateSchema(), "Activity & Communication");
+        registerTool("conversation_delete", "[Conversation] Delete a conversation", createIdSchema("Conversation ID"), "Activity & Communication");
         registerTool("conversation_list", "[Conversation] List conversations with pagination", createListSchema(), "Activity & Communication");
         
-        // Conversation message operations (4)
+        // Conversation message operations (5)
         registerTool("conversation_message_create", "[Message] Create a new conversation message", createMessageSchema(), "Activity & Communication");
         registerTool("conversation_message_get", "[Message] Get a conversation message by ID", createMessageGetSchema(), "Activity & Communication");
         registerTool("conversation_message_update", "[Message] Update an existing conversation message", createMessageUpdateSchema(), "Activity & Communication");
+        registerTool("conversation_message_delete", "[Message] Delete a conversation message", createMessageGetSchema(), "Activity & Communication");
         registerTool("conversation_message_list", "[Message] List conversation messages", createMessageListSchema(), "Activity & Communication");
         
         log.info("Initialized {} MCP tools", tools.size());
@@ -216,12 +228,14 @@ public class McpToolRegistry {
             case "conversation_create" -> conversationService.createConversation(arguments);
             case "conversation_get" -> conversationService.getConversation(arguments);
             case "conversation_update" -> conversationService.updateConversation(arguments);
+            case "conversation_delete" -> conversationService.deleteConversation(arguments);
             case "conversation_list" -> conversationService.listConversations(arguments);
             
             // Conversation Message operations
             case "conversation_message_create" -> conversationMessageService.createConversationMessage(arguments);
             case "conversation_message_get" -> conversationMessageService.getConversationMessage(arguments);
             case "conversation_message_update" -> conversationMessageService.updateConversationMessage(arguments);
+            case "conversation_message_delete" -> conversationMessageService.deleteConversationMessage(arguments);
             case "conversation_message_list" -> conversationMessageService.listConversationMessages(arguments);
             
             // Contact Field operations
@@ -235,11 +249,29 @@ public class McpToolRegistry {
             case "contacttag_add" -> contactTagService.attachTag(arguments);
             case "contacttag_remove" -> contactTagService.detachTag(arguments);
             
+            // Discovery operations (Constitutional Principle VII)
+            case "gender_list" -> genderService.listGenders(arguments);
+            case "contact_field_type_list" -> contactFieldTypeService.listContactFieldTypes(arguments);
+            
             default -> Mono.error(new UnsupportedOperationException("Tool not implemented: " + toolName));
         };
     }
 
     // Schema creation methods
+    
+    /**
+     * Creates a schema for discovery tools that take no parameters.
+     * These tools simply list available options from Monica API.
+     */
+    private Map<String, Object> createListOnlySchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(),
+            "additionalProperties", false,
+            "description", "No parameters required - this discovery tool lists available options"
+        );
+    }
+    
     private Map<String, Object> createIdSchema(String description) {
         return Map.of(
             "type", "object",
@@ -289,9 +321,8 @@ public class McpToolRegistry {
             "maxLength", 255
         ));
         properties.put("genderId", Map.of(
-            "type", "string",
-            "description", "Gender ID: 1=Male, 2=Female, 3=Other (required)",
-            "enum", List.of("1", "2", "3")
+            "type", "string", 
+            "description", "Gender ID (required) - Use gender_list tool to see available options. Note: Monica supports custom genders per account."
         ));
         properties.put("nickname", Map.of(
             "type", "string",
@@ -336,16 +367,78 @@ public class McpToolRegistry {
     }
 
     private Map<String, Object> createContactUpdateSchema() {
-        Map<String, Object> schema = new HashMap<>(createContactSchema());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> properties = new HashMap<>((Map<String, Object>) schema.get("properties"));
+        Map<String, Object> properties = new HashMap<>();
+        
+        // Required ID field
         properties.put("id", Map.of(
             "type", "integer",
-            "description", "Contact ID"
+            "description", "Contact ID (required)"
         ));
-        schema.put("properties", properties);
-        schema.put("required", List.of("id"));
-        return schema;
+        
+        // Fields that can be updated
+        properties.put("firstName", Map.of(
+            "type", "string",
+            "description", "Contact's first name (optional - if not provided, existing value will be kept)",
+            "maxLength", 255
+        ));
+        properties.put("lastName", Map.of(
+            "type", "string",
+            "description", "Contact's last name (optional)",
+            "maxLength", 255
+        ));
+        properties.put("genderId", Map.of(
+            "type", "string",
+            "description", "Gender ID (optional) - Use gender_list tool to see available options"
+        ));
+        properties.put("nickname", Map.of(
+            "type", "string",
+            "description", "Contact's nickname (optional)",
+            "maxLength", 255
+        ));
+        properties.put("email", Map.of(
+            "type", "string",
+            "format", "email",
+            "description", "Primary email address (optional)"
+        ));
+        properties.put("phone", Map.of(
+            "type", "string",
+            "description", "Primary phone number (optional)"
+        ));
+        properties.put("company", Map.of(
+            "type", "string",
+            "description", "Company or organization (optional)",
+            "maxLength", 255
+        ));
+        properties.put("jobTitle", Map.of(
+            "type", "string",
+            "description", "Job title or position (optional)",
+            "maxLength", 255
+        ));
+        properties.put("birthdate", Map.of(
+            "type", "string",
+            "format", "date",
+            "description", "Birthdate in YYYY-MM-DD format (optional)"
+        ));
+        properties.put("isBirthdateKnown", Map.of(
+            "type", "boolean",
+            "description", "Whether the birthdate is known (optional - defaults to existing value)"
+        ));
+        properties.put("isDeceased", Map.of(
+            "type", "boolean",
+            "description", "Whether the contact is deceased (optional - defaults to existing value)"
+        ));
+        properties.put("isDeceasedDateKnown", Map.of(
+            "type", "boolean",
+            "description", "Whether the deceased date is known (optional - defaults to existing value)"
+        ));
+        
+        return Map.of(
+            "type", "object",
+            "properties", properties,
+            "required", List.of("id"),
+            "additionalProperties", false,
+            "description", "Update a contact. NOTE: MonicaHQ API will automatically fetch and preserve existing values for all fields not provided in the update."
+        );
     }
 
     // Additional schema methods for other entities (simplified for brevity)
@@ -626,7 +719,7 @@ public class McpToolRegistry {
             "type", "object",
             "properties", Map.of(
                 "contactId", Map.of("type", "integer", "description", "Associated contact ID"),
-                "contactFieldTypeId", Map.of("type", "integer", "description", "Field type ID"),
+                "contactFieldTypeId", Map.of("type", "integer", "description", "Field type ID - Use contact_field_type_list tool to see available types (email, phone, etc.)"),
                 "data", Map.of("type", "string", "description", "Field data")
             ),
             "required", List.of("contactId", "contactFieldTypeId", "data")

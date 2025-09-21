@@ -1,6 +1,7 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.util.*;
 public class NoteService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> createNote(Map<String, Object> arguments) {
         log.info("Creating note with arguments: {}", arguments);
@@ -80,11 +82,16 @@ public class NoteService {
             
             return monicaClient.delete("/notes/" + noteId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Delete", "Note", noteId, true, 
+                        "Note with ID " + noteId + " has been deleted successfully"
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Note with ID " + noteId + " has been deleted successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -191,15 +198,35 @@ public class NoteService {
     }
 
     private Map<String, Object> formatNoteResponse(Map<String, Object> apiResponse) {
+        Map<String, Object> noteData;
         if (apiResponse.containsKey("data")) {
+            // Single note response
             @SuppressWarnings("unchecked")
-            Map<String, Object> noteData = (Map<String, Object>) apiResponse.get("data");
-            return Map.of(
-                "data", mapFromApiFormat(noteData)
-            );
+            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
+            noteData = mapFromApiFormat(rawData);
+        } else {
+            noteData = mapFromApiFormat(apiResponse);
         }
         
-        return Map.of("data", mapFromApiFormat(apiResponse));
+        // Use raw API data for complete field coverage as per Constitutional Principle VI
+        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+            (Map<String, Object>) apiResponse.get("data") : apiResponse;
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", noteData);
+        
+        // Format content for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
     }
 
     private Map<String, Object> formatNoteListResponse(Map<String, Object> apiResponse) {
@@ -210,15 +237,26 @@ public class NoteService {
             .map(this::mapFromApiFormat)
             .toList();
         
+        // Format content for Claude Desktop visibility using raw API response
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
         Map<String, Object> result = new HashMap<>();
         result.put("data", formattedNotes);
         
-        // Add meta fields directly to result for MCP protocol
         @SuppressWarnings("unchecked")
         Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
         if (meta != null) {
             result.put("meta", meta);
         }
+        
+        // Add content field for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
         
         return result;
     }

@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
 import java.util.*;
 
 @Service
@@ -14,6 +14,7 @@ import java.util.*;
 public class ContactTagService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> attachTag(Map<String, Object> arguments) {
         log.info("Attaching tag to contact with arguments: {}", arguments);
@@ -78,11 +79,16 @@ public class ContactTagService {
             
             return monicaClient.delete("/contacts/" + contactId + "/unsetTag/" + tagId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Detach", "Contact Tag", tagId, true, 
+                        "Tag has been successfully detached from contact " + contactId
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Tag with ID " + tagId + " has been detached from contact " + contactId + " successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -202,11 +208,19 @@ public class ContactTagService {
     }
 
     private Map<String, Object> formatContactTagResponse(Map<String, Object> apiResponse) {
+        // Use raw API data for complete field coverage as per Constitutional Principle VI
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+            (Map<String, Object>) apiResponse.get("data") : apiResponse;
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
         Map<String, Object> result = new HashMap<>();
+        result.put("data", apiResponse);
+        
         List<Map<String, Object>> content = List.of(
             Map.of(
                 "type", "text",
-                "text", "Tag added to contact successfully"
+                "text", formattedContent
             )
         );
         result.put("content", content);
@@ -214,16 +228,36 @@ public class ContactTagService {
     }
 
     private Map<String, Object> formatContactTagListResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", apiResponse.get("data") != null ? apiResponse.get("data") : List.of());
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> data = (List<Map<String, Object>>) apiResponse.get("data");
+        if (data == null) {
+            data = List.of();
+        }
         
-        // Add meta fields directly to result for MCP protocol
+        // Extract meta for result structure
         @SuppressWarnings("unchecked")
         Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
+        
+        // Format content for Claude Desktop visibility
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", data);
+        
         if (meta != null) {
             result.put("meta", meta);
         }
         
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
         return result;
     }
+    
 }

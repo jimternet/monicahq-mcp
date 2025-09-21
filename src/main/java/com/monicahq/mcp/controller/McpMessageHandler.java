@@ -155,13 +155,16 @@ public class McpMessageHandler {
                     }
                 });
                 
-                // Create informative content message based on the data
-                String contentMessage = createContentMessage(toolName, resultMap);
-                formattedResult.put("content", new Object[] {
-                    Map.of("type", "text", "text", contentMessage)
-                });
+                // Ensure content field is present for MCP compliance as per Constitution v2.0
+                if (!resultMap.containsKey("content")) {
+                    // Fallback: create informative content message based on the data
+                    String contentMessage = createContentMessage(toolName, resultMap);
+                    formattedResult.put("content", new Object[] {
+                        Map.of("type", "text", "text", contentMessage)
+                    });
+                }
             } else {
-                // If it's not a Map, wrap it as data
+                // If it's not a Map, wrap it as data and create content
                 formattedResult.put("data", toolResult != null ? toolResult : Map.of());
                 formattedResult.put("content", new Object[] {
                     Map.of("type", "text", "text", "Operation completed successfully")
@@ -290,6 +293,11 @@ public class McpMessageHandler {
                         return "No items found.";
                     }
                     
+                    // Special handling for contact_list to show detailed information
+                    if (toolName.equals("contact_list")) {
+                        return formatContactListDetails(list, resultMap);
+                    }
+                    
                     String entityType = toolName.replace("_list", "").replace("_", " ");
                     return String.format("Found %d %s(s).", list.size(), entityType);
                 }
@@ -343,5 +351,118 @@ public class McpMessageHandler {
             log.warn("Failed to create content message for tool {}: {}", toolName, e.getMessage());
             return "Operation completed successfully.";
         }
+    }
+    
+    private String formatContactListDetails(List<?> contacts, Map<?, ?> resultMap) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Found %d contact(s):\n\n", contacts.size()));
+        
+        for (Object contactObj : contacts) {
+            if (contactObj instanceof Map<?, ?> contact) {
+                // Extract basic information
+                Object id = contact.get("id");
+                Object firstName = contact.get("firstName");
+                Object lastName = contact.get("lastName");
+                Object completeName = contact.get("complete_name");
+                Object nickname = contact.get("nickname");
+                
+                // Build contact entry
+                sb.append(String.format("• %s (ID: %s)\n", 
+                    completeName != null ? completeName : String.format("%s %s", 
+                        firstName != null ? firstName : "", 
+                        lastName != null ? lastName : "").trim(),
+                    id));
+                
+                // Add nickname if present
+                if (nickname != null && !nickname.toString().isEmpty()) {
+                    sb.append(String.format("  Nickname: %s\n", nickname));
+                }
+                
+                // Extract nested information
+                Object information = contact.get("information");
+                if (information instanceof Map<?, ?> info) {
+                    // Career info
+                    Object career = info.get("career");
+                    if (career instanceof Map<?, ?> careerMap) {
+                        Object job = careerMap.get("job");
+                        Object company = careerMap.get("company");
+                        if (job != null && !job.toString().isEmpty()) {
+                            sb.append(String.format("  Job: %s\n", job));
+                        }
+                        if (company != null && !company.toString().isEmpty()) {
+                            sb.append(String.format("  Company: %s\n", company));
+                        }
+                    }
+                }
+                
+                // Tags
+                Object tags = contact.get("tags");
+                if (tags instanceof List<?> tagList && !tagList.isEmpty()) {
+                    sb.append("  Tags: ");
+                    for (int i = 0; i < tagList.size(); i++) {
+                        if (tagList.get(i) instanceof Map<?, ?> tag) {
+                            Object tagName = tag.get("name");
+                            if (tagName != null) {
+                                sb.append(tagName);
+                                if (i < tagList.size() - 1) {
+                                    sb.append(", ");
+                                }
+                            }
+                        }
+                    }
+                    sb.append("\n");
+                }
+                
+                // Statistics
+                Object statistics = contact.get("statistics");
+                if (statistics instanceof Map<?, ?> stats) {
+                    Object notes = stats.get("number_of_notes");
+                    Object activities = stats.get("number_of_activities");
+                    Object reminders = stats.get("number_of_reminders");
+                    
+                    if ((notes != null && !notes.toString().equals("0")) ||
+                        (activities != null && !activities.toString().equals("0")) ||
+                        (reminders != null && !reminders.toString().equals("0"))) {
+                        sb.append("  Activity: ");
+                        boolean first = true;
+                        if (notes != null && !notes.toString().equals("0")) {
+                            sb.append(String.format("%s notes", notes));
+                            first = false;
+                        }
+                        if (activities != null && !activities.toString().equals("0")) {
+                            if (!first) sb.append(", ");
+                            sb.append(String.format("%s activities", activities));
+                            first = false;
+                        }
+                        if (reminders != null && !reminders.toString().equals("0")) {
+                            if (!first) sb.append(", ");
+                            sb.append(String.format("%s reminders", reminders));
+                        }
+                        sb.append("\n");
+                    }
+                }
+                
+                sb.append("\n");
+            }
+        }
+        
+        // Add search query info if present
+        Object meta = resultMap.get("meta");
+        if (meta instanceof Map<?, ?> metaMap) {
+            Object query = metaMap.get("query");
+            if (query != null && !query.toString().isEmpty()) {
+                sb.append(String.format("Search query: \"%s\"\n", query));
+            }
+            
+            Object currentPage = metaMap.get("current_page");
+            Object totalPages = metaMap.get("last_page");
+            Object total = metaMap.get("total");
+            if (currentPage != null && totalPages != null) {
+                sb.append(String.format("Page %s of %s (Total: %s contacts)", 
+                    currentPage, totalPages, total != null ? total : "unknown"));
+            }
+        }
+        
+        return sb.toString().trim();
     }
 }

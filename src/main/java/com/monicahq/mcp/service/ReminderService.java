@@ -1,6 +1,7 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.util.*;
 public class ReminderService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> createReminder(Map<String, Object> arguments) {
         log.info("Creating reminder with arguments: {}", arguments);
@@ -80,11 +82,16 @@ public class ReminderService {
             
             return monicaClient.delete("/reminders/" + reminderId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Delete", "Reminder", reminderId, true, 
+                        "Reminder with ID " + reminderId + " has been deleted successfully"
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Reminder with ID " + reminderId + " has been deleted successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -131,8 +138,9 @@ public class ReminderService {
             throw new IllegalArgumentException("title is required");
         }
         
-        if (!arguments.containsKey("nextExpectedDate") || arguments.get("nextExpectedDate") == null) {
-            throw new IllegalArgumentException("nextExpectedDate is required");
+        // Check for initialDate as defined in the schema
+        if (!arguments.containsKey("initialDate") || arguments.get("initialDate") == null) {
+            throw new IllegalArgumentException("initialDate is required - the date for the reminder in YYYY-MM-DD format");
         }
     }
 
@@ -159,6 +167,7 @@ public class ReminderService {
         arguments.forEach((key, value) -> {
             switch (key) {
                 case "contactId" -> apiRequest.put("contact_id", value);
+                case "initialDate" -> apiRequest.put("initial_date", value);
                 case "nextExpectedDate" -> apiRequest.put("next_expected_date", value);
                 case "lastTriggered" -> apiRequest.put("last_triggered", value);
                 default -> apiRequest.put(key, value);
@@ -192,15 +201,35 @@ public class ReminderService {
     }
 
     private Map<String, Object> formatReminderResponse(Map<String, Object> apiResponse) {
+        Map<String, Object> reminderData;
         if (apiResponse.containsKey("data")) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> reminderData = (Map<String, Object>) apiResponse.get("data");
-            return Map.of(
-                "data", mapFromApiFormat(reminderData)
-            );
+            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
+            reminderData = mapFromApiFormat(rawData);
+        } else {
+            reminderData = mapFromApiFormat(apiResponse);
         }
         
-        return Map.of("data", mapFromApiFormat(apiResponse));
+        // Use raw API data for complete field coverage as per Constitutional Principle VI
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+            (Map<String, Object>) apiResponse.get("data") : apiResponse;
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", reminderData);
+        
+        // Format content for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
     }
 
     private Map<String, Object> formatReminderListResponse(Map<String, Object> apiResponse) {
@@ -211,15 +240,28 @@ public class ReminderService {
             .map(this::mapFromApiFormat)
             .toList();
         
+        // Format content for Claude Desktop visibility
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
+        // Extract meta for result structure
+        @SuppressWarnings("unchecked")
+        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
+        
         Map<String, Object> result = new HashMap<>();
         result.put("data", formattedReminders);
         
-        // Add meta fields directly to result for MCP protocol
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
         if (meta != null) {
             result.put("meta", meta);
         }
+        
+        // Add content field for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
         
         return result;
     }
@@ -240,4 +282,5 @@ public class ReminderService {
         
         return result;
     }
+    
 }

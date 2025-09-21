@@ -30,7 +30,7 @@ public class ReminderCreateTest {
 
     @Test
     void shouldCreateReminderViaMcpProtocol() {
-        Map<String, Object> toolsCallRequest = Map.of("jsonrpc", "2.0", "method", "tools/call", "params", Map.of("name", "reminder_create", "arguments", Map.of("contactId", 12345, "title", "Birthday reminder", "description", "Remember birthday", "nextExpectedDate", "2025-12-25")), "id", 1);
+        Map<String, Object> toolsCallRequest = Map.of("jsonrpc", "2.0", "method", "tools/call", "params", Map.of("name", "reminder_create", "arguments", Map.of("contactId", 12345, "title", "Birthday reminder", "description", "Remember birthday", "initialDate", "2025-12-25")), "id", 1);
         
         JsonNode requestNode = objectMapper.valueToTree(toolsCallRequest);
         Map<String, Object> response = messageHandler.handleMessage(requestNode, null);

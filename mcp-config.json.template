@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "monicahq": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "build/libs/monicahq-mcp-0.1.0.jar"
+      ],
+      "env": {
+        "MONICA_API_URL": "${MONICA_API_URL}",
+        "MONICA_API_TOKEN": "${MONICA_API_TOKEN}"
+      }
+    }
+  }
+}

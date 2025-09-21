@@ -1,6 +1,8 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.dto.Activity;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import java.util.*;
 public class ActivityService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> createActivity(Map<String, Object> arguments) {
         log.info("Creating activity with arguments: {}", arguments);
@@ -80,11 +83,16 @@ public class ActivityService {
             
             return monicaClient.delete("/activities/" + activityId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Delete", "Activity", activityId, true, 
+                        "Activity with ID " + activityId + " has been deleted successfully"
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Activity with ID " + activityId + " has been deleted successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -204,15 +212,34 @@ public class ActivityService {
     }
 
     private Map<String, Object> formatActivityResponse(Map<String, Object> apiResponse) {
+        Map<String, Object> activityData;
         if (apiResponse.containsKey("data")) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> activityData = (Map<String, Object>) apiResponse.get("data");
-            return Map.of(
-                "data", mapFromApiFormat(activityData)
-            );
+            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
+            activityData = mapFromApiFormat(rawData);
+        } else {
+            activityData = mapFromApiFormat(apiResponse);
         }
         
-        return Map.of("data", mapFromApiFormat(apiResponse));
+        // Use raw API data for complete field coverage as per Constitutional Principle VI
+        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+            (Map<String, Object>) apiResponse.get("data") : apiResponse;
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", activityData);
+        
+        // Format content for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
     }
 
     private Map<String, Object> formatActivityListResponse(Map<String, Object> apiResponse) {
@@ -223,15 +250,27 @@ public class ActivityService {
             .map(this::mapFromApiFormat)
             .toList();
         
+        // Format content as escaped JSON for Claude Desktop accessibility as per Constitutional Principle VI
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
         Map<String, Object> result = new HashMap<>();
         result.put("data", formattedActivities);
         
-        // Add meta fields directly to result for MCP protocol
+        // Extract and preserve meta from API response
         @SuppressWarnings("unchecked")
         Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
         if (meta != null) {
             result.put("meta", meta);
         }
+        
+        // Add content field for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
         
         return result;
     }
@@ -273,5 +312,52 @@ public class ActivityService {
         });
         
         return result;
+    }
+    
+    private Activity convertToActivityDto(Map<String, Object> activityData) {
+        return Activity.builder()
+            .id(getLongValue(activityData, "id"))
+            .contactId(getLongValue(activityData, "contactId"))
+            .type((String) activityData.get("type"))
+            .summary((String) activityData.get("summary"))
+            .description((String) activityData.get("description"))
+            .date(getLocalDateTimeValue(activityData, "date"))
+            .duration(getIntegerValue(activityData, "duration"))
+            .createdAt(getLocalDateTimeValue(activityData, "createdAt"))
+            .updatedAt(getLocalDateTimeValue(activityData, "updatedAt"))
+            .build();
+    }
+    
+    private Long getLongValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        return null;
+    }
+    
+    private Integer getIntegerValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        return null;
+    }
+    
+    private java.time.LocalDateTime getLocalDateTimeValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        if (value instanceof String) {
+            try {
+                String dateTimeStr = (String) value;
+                // Handle ISO format with Z
+                if (dateTimeStr.endsWith("Z")) {
+                    return java.time.LocalDateTime.parse(dateTimeStr.substring(0, dateTimeStr.length() - 1));
+                }
+                return java.time.LocalDateTime.parse(dateTimeStr);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
     }
 }
