@@ -192,3 +192,8 @@ mcp-server
 # MonicaHQ specific
 monica-cache/
 monica-backup/
+
+# Claude Desktop configuration files with credentials
+claude_desktop_config.json
+claude_desktop_config_docker.json
+mcp-inspector-docker-config.json

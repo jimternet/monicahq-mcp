@@ -1,6 +1,7 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.util.*;
 public class CallService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> createCall(Map<String, Object> arguments) {
         log.info("Creating call with arguments: {}", arguments);
@@ -80,11 +82,16 @@ public class CallService {
             
             return monicaClient.delete("/calls/" + callId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Delete", "Call", callId, true, 
+                        "Call with ID " + callId + " has been deleted successfully"
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Call with ID " + callId + " has been deleted successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -202,15 +209,35 @@ public class CallService {
     }
 
     private Map<String, Object> formatCallResponse(Map<String, Object> apiResponse) {
+        Map<String, Object> callData;
         if (apiResponse.containsKey("data")) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> callData = (Map<String, Object>) apiResponse.get("data");
-            return Map.of(
-                "data", mapFromApiFormat(callData)
-            );
+            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
+            callData = mapFromApiFormat(rawData);
+        } else {
+            callData = mapFromApiFormat(apiResponse);
         }
         
-        return Map.of("data", mapFromApiFormat(apiResponse));
+        // Use raw API data for complete field coverage as per Constitutional Principle VI
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+            (Map<String, Object>) apiResponse.get("data") : apiResponse;
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", callData);
+        
+        // Format content for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
     }
 
     private Map<String, Object> formatCallListResponse(Map<String, Object> apiResponse) {
@@ -221,15 +248,26 @@ public class CallService {
             .map(this::mapFromApiFormat)
             .toList();
         
+        // Format content for Claude Desktop visibility using raw API response
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
         Map<String, Object> result = new HashMap<>();
         result.put("data", formattedCalls);
         
-        // Add meta fields directly to result for MCP protocol
         @SuppressWarnings("unchecked")
         Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
         if (meta != null) {
             result.put("meta", meta);
         }
+        
+        // Add content field for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
         
         return result;
     }

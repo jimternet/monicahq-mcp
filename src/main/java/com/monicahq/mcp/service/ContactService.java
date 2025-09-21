@@ -1,6 +1,8 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.dto.Contact;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import java.util.*;
 public class ContactService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> createContact(Map<String, Object> arguments) {
         log.info("Creating contact with arguments: {}", arguments);
@@ -63,16 +66,62 @@ public class ContactService {
         try {
             Long contactId = extractContactId(arguments);
             
-            // Remove ID from arguments for API call
-            Map<String, Object> updateData = new HashMap<>(arguments);
-            updateData.remove("id");
-            
-            Map<String, Object> apiRequest = mapToApiFormat(updateData);
-            
-            return monicaClient.put("/contacts/" + contactId, apiRequest)
-                .map(this::formatContactResponse)
-                .doOnSuccess(result -> log.info("Contact updated successfully: {}", contactId))
-                .doOnError(error -> log.error("Failed to update contact {}: {}", contactId, error.getMessage()));
+            // Fetch existing contact to ensure all required fields are present
+            return monicaClient.get("/contacts/" + contactId, null)
+                .flatMap(existingContact -> {
+                    // Extract the data portion of the response
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> existingData = existingContact.containsKey("data") ? 
+                        (Map<String, Object>) existingContact.get("data") : existingContact;
+                    
+                    // Create update data by merging with existing data
+                    Map<String, Object> updateData = new HashMap<>(arguments);
+                    updateData.remove("id");
+                    
+                    // Ensure required fields from existing contact are preserved
+                    // MonicaHQ requires these fields even when not changing them
+                    if (!updateData.containsKey("firstName") && existingData.containsKey("first_name")) {
+                        updateData.put("firstName", existingData.get("first_name"));
+                    }
+                    if (!updateData.containsKey("lastName") && existingData.containsKey("last_name")) {
+                        updateData.put("lastName", existingData.get("last_name"));
+                    }
+                    if (!updateData.containsKey("genderId") && existingData.containsKey("gender_id")) {
+                        updateData.put("genderId", existingData.get("gender_id"));
+                    }
+                    
+                    // Always include required boolean fields
+                    if (!updateData.containsKey("isBirthdateKnown")) {
+                        Object value = existingData.get("is_birthdate_known");
+                        updateData.put("isBirthdateKnown", value != null ? value : false);
+                    }
+                    if (!updateData.containsKey("isDeceased")) {
+                        Object value = existingData.get("is_deceased");
+                        updateData.put("isDeceased", value != null ? value : false);
+                    }
+                    if (!updateData.containsKey("isDeceasedDateKnown")) {
+                        Object value = existingData.get("is_deceased_date_known");
+                        updateData.put("isDeceasedDateKnown", value != null ? value : false);
+                    }
+                    
+                    // Validate that we have required fields
+                    validateContactUpdateArguments(updateData);
+                    
+                    Map<String, Object> apiRequest = mapToApiFormat(updateData);
+                    
+                    log.info("Sending update request for contact {} with data: {}", contactId, apiRequest);
+                    
+                    return monicaClient.put("/contacts/" + contactId, apiRequest)
+                        .map(this::formatContactResponse)
+                        .doOnSuccess(result -> log.info("Contact updated successfully: {}", contactId))
+                        .doOnError(error -> log.error("Failed to update contact {} with request {}: {}", 
+                            contactId, apiRequest, error.getMessage()));
+                })
+                .onErrorResume(error -> {
+                    log.error("Failed to fetch existing contact {} for update: {}", contactId, error.getMessage());
+                    return Mono.error(new IllegalStateException(
+                        "Unable to update contact - failed to fetch existing data: " + error.getMessage(), error));
+                });
                 
         } catch (IllegalArgumentException e) {
             log.error("Invalid arguments for contact update: {}", e.getMessage());
@@ -88,11 +137,16 @@ public class ContactService {
             
             return monicaClient.delete("/contacts/" + contactId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Delete", "Contact", contactId, true, 
+                        "Contact with ID " + contactId + " has been deleted successfully"
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Contact with ID " + contactId + " has been deleted successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -143,6 +197,32 @@ public class ContactService {
         arguments.putIfAbsent("isBirthdateKnown", false);
         arguments.putIfAbsent("isDeceased", false);
         arguments.putIfAbsent("isDeceasedDateKnown", false);
+    }
+    
+    private void validateContactUpdateArguments(Map<String, Object> arguments) {
+        if (arguments == null || arguments.isEmpty()) {
+            throw new IllegalArgumentException("Contact update arguments cannot be empty");
+        }
+        
+        // MonicaHQ API requires these fields for ALL updates
+        if (!arguments.containsKey("firstName") || 
+            arguments.get("firstName") == null || 
+            arguments.get("firstName").toString().trim().isEmpty()) {
+            throw new IllegalArgumentException("firstName is required for updates - MonicaHQ requires this field even when not changing it");
+        }
+        
+        // Ensure required boolean fields are present
+        if (!arguments.containsKey("isBirthdateKnown")) {
+            throw new IllegalArgumentException("isBirthdateKnown is required for updates - MonicaHQ requires this field");
+        }
+        
+        if (!arguments.containsKey("isDeceased")) {
+            throw new IllegalArgumentException("isDeceased is required for updates - MonicaHQ requires this field");
+        }
+        
+        if (!arguments.containsKey("isDeceasedDateKnown")) {
+            throw new IllegalArgumentException("isDeceasedDateKnown is required for updates - MonicaHQ requires this field");
+        }
     }
 
     private Long extractContactId(Map<String, Object> arguments) {
@@ -213,16 +293,37 @@ public class ContactService {
     }
 
     private Map<String, Object> formatContactResponse(Map<String, Object> apiResponse) {
+        Map<String, Object> contactData;
+        Map<String, Object> rawApiData;
+        
         if (apiResponse.containsKey("data")) {
             // Single contact response
             @SuppressWarnings("unchecked")
-            Map<String, Object> contactData = (Map<String, Object>) apiResponse.get("data");
-            return Map.of(
-                "data", mapFromApiFormat(contactData)
-            );
+            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
+            rawApiData = rawData; // Preserve original API data
+            contactData = mapFromApiFormat(rawData);
+        } else {
+            rawApiData = apiResponse; // Preserve original API data
+            contactData = mapFromApiFormat(apiResponse);
         }
         
-        return Map.of("data", mapFromApiFormat(apiResponse));
+        // Use raw API data as escaped JSON for complete field coverage as per Constitutional Principle VI
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", contactData);
+        
+        // Format content for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
     }
 
     private Map<String, Object> formatContactListResponse(Map<String, Object> apiResponse) {
@@ -233,15 +334,27 @@ public class ContactService {
             .map(this::mapFromApiFormat)
             .toList();
         
+        // Format content as escaped JSON for Claude Desktop accessibility as per Constitutional Principle VI
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
         Map<String, Object> result = new HashMap<>();
         result.put("data", formattedContacts);
         
-        // Add meta fields directly to result for MCP protocol
+        // Extract and preserve meta from API response
         @SuppressWarnings("unchecked")
         Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
         if (meta != null) {
             result.put("meta", meta);
         }
+        
+        // Add content field for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
         
         return result;
     }
@@ -266,5 +379,70 @@ public class ContactService {
         });
         
         return result;
+    }
+    
+    private Contact convertToContactDto(Map<String, Object> contactData) {
+        return Contact.builder()
+            .id(getLongValue(contactData, "id"))
+            .firstName((String) contactData.get("firstName"))
+            .lastName((String) contactData.get("lastName"))
+            .nickname((String) contactData.get("nickname"))
+            .genderId(getLongValue(contactData, "genderId"))
+            .isBirthdateKnown(getBooleanValue(contactData, "isBirthdateKnown"))
+            .isDeceased(getBooleanValue(contactData, "isDeceased"))
+            .isDeceasedDateKnown(getBooleanValue(contactData, "isDeceasedDateKnown"))
+            .email((String) contactData.get("email"))
+            .phone((String) contactData.get("phone"))
+            .birthdate(getLocalDateValue(contactData, "birthdate"))
+            .company((String) contactData.get("company"))
+            .jobTitle((String) contactData.get("jobTitle"))
+            .createdAt(getLocalDateTimeValue(contactData, "createdAt"))
+            .updatedAt(getLocalDateTimeValue(contactData, "updatedAt"))
+            .build();
+    }
+    
+    private Long getLongValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        return null;
+    }
+    
+    private Boolean getBooleanValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        return false;
+    }
+    
+    private java.time.LocalDate getLocalDateValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        if (value instanceof String) {
+            try {
+                return java.time.LocalDate.parse((String) value);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
+    }
+    
+    private java.time.LocalDateTime getLocalDateTimeValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        if (value instanceof String) {
+            try {
+                String dateTimeStr = (String) value;
+                // Handle ISO format with Z
+                if (dateTimeStr.endsWith("Z")) {
+                    return java.time.LocalDateTime.parse(dateTimeStr.substring(0, dateTimeStr.length() - 1));
+                }
+                return java.time.LocalDateTime.parse(dateTimeStr);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
     }
 }

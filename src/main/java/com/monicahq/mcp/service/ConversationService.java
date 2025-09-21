@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
 import java.util.*;
 
 @Service
@@ -14,6 +14,7 @@ import java.util.*;
 public class ConversationService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> createConversation(Map<String, Object> arguments) {
         log.info("Creating conversation with arguments: {}", arguments);
@@ -80,11 +81,16 @@ public class ConversationService {
             
             return monicaClient.delete("/conversations/" + conversationId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Delete", "Conversation", conversationId, true, 
+                        "Conversation has been permanently removed"
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Conversation with ID " + conversationId + " has been deleted successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -185,34 +191,68 @@ public class ConversationService {
     }
 
     private Map<String, Object> formatConversationResponse(Map<String, Object> apiResponse) {
+        Map<String, Object> conversationData;
         if (apiResponse.containsKey("data")) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> conversationData = (Map<String, Object>) apiResponse.get("data");
-            return Map.of(
-                "data", mapFromApiFormat(conversationData)
-            );
+            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
+            conversationData = mapFromApiFormat(rawData);
+        } else {
+            conversationData = mapFromApiFormat(apiResponse);
         }
         
-        return Map.of("data", mapFromApiFormat(apiResponse));
+        // Use raw API data for complete field coverage as per Constitutional Principle VI
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+            (Map<String, Object>) apiResponse.get("data") : apiResponse;
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", conversationData);
+        
+        // Format content for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
     }
 
     private Map<String, Object> formatConversationListResponse(Map<String, Object> apiResponse) {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> conversations = (List<Map<String, Object>>) apiResponse.get("data");
         
+        // Convert each conversation to consistent format
         List<Map<String, Object>> formattedConversations = conversations.stream()
             .map(this::mapFromApiFormat)
             .toList();
         
+        // Format content for Claude Desktop visibility
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
+        // Extract meta for result structure
+        @SuppressWarnings("unchecked")
+        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
+        
+        // Return both data and content fields for protocol compliance
         Map<String, Object> result = new HashMap<>();
         result.put("data", formattedConversations);
         
-        // Add meta fields directly to result for MCP protocol
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
         if (meta != null) {
             result.put("meta", meta);
         }
+        
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
         
         return result;
     }
@@ -232,4 +272,5 @@ public class ConversationService {
         
         return result;
     }
+    
 }

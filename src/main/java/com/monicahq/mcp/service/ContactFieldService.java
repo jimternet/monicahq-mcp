@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.util.ContentFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
 import java.util.*;
 
 @Service
@@ -14,6 +14,7 @@ import java.util.*;
 public class ContactFieldService {
 
     private final MonicaHqClient monicaClient;
+    private final ContentFormatter contentFormatter;
 
     public Mono<Map<String, Object>> createContactField(Map<String, Object> arguments) {
         log.info("Creating contact field with arguments: {}", arguments);
@@ -103,11 +104,16 @@ public class ContactFieldService {
             
             return monicaClient.delete("/contacts/" + contactId + "/contactfields/" + fieldId)
                 .map(response -> {
+                    String formattedContent = contentFormatter.formatOperationResult(
+                        "Delete", "Contact Field", fieldId, true, 
+                        "Field has been permanently removed from contact"
+                    );
+                    
                     Map<String, Object> result = new HashMap<>();
                     List<Map<String, Object>> content = List.of(
                         Map.of(
                             "type", "text",
-                            "text", "Contact field with ID " + fieldId + " has been deleted successfully"
+                            "text", formattedContent
                         )
                     );
                     result.put("content", content);
@@ -227,34 +233,69 @@ public class ContactFieldService {
     }
 
     private Map<String, Object> formatContactFieldResponse(Map<String, Object> apiResponse) {
+        Map<String, Object> fieldData;
         if (apiResponse.containsKey("data")) {
+            // Single field response
             @SuppressWarnings("unchecked")
-            Map<String, Object> fieldData = (Map<String, Object>) apiResponse.get("data");
-            return Map.of(
-                "data", mapFromApiFormat(fieldData)
-            );
+            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
+            fieldData = mapFromApiFormat(rawData);
+        } else {
+            fieldData = mapFromApiFormat(apiResponse);
         }
         
-        return Map.of("data", mapFromApiFormat(apiResponse));
+        // Use raw API data for complete field coverage as per Constitutional Principle VI
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+            (Map<String, Object>) apiResponse.get("data") : apiResponse;
+        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
+        
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", fieldData);
+        
+        // Format content for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
     }
 
     private Map<String, Object> formatContactFieldListResponse(Map<String, Object> apiResponse) {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> fields = (List<Map<String, Object>>) apiResponse.get("data");
         
+        // Convert each field to consistent format
         List<Map<String, Object>> formattedFields = fields.stream()
             .map(this::mapFromApiFormat)
             .toList();
         
+        // Format content for Claude Desktop visibility
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
+        // Extract meta for result structure
+        @SuppressWarnings("unchecked")
+        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
+        
+        // Return both data and content fields for protocol compliance
         Map<String, Object> result = new HashMap<>();
         result.put("data", formattedFields);
         
-        // Add meta fields directly to result for MCP protocol
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
         if (meta != null) {
             result.put("meta", meta);
         }
+        
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
         
         return result;
     }
@@ -273,4 +314,5 @@ public class ContactFieldService {
         
         return result;
     }
+    
 }

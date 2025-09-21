@@ -43,28 +43,48 @@
 **Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
-## Constitution Check
+## Constitution Check (v1.2.0)
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**Simplicity**:
-- Projects: [#] (max 3 - e.g., api, cli, tests)
-- Using framework directly? (no wrapper classes)
-- Single data model? (no DTOs unless serialization differs)
-- Avoiding patterns? (no Repository/UoW without proven need)
+**I. MCP Protocol First**:
+- Proper JSON-RPC 2.0 implementation?
+- Tools properly categorized and discoverable?
+- Claude Desktop integration tested?
 
-**Architecture**:
-- EVERY feature as library? (no direct app code)
-- Libraries listed: [name + purpose for each]
-- CLI per library: [commands with --help/--version/--format]
-- Library docs: llms.txt format planned?
-
-**Testing (NON-NEGOTIABLE)**:
+**II. Test-Driven Development (NON-NEGOTIABLE)**:
 - RED-GREEN-Refactor cycle enforced? (test MUST fail first)
 - Git commits show tests before implementation?
+- 100% test coverage maintained? (136/136 baseline)
 - Order: Contract→Integration→E2E→Unit strictly followed?
 - Real dependencies used? (actual DBs, not mocks)
 - Integration tests for: new libraries, contract changes, shared schemas?
 - FORBIDDEN: Implementation before test, skipping RED phase
+
+**III. Spring Boot Architecture Excellence**:
+- WebFlux for external API calls?
+- Proper reactive patterns used?
+- Circuit breaker patterns with Resilience4j?
+- Dependency injection properly configured?
+
+**IV. Production-Ready Deployment**:
+- Docker containerization working?
+- Environment variables configured?
+- Health checks implemented?
+- Works in both STDIO and Web Server modes?
+
+**V. Type Safety and Code Generation**:
+- MapStruct for all mappings?
+- Lombok for reducing boilerplate?
+- Strong typing with validation?
+- No manual mapping where type-safe alternatives exist?
+
+**VI. MCP Response Content Visibility**:
+- All tool responses format data in `content` field?
+- Content field contains human-readable, structured format?
+- All data accessible to Claude Desktop via content?
+- Information presented in structured, scannable format?
+- No data hidden in `data` field that Claude needs?
+- Tests verify content field completeness?
 
 **Observability**:
 - Structured logging included?
@@ -235,4 +255,4 @@ ios/ or android/
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.2.0 - See `/memory/constitution.md`*

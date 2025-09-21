@@ -150,9 +150,9 @@ public class TaskManagementTest {
         assertTrue(deleteResult.containsKey("content"));
         
         @SuppressWarnings("unchecked")
-        Object[] content = (Object[]) deleteResult.get("content");
-        assertTrue(content.length > 0);
-        Map<String, Object> firstContent = (Map<String, Object>) content[0];
+        List<Map<String, Object>> content = (List<Map<String, Object>>) deleteResult.get("content");
+        assertTrue(!content.isEmpty());
+        Map<String, Object> firstContent = content.get(0);
         String text = (String) firstContent.get("text");
         assertTrue(text.contains("deleted") || text.contains("Delete"));
     }

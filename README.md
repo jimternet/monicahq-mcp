@@ -438,11 +438,46 @@ mcp-inspector docker run --rm -i -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for new functionality
-4. Ensure all tests pass: `./gradlew test`
-5. Submit a pull request
+This project follows a **Constitutional Governance Framework** (v1.1.0) to ensure code quality and architectural consistency.
+
+### Development Process
+
+1. **Fork the repository** and create a feature branch
+2. **Review the Constitution**: See `.specify/memory/constitution.md` for 5 core principles
+3. **Follow TDD**: Write tests before implementation (100% coverage required)
+4. **Validate compliance**: Run constitutional validation before submitting
+5. **Submit a pull request** with constitutional compliance verification
+
+### Required Validation Steps
+
+```bash
+# 1. Constitutional compliance check
+./validate-constitution.sh
+
+# 2. Comprehensive testing (7 phases)
+./test-mcp-complete.sh
+
+# 3. Claude Desktop integration test
+./test-claude-desktop.sh
+
+# 4. Run all tests (must maintain 136/136 passing)
+./gradlew test
+```
+
+### Constitutional Principles
+
+1. **MCP Protocol First** - JSON-RPC 2.0 over STDIO compliance
+2. **Test-Driven Development** - 100% test coverage (non-negotiable)
+3. **Spring Boot Architecture Excellence** - WebFlux for external APIs
+4. **Production-Ready Deployment** - Docker + Claude Desktop ready
+5. **Type Safety & Code Generation** - MapStruct + Lombok patterns
+
+### Pull Request Requirements
+
+- ✅ All constitutional validation tests pass
+- ✅ 136/136 tests pass (100% coverage maintained)
+- ✅ STDOUT cleanliness verified for MCP protocol
+- ✅ Constitutional compliance documented
 
 ## License
 

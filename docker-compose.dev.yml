@@ -1,0 +1,82 @@
+services:
+  # Local Monica instance for testing (following official setup)
+  monica:
+    image: monica
+    container_name: monica-test
+    restart: unless-stopped
+    ports:
+      - "8081:80"  # Avoid conflict with MCP server
+    environment:
+      - APP_KEY=base64:YWJjZGVmZ2hpamt1bW5vcHFyc3R1dnd4eXphYmNkZWZnaGlq
+      - APP_URL=http://localhost:8081
+      - DB_HOST=monica-db
+      - DB_USERNAME=monica
+      - DB_PASSWORD=monica123
+      - DB_DATABASE=monica
+    depends_on:
+      - monica-db
+    volumes:
+      - monica-storage:/var/www/html/storage
+    networks:
+      - monica-network
+
+  # Database for Monica (following official setup)
+  monica-db:
+    image: mariadb:11
+    container_name: monica-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=true
+      - MYSQL_DATABASE=monica
+      - MYSQL_USER=monica
+      - MYSQL_PASSWORD=monica123
+    volumes:
+      - monica-mysql:/var/lib/mysql
+    networks:
+      - monica-network
+
+  # Our MCP Server (configured to use local Monica)
+  monicahq-mcp:
+    build: .
+    container_name: monicahq-mcp-test
+    ports:
+      - "8080:8080"
+    environment:
+      # Point to local Monica instance
+      MONICA_API_URL: http://monica:80/api
+      MONICA_API_TOKEN: ${MONICA_API_TOKEN:-your-token-here}
+      
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: docker
+      
+      # JVM Configuration
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+      
+      # MCP Configuration
+      MCP_WEBSOCKET_MAX_SESSIONS: 10
+      MCP_WEBSOCKET_PING_INTERVAL: 30s
+      MCP_AUTH_ENABLED: true
+    
+    volumes:
+      - ./logs:/app/logs
+    
+    restart: unless-stopped
+    depends_on:
+      - monica
+    networks:
+      - monica-network
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  monica-storage:
+  monica-mysql:
+
+networks:
+  monica-network:
+    driver: bridge

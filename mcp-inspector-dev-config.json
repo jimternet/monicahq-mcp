@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+        "monicahq-mcp-dev": {
+            "command": "curl",
+            "args": [
+                "-X", "POST",
+                "-H", "Content-Type: application/json",
+                "-d", "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"id\":1}",
+                "http://localhost:8080/mcp/tools"
+            ],
+            "env": {
+                "MONICA_API_TOKEN": "your-dev-token-here"
+            }
+        }
+    }
+}
