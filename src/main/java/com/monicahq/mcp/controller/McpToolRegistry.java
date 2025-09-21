@@ -39,13 +39,20 @@ public class McpToolRegistry {
     private final RelationshipTypeService relationshipTypeService;
     private final RelationshipTypeGroupService relationshipTypeGroupService;
     
+    // Phase 4.1: Core Missing Entities
+    private final ActivityTypeService activityTypeService;
+    private final ActivityTypeCategoryService activityTypeCategoryService;
+    private final AddressService addressService;
+    private final GroupService groupService;
+    private final OccupationService occupationService;
+    
     // Discovery services - Constitutional Principle VII
     private final GenderService genderService;
     private final ContactFieldTypeService contactFieldTypeService;
 
     @PostConstruct
     public void initializeTools() {
-        log.info("Initializing MCP tool registry with 68 operations");
+        log.info("Initializing MCP tool registry with 93 operations");
         
         // === CONTACT MANAGEMENT (12 operations) ===
         // Core contact operations (5)
@@ -86,6 +93,42 @@ public class McpToolRegistry {
         registerTool("company_update", "[Company] Update an existing company", createCompanyUpdateSchema(), "Company Management");
         registerTool("company_delete", "[Company] Delete a company", createIdSchema("Company ID"), "Company Management");
         registerTool("company_list", "[Company] List companies with pagination", createListSchema(), "Company Management");
+        
+        // === ACTIVITY TYPE MANAGEMENT (8 operations) ===
+        // Activity type operations (4)
+        registerTool("activity_type_create", "[Activity Type] Create a new activity type", createActivityTypeSchema(), "Activity Management");
+        registerTool("activity_type_get", "[Activity Type] Get activity type by ID", createIdSchema("Activity Type ID"), "Activity Management");
+        registerTool("activity_type_update", "[Activity Type] Update existing activity type", createActivityTypeUpdateSchema(), "Activity Management");
+        registerTool("activity_type_delete", "[Activity Type] Delete activity type", createIdSchema("Activity Type ID"), "Activity Management");
+        registerTool("activity_type_list", "[Activity Type] List activity types with pagination", createListSchema(), "Activity Management");
+        
+        // Activity type category operations (4)
+        registerTool("activity_type_category_create", "[Activity Category] Create a new activity type category", createActivityTypeCategorySchema(), "Activity Management");
+        registerTool("activity_type_category_get", "[Activity Category] Get activity type category by ID", createIdSchema("Activity Type Category ID"), "Activity Management");
+        registerTool("activity_type_category_update", "[Activity Category] Update existing activity type category", createActivityTypeCategoryUpdateSchema(), "Activity Management");
+        registerTool("activity_type_category_delete", "[Activity Category] Delete activity type category", createIdSchema("Activity Type Category ID"), "Activity Management");
+        registerTool("activity_type_category_list", "[Activity Category] List activity type categories with pagination", createListSchema(), "Activity Management");
+        
+        // === ADDRESS MANAGEMENT (5 operations) ===
+        registerTool("address_create", "[Address] Create a new address for a contact", createAddressSchema(), "Contact Management");
+        registerTool("address_get", "[Address] Get an address by ID", createIdSchema("Address ID"), "Contact Management");
+        registerTool("address_update", "[Address] Update an existing address", createAddressUpdateSchema(), "Contact Management");
+        registerTool("address_delete", "[Address] Delete an address", createIdSchema("Address ID"), "Contact Management");
+        registerTool("address_list", "[Address] List addresses with pagination", createListSchema(), "Contact Management");
+        
+        // === GROUP MANAGEMENT (5 operations) ===
+        registerTool("group_create", "[Group] Create a new contact group", createGroupSchema(), "Contact Management");
+        registerTool("group_get", "[Group] Get a group by ID", createIdSchema("Group ID"), "Contact Management");
+        registerTool("group_update", "[Group] Update an existing group", createGroupUpdateSchema(), "Contact Management");
+        registerTool("group_delete", "[Group] Delete a group", createIdSchema("Group ID"), "Contact Management");
+        registerTool("group_list", "[Group] List groups with pagination", createListSchema(), "Contact Management");
+        
+        // === OCCUPATION MANAGEMENT (5 operations) ===
+        registerTool("occupation_create", "[Occupation] Create a new occupation/job for a contact", createOccupationSchema(), "Contact Management");
+        registerTool("occupation_get", "[Occupation] Get an occupation by ID", createIdSchema("Occupation ID"), "Contact Management");
+        registerTool("occupation_update", "[Occupation] Update an existing occupation", createOccupationUpdateSchema(), "Contact Management");
+        registerTool("occupation_delete", "[Occupation] Delete an occupation", createIdSchema("Occupation ID"), "Contact Management");
+        registerTool("occupation_list", "[Occupation] List occupations with pagination", createListSchema(), "Contact Management");
         
         // === DISCOVERY TOOLS (Constitutional Principle VII) ===
         registerTool("gender_list", "[Discovery] List all available genders", createListOnlySchema(), "Discovery & Reference");
@@ -295,6 +338,41 @@ public class McpToolRegistry {
             case "company_update" -> companyService.updateCompany(arguments);
             case "company_delete" -> companyService.deleteCompany(arguments);
             case "company_list" -> companyService.listCompanies(arguments);
+            
+            // Activity type operations
+            case "activity_type_create" -> activityTypeService.createActivityType(arguments);
+            case "activity_type_get" -> activityTypeService.getActivityType(arguments);
+            case "activity_type_update" -> activityTypeService.updateActivityType(arguments);
+            case "activity_type_delete" -> activityTypeService.deleteActivityType(arguments);
+            case "activity_type_list" -> activityTypeService.listActivityTypes(arguments);
+            
+            // Activity type category operations
+            case "activity_type_category_create" -> activityTypeCategoryService.createActivityTypeCategory(arguments);
+            case "activity_type_category_get" -> activityTypeCategoryService.getActivityTypeCategory(arguments);
+            case "activity_type_category_update" -> activityTypeCategoryService.updateActivityTypeCategory(arguments);
+            case "activity_type_category_delete" -> activityTypeCategoryService.deleteActivityTypeCategory(arguments);
+            case "activity_type_category_list" -> activityTypeCategoryService.listActivityTypeCategories(arguments);
+            
+            // Address operations
+            case "address_create" -> addressService.createAddress(arguments);
+            case "address_get" -> addressService.getAddress(arguments);
+            case "address_update" -> addressService.updateAddress(arguments);
+            case "address_delete" -> addressService.deleteAddress(arguments);
+            case "address_list" -> addressService.listAddresses(arguments);
+            
+            // Group operations
+            case "group_create" -> groupService.createGroup(arguments);
+            case "group_get" -> groupService.getGroup(arguments);
+            case "group_update" -> groupService.updateGroup(arguments);
+            case "group_delete" -> groupService.deleteGroup(arguments);
+            case "group_list" -> groupService.listGroups(arguments);
+            
+            // Occupation operations
+            case "occupation_create" -> occupationService.createOccupation(arguments);
+            case "occupation_get" -> occupationService.getOccupation(arguments);
+            case "occupation_update" -> occupationService.updateOccupation(arguments);
+            case "occupation_delete" -> occupationService.deleteOccupation(arguments);
+            case "occupation_list" -> occupationService.listOccupations(arguments);
             
             // Discovery operations (Constitutional Principle VII)
             case "gender_list" -> genderService.listGenders(arguments);
@@ -866,6 +944,200 @@ public class McpToolRegistry {
     
     private Map<String, Object> createCompanyUpdateSchema() {
         return createUpdateSchema(createCompanySchema());
+    }
+    
+    private Map<String, Object> createActivityTypeSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "name", Map.of(
+                    "type", "string",
+                    "description", "Activity type name (required)",
+                    "maxLength", 255
+                ),
+                "categoryId", Map.of(
+                    "type", "integer",
+                    "description", "Activity type category ID (optional)"
+                ),
+                "description", Map.of(
+                    "type", "string",
+                    "description", "Activity type description (optional)",
+                    "maxLength", 1000
+                ),
+                "icon", Map.of(
+                    "type", "string",
+                    "description", "Activity type icon (optional)"
+                )
+            ),
+            "required", List.of("name")
+        );
+    }
+    
+    private Map<String, Object> createActivityTypeUpdateSchema() {
+        return createUpdateSchema(createActivityTypeSchema());
+    }
+    
+    private Map<String, Object> createActivityTypeCategorySchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "name", Map.of(
+                    "type", "string",
+                    "description", "Activity type category name (required)",
+                    "maxLength", 255
+                ),
+                "parentId", Map.of(
+                    "type", "integer",
+                    "description", "Parent category ID for hierarchical structure (optional)"
+                ),
+                "description", Map.of(
+                    "type", "string",
+                    "description", "Category description (optional)",
+                    "maxLength", 1000
+                ),
+                "sortOrder", Map.of(
+                    "type", "integer",
+                    "description", "Sort order for display (optional)"
+                )
+            ),
+            "required", List.of("name")
+        );
+    }
+    
+    private Map<String, Object> createActivityTypeCategoryUpdateSchema() {
+        return createUpdateSchema(createActivityTypeCategorySchema());
+    }
+    
+    private Map<String, Object> createAddressSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID this address belongs to (required)"
+                ),
+                "name", Map.of(
+                    "type", "string",
+                    "description", "Address name/label (optional)",
+                    "maxLength", 255
+                ),
+                "street", Map.of(
+                    "type", "string",
+                    "description", "Street address (optional)",
+                    "maxLength", 255
+                ),
+                "city", Map.of(
+                    "type", "string",
+                    "description", "City (optional)",
+                    "maxLength", 255
+                ),
+                "province", Map.of(
+                    "type", "string",
+                    "description", "Province/State (optional)",
+                    "maxLength", 255
+                ),
+                "postalCode", Map.of(
+                    "type", "string",
+                    "description", "Postal/ZIP code (optional)",
+                    "maxLength", 255
+                ),
+                "country", Map.of(
+                    "type", "string",
+                    "description", "Country code (optional, max 3 characters)",
+                    "maxLength", 3
+                ),
+                "latitude", Map.of(
+                    "type", "number",
+                    "description", "Latitude coordinate (optional)"
+                ),
+                "longitude", Map.of(
+                    "type", "number",
+                    "description", "Longitude coordinate (optional)"
+                )
+            ),
+            "required", List.of("contactId")
+        );
+    }
+    
+    private Map<String, Object> createAddressUpdateSchema() {
+        return createUpdateSchema(createAddressSchema());
+    }
+    
+    private Map<String, Object> createGroupSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "name", Map.of(
+                    "type", "string",
+                    "description", "Group name (required)",
+                    "maxLength", 255
+                ),
+                "description", Map.of(
+                    "type", "string",
+                    "description", "Group description (optional)",
+                    "maxLength", 1000
+                )
+            ),
+            "required", List.of("name")
+        );
+    }
+    
+    private Map<String, Object> createGroupUpdateSchema() {
+        return createUpdateSchema(createGroupSchema());
+    }
+    
+    private Map<String, Object> createOccupationSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID this occupation belongs to (required)"
+                ),
+                "companyId", Map.of(
+                    "type", "integer",
+                    "description", "Company ID where the person works (optional)"
+                ),
+                "title", Map.of(
+                    "type", "string",
+                    "description", "Job title (required)",
+                    "maxLength", 255
+                ),
+                "description", Map.of(
+                    "type", "string",
+                    "description", "Job description (optional)",
+                    "maxLength", 1000
+                ),
+                "salary", Map.of(
+                    "type", "string",
+                    "description", "Salary amount (optional)"
+                ),
+                "salaryUnit", Map.of(
+                    "type", "string",
+                    "description", "Salary unit (e.g., 'per year', 'per month', 'per hour') (optional)"
+                ),
+                "currentlyWorksHere", Map.of(
+                    "type", "boolean",
+                    "description", "Whether the person currently works at this job (optional, default: true)",
+                    "default", true
+                ),
+                "startDate", Map.of(
+                    "type", "string",
+                    "format", "date",
+                    "description", "Start date in YYYY-MM-DD format (optional)"
+                ),
+                "endDate", Map.of(
+                    "type", "string",
+                    "format", "date",
+                    "description", "End date in YYYY-MM-DD format (optional, only if currentlyWorksHere=false)"
+                )
+            ),
+            "required", List.of("contactId", "title")
+        );
+    }
+    
+    private Map<String, Object> createOccupationUpdateSchema() {
+        return createUpdateSchema(createOccupationSchema());
     }
 
     // Inner class for MCP tools
