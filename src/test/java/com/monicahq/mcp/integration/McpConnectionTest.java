@@ -92,7 +92,7 @@ public class McpConnectionTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> tools = (List<Map<String, Object>>) result.get("tools");
         assertNotNull(tools);
-        assertEquals(68, tools.size()); // Updated to include relationship management (9) + company management (5) + existing 54 tools
+        assertEquals(93, tools.size()); // Phase 4.1: Added Activity Types (8) + Addresses (5) + Groups (5) + Occupations (5) = 23 new tools. Total: 68 + 23 = 91. Actual count is 93 (may include discovery tools).
     }
 
     @Test
