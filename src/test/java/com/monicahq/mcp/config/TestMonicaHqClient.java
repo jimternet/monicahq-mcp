@@ -195,6 +195,29 @@ public class TestMonicaHqClient extends MonicaHqClient {
             data.put("content", getValueFromRequest(requestBody, "content", "content", "Message content"));
             data.put("written_at", getValueFromRequest(requestBody, "writtenAt", "written_at", "2025-09-13T15:10:00Z"));
             data.put("created_at", "2025-09-13T15:15:00Z");
+        } else if (endpoint.contains("/relationships")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 901);
+            data.put("contact_is", getValueFromRequest(requestBody, "contactIs", "contact_is", 123));
+            data.put("of_contact", getValueFromRequest(requestBody, "ofContact", "of_contact", 124));
+            data.put("relationship_type_id", getValueFromRequest(requestBody, "relationshipTypeId", "relationship_type_id", 1));
+            data.put("notes", getValueFromRequest(requestBody, "notes", "notes", "Test relationship"));
+            data.put("created_at", "2025-09-13T16:00:00Z");
+        } else if (endpoint.contains("/relationshiptypes")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1);
+            data.put("name", "Partner");
+            data.put("name_reverse", "Partner of");
+            data.put("relationship_type_group_id", 1);
+            data.put("created_at", "2025-09-13T16:00:00Z");
+        } else if (endpoint.contains("/relationshiptypegroups")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1);
+            data.put("name", "Family");
+            data.put("created_at", "2025-09-13T16:00:00Z");
+        } else if (endpoint.contains("/companies")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 902);
+            data.put("name", getValueFromRequest(requestBody, "name", "name", "Test Company"));
+            data.put("website", getValueFromRequest(requestBody, "website", "website", "https://example.com"));
+            data.put("number_of_employees", getValueFromRequest(requestBody, "numberOfEmployees", "number_of_employees", 50));
+            data.put("created_at", "2025-09-13T17:00:00Z");
         } else {
             // Generic response for other endpoints
             data.put("id", 999);
@@ -213,6 +236,8 @@ public class TestMonicaHqClient extends MonicaHqClient {
             || endpoint.equals("/calls") || endpoint.equals("/notes") || endpoint.equals("/tasks")
             || endpoint.equals("/tags") || endpoint.equals("/reminders") || endpoint.equals("/entries")
             || endpoint.equals("/contactfields") || endpoint.equals("/conversations") || endpoint.equals("/messages")
+            || endpoint.equals("/relationships") || endpoint.equals("/relationshiptypes") || endpoint.equals("/relationshiptypegroups")
+            || endpoint.equals("/companies")
             || (endpoint.contains("/contactfields") && endpoint.endsWith("/contactfields"))
             || (endpoint.contains("/messages") && endpoint.endsWith("/messages"))
         );
@@ -251,6 +276,14 @@ public class TestMonicaHqClient extends MonicaHqClient {
             items.add(Map.of("id", 808L, "conversation_id", 707L, "content", "Message content"));
         } else if (endpoint.equals("/entries")) {
             items.add(Map.of("id", 909L, "title", "My Journal Entry", "post", "Today was a great day!", "date", "2025-09-13"));
+        } else if (endpoint.equals("/relationships")) {
+            items.add(Map.of("id", 901L, "contact_is", 123L, "of_contact", 124L, "relationship_type_id", 1L, "notes", "Test relationship"));
+        } else if (endpoint.equals("/relationshiptypes")) {
+            items.add(Map.of("id", 1L, "name", "Partner", "name_reverse", "Partner of", "relationship_type_group_id", 1L));
+        } else if (endpoint.equals("/relationshiptypegroups")) {
+            items.add(Map.of("id", 1L, "name", "Family"));
+        } else if (endpoint.equals("/companies")) {
+            items.add(Map.of("id", 902L, "name", "Test Company", "website", "https://example.com", "number_of_employees", 50));
         }
         
         // Extract pagination params

@@ -33,13 +33,19 @@ public class McpToolRegistry {
     private final ContactFieldService contactFieldService;
     private final ContactTagService contactTagService;
     
+    // Relationship and Company services - Critical Gap Implementation
+    private final RelationshipService relationshipService;
+    private final CompanyService companyService;
+    private final RelationshipTypeService relationshipTypeService;
+    private final RelationshipTypeGroupService relationshipTypeGroupService;
+    
     // Discovery services - Constitutional Principle VII
     private final GenderService genderService;
     private final ContactFieldTypeService contactFieldTypeService;
 
     @PostConstruct
     public void initializeTools() {
-        log.info("Initializing MCP tool registry with 54 operations");
+        log.info("Initializing MCP tool registry with 68 operations");
         
         // === CONTACT MANAGEMENT (12 operations) ===
         // Core contact operations (5)
@@ -59,6 +65,27 @@ public class McpToolRegistry {
         // Contact tag operations (2)
         registerTool("contacttag_add", "[Contact Tag] Add a tag to a contact", createContactTagSchema(), "Contact Management");
         registerTool("contacttag_remove", "[Contact Tag] Remove a tag from a contact", createContactTagSchema(), "Contact Management");
+        
+        // === RELATIONSHIP MANAGEMENT (9 operations) ===
+        // Relationship operations (5)
+        registerTool("relationship_create", "[Relationship] Create a new relationship between contacts", createRelationshipSchema(), "Relationship Management");
+        registerTool("relationship_get", "[Relationship] Get a relationship by ID", createIdSchema("Relationship ID"), "Relationship Management");
+        registerTool("relationship_update", "[Relationship] Update an existing relationship", createRelationshipUpdateSchema(), "Relationship Management");
+        registerTool("relationship_delete", "[Relationship] Delete a relationship", createIdSchema("Relationship ID"), "Relationship Management");
+        registerTool("relationship_list", "[Relationship] List relationships with pagination", createListSchema(), "Relationship Management");
+        
+        // Relationship discovery operations (4)
+        registerTool("relationship_type_get", "[Discovery] Get a relationship type by ID", createIdSchema("Relationship Type ID"), "Relationship Management");
+        registerTool("relationship_type_list", "[Discovery] List all available relationship types", createListSchema(), "Relationship Management");
+        registerTool("relationship_type_group_get", "[Discovery] Get a relationship type group by ID", createIdSchema("Relationship Type Group ID"), "Relationship Management");
+        registerTool("relationship_type_group_list", "[Discovery] List all relationship type groups", createListSchema(), "Relationship Management");
+        
+        // === COMPANY MANAGEMENT (5 operations) ===
+        registerTool("company_create", "[Company] Create a new company", createCompanySchema(), "Company Management");
+        registerTool("company_get", "[Company] Get a company by ID", createIdSchema("Company ID"), "Company Management");
+        registerTool("company_update", "[Company] Update an existing company", createCompanyUpdateSchema(), "Company Management");
+        registerTool("company_delete", "[Company] Delete a company", createIdSchema("Company ID"), "Company Management");
+        registerTool("company_list", "[Company] List companies with pagination", createListSchema(), "Company Management");
         
         // === DISCOVERY TOOLS (Constitutional Principle VII) ===
         registerTool("gender_list", "[Discovery] List all available genders", createListOnlySchema(), "Discovery & Reference");
@@ -248,6 +275,26 @@ public class McpToolRegistry {
             // Contact Tag operations
             case "contacttag_add" -> contactTagService.attachTag(arguments);
             case "contacttag_remove" -> contactTagService.detachTag(arguments);
+            
+            // Relationship operations
+            case "relationship_create" -> relationshipService.createRelationship(arguments);
+            case "relationship_get" -> relationshipService.getRelationship(arguments);
+            case "relationship_update" -> relationshipService.updateRelationship(arguments);
+            case "relationship_delete" -> relationshipService.deleteRelationship(arguments);
+            case "relationship_list" -> relationshipService.listRelationships(arguments);
+            
+            // Relationship type operations
+            case "relationship_type_get" -> relationshipTypeService.getRelationshipType(arguments);
+            case "relationship_type_list" -> relationshipTypeService.listRelationshipTypes(arguments);
+            case "relationship_type_group_get" -> relationshipTypeGroupService.getRelationshipTypeGroup(arguments);
+            case "relationship_type_group_list" -> relationshipTypeGroupService.listRelationshipTypeGroups(arguments);
+            
+            // Company operations
+            case "company_create" -> companyService.createCompany(arguments);
+            case "company_get" -> companyService.getCompany(arguments);
+            case "company_update" -> companyService.updateCompany(arguments);
+            case "company_delete" -> companyService.deleteCompany(arguments);
+            case "company_list" -> companyService.listCompanies(arguments);
             
             // Discovery operations (Constitutional Principle VII)
             case "gender_list" -> genderService.listGenders(arguments);
@@ -764,6 +811,61 @@ public class McpToolRegistry {
         schema.put("properties", properties);
         schema.put("required", List.of("id"));
         return schema;
+    }
+
+    private Map<String, Object> createRelationshipSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactIs", Map.of(
+                    "type", "integer",
+                    "description", "ID of the first contact in the relationship (required)"
+                ),
+                "ofContact", Map.of(
+                    "type", "integer",
+                    "description", "ID of the second contact in the relationship (required)"
+                ),
+                "relationshipTypeId", Map.of(
+                    "type", "integer",
+                    "description", "ID of the relationship type (required) - Use relationship_type_list to see available types"
+                ),
+                "notes", Map.of(
+                    "type", "string",
+                    "description", "Optional notes about this relationship"
+                )
+            ),
+            "required", List.of("contactIs", "ofContact", "relationshipTypeId")
+        );
+    }
+    
+    private Map<String, Object> createRelationshipUpdateSchema() {
+        return createUpdateSchema(createRelationshipSchema());
+    }
+    
+    private Map<String, Object> createCompanySchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "name", Map.of(
+                    "type", "string",
+                    "description", "Company name (required)",
+                    "maxLength", 255
+                ),
+                "website", Map.of(
+                    "type", "string",
+                    "description", "Company website URL (optional)"
+                ),
+                "numberOfEmployees", Map.of(
+                    "type", "integer",
+                    "description", "Number of employees (optional)"
+                )
+            ),
+            "required", List.of("name")
+        );
+    }
+    
+    private Map<String, Object> createCompanyUpdateSchema() {
+        return createUpdateSchema(createCompanySchema());
     }
 
     // Inner class for MCP tools
