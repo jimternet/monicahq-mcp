@@ -1,8 +1,6 @@
 package com.monicahq.mcp.controller;
 
 import com.monicahq.mcp.service.*;
-import com.monicahq.mcp.service.GenderService;
-import com.monicahq.mcp.service.ContactFieldTypeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -46,13 +44,24 @@ public class McpToolRegistry {
     private final GroupService groupService;
     private final OccupationService occupationService;
     
+    // Phase 4.2: Financial & Content Management
+    private final DebtService debtService;
+    private final DocumentService documentService;
+    private final PhotoService photoService;
+    private final GiftService giftService;
+    
+    // Phase 4.3: Reference Data Management
+    private final AuditLogService auditLogService;
+    private final CountryService countryService;
+    private final CurrencyService currencyService;
+    
     // Discovery services - Constitutional Principle VII
     private final GenderService genderService;
     private final ContactFieldTypeService contactFieldTypeService;
 
     @PostConstruct
     public void initializeTools() {
-        log.info("Initializing MCP tool registry with 93 operations");
+        log.info("Initializing MCP tool registry with 122 operations");
         
         // === CONTACT MANAGEMENT (12 operations) ===
         // Core contact operations (5)
@@ -129,6 +138,49 @@ public class McpToolRegistry {
         registerTool("occupation_update", "[Occupation] Update an existing occupation", createOccupationUpdateSchema(), "Contact Management");
         registerTool("occupation_delete", "[Occupation] Delete an occupation", createIdSchema("Occupation ID"), "Contact Management");
         registerTool("occupation_list", "[Occupation] List occupations with pagination", createListSchema(), "Contact Management");
+        
+        // === DEBT MANAGEMENT (5 operations) ===
+        registerTool("debt_create", "[Debt] Create a new debt record", createDebtSchema(), "Financial Management");
+        registerTool("debt_get", "[Debt] Get a debt by ID", createIdSchema("Debt ID"), "Financial Management");
+        registerTool("debt_update", "[Debt] Update an existing debt", createDebtUpdateSchema(), "Financial Management");
+        registerTool("debt_delete", "[Debt] Delete a debt", createIdSchema("Debt ID"), "Financial Management");
+        registerTool("debt_list", "[Debt] List debts with pagination", createListSchema(), "Financial Management");
+        
+        // === DOCUMENT MANAGEMENT (5 operations) ===
+        registerTool("document_create", "[Document] Create a new document", createDocumentSchema(), "Content Management");
+        registerTool("document_get", "[Document] Get a document by ID", createIdSchema("Document ID"), "Content Management");
+        registerTool("document_update", "[Document] Update an existing document", createDocumentUpdateSchema(), "Content Management");
+        registerTool("document_delete", "[Document] Delete a document", createIdSchema("Document ID"), "Content Management");
+        registerTool("document_list", "[Document] List documents with pagination", createListSchema(), "Content Management");
+        
+        // === PHOTO MANAGEMENT (5 operations) ===
+        registerTool("photo_create", "[Photo] Create a new photo", createPhotoSchema(), "Content Management");
+        registerTool("photo_get", "[Photo] Get a photo by ID", createIdSchema("Photo ID"), "Content Management");
+        registerTool("photo_update", "[Photo] Update an existing photo", createPhotoUpdateSchema(), "Content Management");
+        registerTool("photo_delete", "[Photo] Delete a photo", createIdSchema("Photo ID"), "Content Management");
+        registerTool("photo_list", "[Photo] List photos with pagination", createListSchema(), "Content Management");
+        
+        // === GIFT MANAGEMENT (5 operations) ===
+        registerTool("gift_create", "[Gift] Create a new gift record", createGiftSchema(), "Gift Management");
+        registerTool("gift_get", "[Gift] Get a gift by ID", createIdSchema("Gift ID"), "Gift Management");
+        registerTool("gift_update", "[Gift] Update an existing gift", createGiftUpdateSchema(), "Gift Management");
+        registerTool("gift_delete", "[Gift] Delete a gift", createIdSchema("Gift ID"), "Gift Management");
+        registerTool("gift_list", "[Gift] List gifts with pagination", createListSchema(), "Gift Management");
+        
+        // === AUDIT LOG MANAGEMENT (3 operations) ===
+        registerTool("auditlog_get", "[Audit Log] Get an audit log by ID", createIdSchema("Audit Log ID"), "System & Reference");
+        registerTool("auditlog_list", "[Audit Log] List audit logs with pagination", createListSchema(), "System & Reference");
+        registerTool("auditlog_search", "[Audit Log] Search audit logs by criteria", createAuditLogSearchSchema(), "System & Reference");
+        
+        // === COUNTRY REFERENCE DATA (3 operations) ===
+        registerTool("country_get", "[Country] Get a country by ID", createIdSchema("Country ID"), "System & Reference");
+        registerTool("country_list", "[Country] List all countries", createListSchema(), "System & Reference");
+        registerTool("country_search", "[Country] Search countries by name", createCountrySearchSchema(), "System & Reference");
+        
+        // === CURRENCY REFERENCE DATA (3 operations) ===
+        registerTool("currency_get", "[Currency] Get a currency by ID", createIdSchema("Currency ID"), "System & Reference");
+        registerTool("currency_list", "[Currency] List all currencies", createListSchema(), "System & Reference");
+        registerTool("currency_search", "[Currency] Search currencies by code or name", createCurrencySearchSchema(), "System & Reference");
         
         // === DISCOVERY TOOLS (Constitutional Principle VII) ===
         registerTool("gender_list", "[Discovery] List all available genders", createListOnlySchema(), "Discovery & Reference");
@@ -373,6 +425,49 @@ public class McpToolRegistry {
             case "occupation_update" -> occupationService.updateOccupation(arguments);
             case "occupation_delete" -> occupationService.deleteOccupation(arguments);
             case "occupation_list" -> occupationService.listOccupations(arguments);
+            
+            // Debt operations
+            case "debt_create" -> debtService.createDebt(arguments);
+            case "debt_get" -> debtService.getDebt(arguments);
+            case "debt_update" -> debtService.updateDebt(arguments);
+            case "debt_delete" -> debtService.deleteDebt(arguments);
+            case "debt_list" -> debtService.listDebts(arguments);
+            
+            // Document operations
+            case "document_create" -> documentService.createDocument(arguments);
+            case "document_get" -> documentService.getDocument(arguments);
+            case "document_update" -> documentService.updateDocument(arguments);
+            case "document_delete" -> documentService.deleteDocument(arguments);
+            case "document_list" -> documentService.listDocuments(arguments);
+            
+            // Photo operations
+            case "photo_create" -> photoService.createPhoto(arguments);
+            case "photo_get" -> photoService.getPhoto(arguments);
+            case "photo_update" -> photoService.updatePhoto(arguments);
+            case "photo_delete" -> photoService.deletePhoto(arguments);
+            case "photo_list" -> photoService.listPhotos(arguments);
+            
+            // Gift operations
+            case "gift_create" -> giftService.createGift(arguments);
+            case "gift_get" -> giftService.getGift(arguments);
+            case "gift_update" -> giftService.updateGift(arguments);
+            case "gift_delete" -> giftService.deleteGift(arguments);
+            case "gift_list" -> giftService.listGifts(arguments);
+            
+            // Audit Log operations
+            case "auditlog_get" -> auditLogService.getAuditLog(arguments);
+            case "auditlog_list" -> auditLogService.listAuditLogs(arguments);
+            case "auditlog_search" -> auditLogService.searchAuditLogs(arguments);
+            
+            // Country operations
+            case "country_get" -> countryService.getCountry(arguments);
+            case "country_list" -> countryService.listCountries(arguments);
+            case "country_search" -> countryService.searchCountries(arguments);
+            
+            // Currency operations
+            case "currency_get" -> currencyService.getCurrency(arguments);
+            case "currency_list" -> currencyService.listCurrencies(arguments);
+            case "currency_search" -> currencyService.searchCurrencies(arguments);
             
             // Discovery operations (Constitutional Principle VII)
             case "gender_list" -> genderService.listGenders(arguments);
@@ -1138,6 +1233,261 @@ public class McpToolRegistry {
     
     private Map<String, Object> createOccupationUpdateSchema() {
         return createUpdateSchema(createOccupationSchema());
+    }
+    
+    private Map<String, Object> createDebtSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID this debt belongs to (required)"
+                ),
+                "amount", Map.of(
+                    "type", "number",
+                    "description", "Debt amount (required)"
+                ),
+                "currency", Map.of(
+                    "type", "string",
+                    "description", "Currency code (optional, max 3 characters)",
+                    "maxLength", 3
+                ),
+                "inDebt", Map.of(
+                    "type", "string",
+                    "description", "Who is in debt - 'contact' or 'user' (optional)"
+                ),
+                "status", Map.of(
+                    "type", "string",
+                    "description", "Debt status (optional)",
+                    "maxLength", 255
+                ),
+                "reason", Map.of(
+                    "type", "string",
+                    "description", "Reason for the debt (optional)",
+                    "maxLength", 1000
+                )
+            ),
+            "required", List.of("contactId", "amount")
+        );
+    }
+    
+    private Map<String, Object> createDebtUpdateSchema() {
+        return createUpdateSchema(createDebtSchema());
+    }
+    
+    private Map<String, Object> createDocumentSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID this document belongs to (required)"
+                ),
+                "filename", Map.of(
+                    "type", "string",
+                    "description", "Document filename (required)",
+                    "maxLength", 255
+                ),
+                "originalFilename", Map.of(
+                    "type", "string",
+                    "description", "Original filename (optional)",
+                    "maxLength", 255
+                ),
+                "mimeType", Map.of(
+                    "type", "string",
+                    "description", "MIME type of the document (optional)",
+                    "maxLength", 100
+                ),
+                "size", Map.of(
+                    "type", "integer",
+                    "description", "File size in bytes (optional)"
+                ),
+                "description", Map.of(
+                    "type", "string",
+                    "description", "Document description (optional)",
+                    "maxLength", 1000
+                )
+            ),
+            "required", List.of("contactId", "filename")
+        );
+    }
+    
+    private Map<String, Object> createDocumentUpdateSchema() {
+        return createUpdateSchema(createDocumentSchema());
+    }
+    
+    private Map<String, Object> createPhotoSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID this photo belongs to (required)"
+                ),
+                "filename", Map.of(
+                    "type", "string",
+                    "description", "Photo filename (required)",
+                    "maxLength", 255
+                ),
+                "originalFilename", Map.of(
+                    "type", "string",
+                    "description", "Original filename (optional)",
+                    "maxLength", 255
+                ),
+                "width", Map.of(
+                    "type", "integer",
+                    "description", "Image width in pixels (optional)"
+                ),
+                "height", Map.of(
+                    "type", "integer",
+                    "description", "Image height in pixels (optional)"
+                ),
+                "filesize", Map.of(
+                    "type", "integer",
+                    "description", "File size in bytes (optional)"
+                ),
+                "mimeType", Map.of(
+                    "type", "string",
+                    "description", "MIME type of the image (optional)",
+                    "maxLength", 100
+                )
+            ),
+            "required", List.of("contactId", "filename")
+        );
+    }
+    
+    private Map<String, Object> createPhotoUpdateSchema() {
+        return createUpdateSchema(createPhotoSchema());
+    }
+    
+    private Map<String, Object> createGiftSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID this gift is for (required)"
+                ),
+                "name", Map.of(
+                    "type", "string",
+                    "description", "Gift name (required)",
+                    "maxLength", 255
+                ),
+                "comment", Map.of(
+                    "type", "string",
+                    "description", "Gift comment or notes (optional)",
+                    "maxLength", 1000
+                ),
+                "url", Map.of(
+                    "type", "string",
+                    "description", "Gift URL or link (optional)",
+                    "maxLength", 255
+                ),
+                "value", Map.of(
+                    "type", "number",
+                    "description", "Gift value/price (optional)"
+                ),
+                "status", Map.of(
+                    "type", "string",
+                    "description", "Gift status - 'idea', 'purchased', 'given' (optional)",
+                    "maxLength", 255
+                ),
+                "date", Map.of(
+                    "type", "string",
+                    "format", "date",
+                    "description", "Gift date in YYYY-MM-DD format (optional)"
+                ),
+                "isFor", Map.of(
+                    "type", "string",
+                    "description", "What occasion the gift is for (optional)"
+                )
+            ),
+            "required", List.of("contactId", "name")
+        );
+    }
+    
+    private Map<String, Object> createGiftUpdateSchema() {
+        return createUpdateSchema(createGiftSchema());
+    }
+    
+    private Map<String, Object> createAuditLogSearchSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "action", Map.of(
+                    "type", "string",
+                    "description", "Filter by action type (e.g., 'create', 'update', 'delete')"
+                ),
+                "auditableType", Map.of(
+                    "type", "string",
+                    "description", "Filter by entity type (e.g., 'Contact', 'Activity')"
+                ),
+                "userId", Map.of(
+                    "type", "integer",
+                    "description", "Filter by user ID who performed the action"
+                ),
+                "page", Map.of(
+                    "type", "integer",
+                    "description", "Page number (starting from 1)",
+                    "default", 1
+                ),
+                "limit", Map.of(
+                    "type", "integer",
+                    "description", "Number of items per page",
+                    "default", 25,
+                    "maximum", 100
+                )
+            ),
+            "additionalProperties", false
+        );
+    }
+    
+    private Map<String, Object> createCountrySearchSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "search", Map.of(
+                    "type", "string",
+                    "description", "Search query for country name"
+                ),
+                "page", Map.of(
+                    "type", "integer",
+                    "description", "Page number (starting from 1)",
+                    "default", 1
+                ),
+                "limit", Map.of(
+                    "type", "integer",
+                    "description", "Number of items per page",
+                    "default", 50,
+                    "maximum", 200
+                )
+            ),
+            "additionalProperties", false
+        );
+    }
+    
+    private Map<String, Object> createCurrencySearchSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "search", Map.of(
+                    "type", "string",
+                    "description", "Search query for currency code or name"
+                ),
+                "page", Map.of(
+                    "type", "integer",
+                    "description", "Page number (starting from 1)",
+                    "default", 1
+                ),
+                "limit", Map.of(
+                    "type", "integer",
+                    "description", "Number of items per page",
+                    "default", 50,
+                    "maximum", 200
+                )
+            ),
+            "additionalProperties", false
+        );
     }
 
     // Inner class for MCP tools

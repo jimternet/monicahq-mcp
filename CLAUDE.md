@@ -1,10 +1,10 @@
 # Claude Code Context - MonicaHQ MCP Server
 
 ## Project Overview
-Spring Boot-based MCP server providing Claude Desktop access to MonicaHQ CRM via 68 operations across 16 entity types.
+Spring Boot-based MCP server providing Claude Desktop access to MonicaHQ CRM via 122 operations across 23 entity types.
 
 ## Current Status
-- **Tests**: 173/173 passing (100%) ✅
+- **Tests**: 188/188 passing (100%) ✅
 - **Constitution**: v1.3.0 with enhanced Principle VI (Complete Monica API Data Access) ✅
 - **Architecture**: STDIO MCP protocol with Spring Boot 3.x with complete field visibility
 - **Deployment**: Ready for production with Docker + Claude Desktop
@@ -61,10 +61,10 @@ docker run -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
 - `MONICA_API_URL`: MonicaHQ API endpoint
 - `MONICA_API_TOKEN`: OAuth2 Bearer token
 
-## MCP Operations (68 total)
-**Entity Types**: Contact, Activity, Call, Note, Task, Tag, Reminder, JournalEntry, Conversation, ConversationMessage, ContactField, ContactTag, Relationship, Company, RelationshipType, RelationshipTypeGroup
+## MCP Operations (122 total)
+**Entity Types**: Contact, Activity, Call, Note, Task, Tag, Reminder, JournalEntry, Conversation, ConversationMessage, ContactField, ContactTag, Relationship, Company, RelationshipType, RelationshipTypeGroup, Debt, Document, Photo, Gift, AuditLog, Country, Currency
 
-**Operations per entity**: create, get, update, delete, list (plus add/remove for relationships)
+**Operations per entity**: create, get, update, delete, list (plus add/remove for relationships, search for reference data)
 
 ## Architecture Patterns
 - **MCP Protocol**: JSON-RPC 2.0 over STDIO
@@ -91,7 +91,8 @@ docker run -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
 1. **Enhanced Constitutional Principle VI**: Complete Monica API data visibility (v1.3.0)
 2. **Generic Content Formatter**: ALL Monica API fields now visible in MCP content responses
 3. **Universal Field Coverage**: Raw API data formatting ensures no data loss for Claude Desktop
-4. **Test Suite Enhanced**: All 173 tests passing with comprehensive field validation
+4. **Test Suite Enhanced**: All 188 tests passing with comprehensive field validation
+5. **Phase 4.2-4.3 Complete**: Added financial (Debt), content (Document, Photo, Gift), and reference data (AuditLog, Country, Currency) management
 5. **Critical Gap Implementation**: Added relationship management (9 operations) and company tracking (5 operations)
 
 ---
