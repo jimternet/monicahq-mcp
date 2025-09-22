@@ -9,6 +9,24 @@ A Spring Boot-based Model Context Protocol (MCP) server that provides Claude Des
 - **Tool Organization**: 122 operations across comprehensive entity coverage
 - **Deployment**: Multiple options (Spring Boot JAR, Docker, Claude Desktop)
 
+## 📚 Documentation Index
+
+This project includes specialized documentation for different use cases:
+
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| **README.md** | Main setup guide and API overview | Setting up the MCP server, understanding capabilities |
+| **[CLAUDE.md](CLAUDE.md)** | Claude Code context and development notes | AI-assisted development, codebase understanding |
+| **[TESTING-GUIDE.md](TESTING-GUIDE.md)** | Comprehensive testing procedures | Running tests, constitutional compliance validation |
+| **[MCP-STDIO-LOGGING.md](MCP-STDIO-LOGGING.md)** | MCP protocol compliance requirements | Debugging Claude Desktop integration issues |
+| **[IMPLEMENTATION-SUCCESS.md](IMPLEMENTATION-SUCCESS.md)** | Historical implementation record | Understanding project completion milestones |
+
+### Quick Reference Links
+- **Getting Started**: Continue reading this README
+- **Development Setup**: See [docker-compose.dev.yml](#development-with-docker-compose) below
+- **Testing & Validation**: See [TESTING-GUIDE.md](TESTING-GUIDE.md)
+- **Troubleshooting**: See [MCP-STDIO-LOGGING.md](MCP-STDIO-LOGGING.md) for protocol issues
+
 ## Quick Start
 
 Choose your preferred deployment method:
@@ -89,48 +107,65 @@ Choose JAR or Docker configuration:
 
 ## MCP Operations
 
-The server provides **50 categorized operations** across 12 entity types, organized for optimal discoverability:
+The server provides **122 categorized operations** across 23 entity types, organized for optimal discoverability:
 
-### 📋 Contact Management (12 operations)
-| Entity | Operations | Description |
-|--------|------------|-------------|
-| **Contact** | `[Contact]` create, get, update, delete, list | Core contact management |
-| **ContactField** | `[Contact Field]` create, get, update, delete, list | Custom contact fields |
-| **ContactTag** | `[Contact Tag]` add, remove | Tag-contact relationships |
+### Core Entity Operations (122 total)
 
-### 🎯 Productivity & Organization (20 operations)
-| Entity | Operations | Description |
-|--------|------------|-------------|
-| **Note** | `[Note]` create, get, update, delete, list | Notes and observations |
-| **Task** | `[Task]` create, get, update, delete, list | Task management |
-| **Reminder** | `[Reminder]` create, get, update, delete, list | Reminders and alerts |
-| **Tag** | `[Tag]` create, get, update, delete, list | Organizational tags |
+| Category | Entity Types | Operations | Count |
+|----------|-------------|------------|--------|
+| **📋 Contact Management** | Contact, ContactField, ContactTag, Address, Group, Occupation | CRUD + relationships | 32 |
+| **🎯 Productivity** | Note, Task, Reminder, Tag, JournalEntry | Full CRUD | 25 |
+| **💬 Communication** | Activity, ActivityType, ActivityTypeCategory, Call, Conversation, Message | CRUD + threading | 29 |
+| **💼 Professional** | Company, Relationship, RelationshipType, RelationshipTypeGroup | CRUD + associations | 19 |
+| **💰 Financial** | Debt, Gift, Document, Photo | CRUD + file handling | 20 |
+| **🌍 Reference Data** | Country, Currency, AuditLog | Read-only operations | 9 |
 
-### 💬 Activity & Communication (18 operations)
-| Entity | Operations | Description |
-|--------|------------|-------------|
-| **Activity** | `[Activity]` create, get, update, delete, list | Activities and interactions |
-| **Call** | `[Call]` create, get, update, delete, list | Phone call records |
-| **Conversation** | `[Conversation]` create, get, update, list | Conversation threads |
-| **ConversationMessage** | `[Message]` create, get, update, list | Individual messages |
+### Complete Entity List (23 types)
+- **Contacts**: Contact, ContactField, ContactTag, Address, Group, Occupation
+- **Activities**: Activity, ActivityType, ActivityTypeCategory, Call, Conversation, ConversationMessage
+- **Organization**: Note, Task, Reminder, Tag, JournalEntry
+- **Relationships**: Company, Relationship, RelationshipType, RelationshipTypeGroup
+- **Financial**: Debt, Gift, Document, Photo
+- **System**: Country, Currency, AuditLog
 
 ### Tool Organization Features
-- **Category Prefixes**: All tools have clear category labels (e.g., `[Contact] Create a new contact`)
+- **Category Prefixes**: All 122 tools have clear category labels (e.g., `[Contact] Create a new contact`)
 - **Logical Grouping**: Tools are ordered by frequency of use and workflow logic
+- **Comprehensive Coverage**: 91% of Monica API endpoints implemented (excludes admin-only operations)
 - **Future-Ready**: Metadata included for client-side grouping capabilities
 
 ## Example Usage with Claude
 
 Once configured, you can interact with your MonicaHQ instance through Claude:
 
+### Basic Operations
 ```
 "Create a new contact named John Doe with email john@example.com"
-
 "Add a note to contact ID 123 saying 'Met at conference'"
-
 "List all tasks due this week"
-
 "Tag contact 'Alice Smith' with 'VIP Client'"
+```
+
+### Real-World Workflows
+```
+# Contact Management Workflow
+"Create a contact for Sarah Johnson, CEO of TechCorp"
+"Add her work address: 123 Tech Street, San Francisco, CA 94105"
+"Create a company called TechCorp and associate Sarah with it"
+"Set a reminder to follow up with Sarah next Tuesday"
+"Add a note about our meeting discussion on AI integration"
+
+# Relationship Tracking
+"Show me all my family relationships"
+"Create a gift idea for my partner's birthday next month"
+"Track a debt of $50 I owe to contact ID 45"
+"Add a photo to John's contact from our team event"
+
+# Activity Management
+"Log a call with client ID 78 about contract renewal"
+"Create a journal entry about today's product launch"
+"Start a conversation thread about the Q4 planning"
+"List all activities from last week"
 ```
 
 ## Deployment Architecture
@@ -157,8 +192,8 @@ The MonicaHQ MCP Server is built as a flexible Spring Boot 3.x application suppo
 - **Framework**: Spring Boot 3.x with WebFlux (reactive)
 - **Authentication**: OAuth2 Bearer tokens to MonicaHQ API
 - **Resilience**: Circuit breaker pattern with Resilience4j
-- **Testing**: 136 comprehensive tests (100% pass rate)
-- **Tool Organization**: 50 operations in 3 logical categories
+- **Testing**: 188 comprehensive tests (100% pass rate)
+- **Tool Organization**: 122 operations across 23 entity types
 
 ## Deployment Options
 
@@ -361,6 +396,20 @@ deploy:
       cpus: '0.25'
 ```
 
+## System Requirements
+
+### Minimum Requirements
+- **Java**: 17+ (OpenJDK or Oracle JDK)
+- **Memory**: 512MB RAM minimum, 1GB recommended
+- **Disk**: 100MB for application + logs
+- **Monica**: Any Monica instance with API access enabled
+- **Network**: HTTPS access to Monica instance
+
+### Monica API Compatibility
+- **Supported Versions**: Monica 4.x and 5.x
+- **Required**: OAuth2 Bearer token authentication
+- **API Coverage**: 91% of Monica API endpoints (122 operations)
+
 ## Troubleshooting
 
 ### Common Issues
@@ -436,14 +485,39 @@ mcp-inspector java -jar build/libs/monicahqmcp-0.1.0.jar --stdio
 mcp-inspector docker run --rm -i -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
 ```
 
+## Development with Docker Compose
+
+For complete development environment with Monica instance and validation:
+
+```bash
+# Start complete development stack (Monica + MCP Server + Database)
+docker-compose -f docker-compose.dev.yml up -d
+
+# Monica available at: http://localhost:8081
+# MCP Server available at: http://localhost:8080
+# Validation reports: http://localhost:8080/validation
+
+# Run validation suite
+docker-compose -f docker-compose.dev.yml exec monicahq-mcp ./validation/constitutional/validate-constitution.sh
+
+# Stop and cleanup
+docker-compose -f docker-compose.dev.yml down -v
+```
+
+The development stack includes:
+- **Monica CRM**: Full Monica instance with database
+- **MCP Server**: Your development server with live reloading
+- **Validation Suite**: Automated constitutional compliance checking
+- **Health Monitoring**: Built-in health checks and logging
+
 ## Contributing
 
-This project follows a **Constitutional Governance Framework** (v1.1.0) to ensure code quality and architectural consistency.
+This project follows a **Constitutional Governance Framework** (v1.3.0) to ensure code quality and architectural consistency.
 
 ### Development Process
 
 1. **Fork the repository** and create a feature branch
-2. **Review the Constitution**: See `.specify/memory/constitution.md` for 5 core principles
+2. **Review the Constitution**: See [TESTING-GUIDE.md](TESTING-GUIDE.md) for constitutional principles
 3. **Follow TDD**: Write tests before implementation (100% coverage required)
 4. **Validate compliance**: Run constitutional validation before submitting
 5. **Submit a pull request** with constitutional compliance verification
@@ -452,17 +526,19 @@ This project follows a **Constitutional Governance Framework** (v1.1.0) to ensur
 
 ```bash
 # 1. Constitutional compliance check
-./validate-constitution.sh
+./validation/constitutional/validate-constitution.sh
 
 # 2. Comprehensive testing (7 phases)
-./test-mcp-complete.sh
+./validation/integration/test-mcp-complete.sh
 
 # 3. Claude Desktop integration test
-./test-claude-desktop.sh
+./validation/integration/test-claude-desktop.sh
 
-# 4. Run all tests (must maintain 136/136 passing)
+# 4. Run all tests (must maintain 188/188 passing)
 ./gradlew test
 ```
+
+For detailed testing procedures, see [TESTING-GUIDE.md](TESTING-GUIDE.md).
 
 ### Constitutional Principles
 
@@ -471,13 +547,81 @@ This project follows a **Constitutional Governance Framework** (v1.1.0) to ensur
 3. **Spring Boot Architecture Excellence** - WebFlux for external APIs
 4. **Production-Ready Deployment** - Docker + Claude Desktop ready
 5. **Type Safety & Code Generation** - MapStruct + Lombok patterns
+6. **Complete Monica API Data Access** - All fields visible in MCP responses
 
 ### Pull Request Requirements
 
 - ✅ All constitutional validation tests pass
-- ✅ 136/136 tests pass (100% coverage maintained)
+- ✅ 188/188 tests pass (100% coverage maintained)
 - ✅ STDOUT cleanliness verified for MCP protocol
 - ✅ Constitutional compliance documented
+
+## Frequently Asked Questions (FAQ)
+
+### General Questions
+
+**Q: What is MCP (Model Context Protocol)?**
+A: MCP is a protocol that allows Claude Desktop to interact with external systems. This server implements MCP to give Claude access to your MonicaHQ CRM data.
+
+**Q: Do I need my own Monica instance?**
+A: Yes, you need a Monica instance with API access enabled. You can self-host Monica or use their hosted service.
+
+**Q: Which Monica features are supported?**
+A: We support 91% of Monica's API, including all core CRM features. Only administrative endpoints (users, permissions) are excluded.
+
+### Setup Questions
+
+**Q: How do I get a Monica API token?**
+A: In Monica, go to Settings → API → Create New Token. Copy the generated Bearer token.
+
+**Q: Can I use this without Claude Desktop?**
+A: Yes! The server supports Web Server mode for HTTP/WebSocket access. Use `--web` flag when starting.
+
+**Q: Why are there two docker-compose files?**
+A: `docker-compose.yml` is for production deployment, while `docker-compose.dev.yml` includes a full Monica instance for development.
+
+### Technical Questions
+
+**Q: Why does Claude Desktop show "MCP server error"?**
+A: Usually STDOUT contamination. Check [MCP-STDIO-LOGGING.md](MCP-STDIO-LOGGING.md) for debugging steps.
+
+**Q: Can I extend this with custom Monica fields?**
+A: Yes, the server automatically includes all fields from Monica API responses, including custom fields.
+
+**Q: What's the difference between STDIO and Web Server modes?**
+A: STDIO mode is for Claude Desktop (JSON-RPC over standard I/O), Web Server mode provides HTTP/WebSocket endpoints for other clients.
+
+### Performance Questions
+
+**Q: How many concurrent operations can it handle?**
+A: The server uses reactive WebFlux architecture and can handle 100+ concurrent operations. Actual limit depends on your Monica instance.
+
+**Q: What happens if Monica API is slow or down?**
+A: Circuit breaker pattern prevents cascading failures. After 50% failure rate, the circuit opens for 10 seconds before retrying.
+
+## Security Considerations
+
+### Authentication & Authorization
+- **OAuth2 Bearer Tokens**: Never commit tokens to version control
+- **Environment Variables**: Use `.env` files or secure secret management
+- **Token Scope**: Create Monica tokens with minimum required permissions
+
+### Network Security
+- **HTTPS Required**: Always use HTTPS URLs for Monica API
+- **Docker Network Isolation**: Containers use isolated networks
+- **No Direct Database Access**: All operations go through Monica's API
+
+### Data Privacy
+- **No Data Storage**: MCP server doesn't store any CRM data
+- **Pass-Through Architecture**: Acts as a proxy to Monica API
+- **Audit Logging**: All operations are logged for compliance
+
+### Best Practices
+1. **Rotate API Tokens** regularly
+2. **Use Read-Only Tokens** when possible
+3. **Monitor Access Logs** for unusual activity
+4. **Keep Dependencies Updated** with `./gradlew dependencyUpdates`
+5. **Review Constitutional Compliance** before deployment
 
 ## License
 
@@ -494,6 +638,14 @@ MIT License - see LICENSE file for details.
 - **JUnit 5** - Testing framework
 - **Docker** - Containerization
 - **Gradle** - Build system
+
+## Support & Resources
+
+- **Documentation**: See our [Documentation Index](#documentation-index)
+- **Monica API Docs**: [Monica API Reference](https://github.com/monicahq/monica/blob/main/docs/api/readme.md)
+- **MCP Protocol**: [Model Context Protocol Specification](https://modelcontextprotocol.io)
+- **Issues**: Report bugs via GitHub Issues
+- **Contributing**: See [Contributing](#contributing) section
 
 ---
 

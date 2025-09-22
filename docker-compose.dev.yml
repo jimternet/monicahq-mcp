@@ -14,11 +14,18 @@ services:
       - DB_PASSWORD=monica123
       - DB_DATABASE=monica
     depends_on:
-      - monica-db
+      monica-db:
+        condition: service_healthy
     volumes:
       - monica-storage:/var/www/html/storage
     networks:
       - monica-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/api/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
 
   # Database for Monica (following official setup)
   monica-db:
@@ -34,6 +41,12 @@ services:
       - monica-mysql:/var/lib/mysql
     networks:
       - monica-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # Our MCP Server (configured to use local Monica)
   monicahq-mcp:
@@ -58,11 +71,14 @@ services:
       MCP_AUTH_ENABLED: true
     
     volumes:
-      - ./logs:/app/logs
+      - ./validation:/app/validation:ro
+      - ./tests:/app/tests:ro
+      - dev-logs:/app/logs
     
     restart: unless-stopped
     depends_on:
-      - monica
+      monica:
+        condition: service_healthy
     networks:
       - monica-network
     
@@ -73,9 +89,31 @@ services:
       retries: 3
       start_period: 40s
 
+  # Validation Service for Development
+  validation-service:
+    build: .
+    container_name: monica-mcp-validator
+    entrypoint: ["/bin/bash"]
+    command: ["-c", "sleep infinity"]  # Keep alive for manual validation runs
+    environment:
+      MONICA_API_URL: http://monica:80/api
+      MONICA_API_TOKEN: ${MONICA_API_TOKEN:-your-token-here}
+    volumes:
+      - .:/workspace:ro
+      - dev-logs:/workspace/logs
+    working_dir: /workspace
+    depends_on:
+      monicahq-mcp:
+        condition: service_healthy
+    networks:
+      - monica-network
+    profiles:
+      - validation
+
 volumes:
   monica-storage:
   monica-mysql:
+  dev-logs:  # Shared logs volume for development
 
 networks:
   monica-network:

@@ -20,9 +20,9 @@ Spring Boot-based MCP server providing Claude Desktop access to MonicaHQ CRM via
 src/main/java/com/monicahq/mcp/
 ├── config/          # Spring configuration
 ├── controller/      # MCP handlers + tool registry
-├── service/         # 68 business operations
+├── service/         # 122 business operations
 ├── client/          # MonicaHQ API client
-├── dto/            # 16 entity models
+├── dto/            # 23 entity models
 ├── mapper/         # Type-safe conversions
 └── exception/      # Error handling
 
