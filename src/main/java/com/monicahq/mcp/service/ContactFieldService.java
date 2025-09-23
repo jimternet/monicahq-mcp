@@ -110,10 +110,12 @@ public class ContactFieldService {
     public Mono<Map<String, Object>> listContactFields(Map<String, Object> arguments) {
         log.info("Listing contact fields with arguments: {}", arguments);
         
-        // Monica API doesn't appear to support listing contact fields for a specific contact
-        // Return a helpful message indicating this limitation
-        String message = "Contact field listing is not supported by the Monica API. " +
-                        "Individual contact fields can be retrieved using their specific ID via the getContactField operation.";
+        // While Monica API documentation indicates /contact/{id}/contactfields should work,
+        // testing against actual Monica instances shows this endpoint returns 404 Not Found.
+        // This appears to be a version/implementation gap between docs and deployment.
+        String message = "Contact field listing endpoint (/contact/{id}/contactfields) is not available in this Monica version. " +
+                        "Individual contact fields can be retrieved using their specific ID via the getContactField operation. " +
+                        "This may be resolved in newer Monica versions.";
         
         Map<String, Object> result = new HashMap<>();
         result.put("data", new ArrayList<>());
@@ -126,7 +128,7 @@ public class ContactFieldService {
         );
         result.put("content", content);
         
-        log.info("Contact fields list operation completed with API limitation notice");
+        log.info("Contact fields list operation completed with version limitation notice");
         return Mono.just(result);
     }
 
