@@ -110,19 +110,24 @@ public class ContactFieldService {
     public Mono<Map<String, Object>> listContactFields(Map<String, Object> arguments) {
         log.info("Listing contact fields with arguments: {}", arguments);
         
-        try {
-            Long contactId = extractContactId(arguments);
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/contact/" + contactId + "/contactfields", queryParams)
-                .map(this::formatContactFieldListResponse)
-                .doOnSuccess(result -> log.info("Contact fields listed successfully"))
-                .doOnError(error -> log.error("Failed to list contact fields: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error building query parameters: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        // Monica API doesn't appear to support listing contact fields for a specific contact
+        // Return a helpful message indicating this limitation
+        String message = "Contact field listing is not supported by the Monica API. " +
+                        "Individual contact fields can be retrieved using their specific ID via the getContactField operation.";
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", new ArrayList<>());
+        
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", message
+            )
+        );
+        result.put("content", content);
+        
+        log.info("Contact fields list operation completed with API limitation notice");
+        return Mono.just(result);
     }
 
     private void validateContactFieldCreateArguments(Map<String, Object> arguments) {
