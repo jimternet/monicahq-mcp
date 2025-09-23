@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/jimternet/monicahq-mcp/blob/main/README.md
+    about: Please read the documentation before opening an issue
+  - name: Monica API Documentation
+    url: https://github.com/monicahq/monica/blob/main/docs/api/readme.md
+    about: For Monica API related questions
+  - name: MCP Protocol Specification
+    url: https://modelcontextprotocol.io
+    about: For Model Context Protocol questions
