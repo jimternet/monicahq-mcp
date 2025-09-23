@@ -118,6 +118,7 @@ echo "=========================================================="
 
 FIELD_DATA='{
     "contact_field_type_id": "'$FIRST_FIELD_TYPE_ID'",
+    "contact_id": '$CREATED_CONTACT_ID',
     "data": "test'$TIMESTAMP'@example.com"
 }'
 
@@ -126,7 +127,7 @@ CREATE_FIELD_RESPONSE=$(curl -s -X POST \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $MONICA_TOKEN" \
     -d "$FIELD_DATA" \
-    $MONICA_API_URL/api/contacts/$CREATED_CONTACT_ID/contactfields)
+    $MONICA_API_URL/api/contactfields)
 
 if echo "$CREATE_FIELD_RESPONSE" | jq -e '.data.id' > /dev/null 2>&1; then
     CREATED_FIELD_ID=$(echo "$CREATE_FIELD_RESPONSE" | jq -r '.data.id')
@@ -159,7 +160,7 @@ echo "======================================"
 
 log_info "Reading contact field with ID: $CREATED_FIELD_ID"
 READ_FIELD_RESPONSE=$(curl -s -H "Authorization: Bearer $MONICA_TOKEN" \
-    $MONICA_API_URL/api/contacts/$CREATED_CONTACT_ID/contactfields/$CREATED_FIELD_ID)
+    $MONICA_API_URL/api/contactfields/$CREATED_FIELD_ID)
 
 if echo "$READ_FIELD_RESPONSE" | jq -e '.data' > /dev/null 2>&1; then
     READ_FIELD_CONTENT=$(echo "$READ_FIELD_RESPONSE" | jq -r '.data')
@@ -186,6 +187,7 @@ echo "========================================"
 
 UPDATE_FIELD_DATA='{
     "contact_field_type_id": "'$FIRST_FIELD_TYPE_ID'",
+    "contact_id": '$CREATED_CONTACT_ID',
     "data": "updated'$TIMESTAMP'@example.com"
 }'
 
@@ -194,7 +196,7 @@ UPDATE_FIELD_RESPONSE=$(curl -s -X PUT \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $MONICA_TOKEN" \
     -d "$UPDATE_FIELD_DATA" \
-    $MONICA_API_URL/api/contacts/$CREATED_CONTACT_ID/contactfields/$CREATED_FIELD_ID)
+    $MONICA_API_URL/api/contactfields/$CREATED_FIELD_ID)
 
 if echo "$UPDATE_FIELD_RESPONSE" | jq -e '.data' > /dev/null 2>&1; then
     UPDATE_FIELD_CONTENT=$(echo "$UPDATE_FIELD_RESPONSE" | jq -r '.data')
@@ -220,7 +222,7 @@ echo "======================================"
 
 log_info "Re-reading contact field to verify update..."
 READ_AFTER_UPDATE=$(curl -s -H "Authorization: Bearer $MONICA_TOKEN" \
-    $MONICA_API_URL/api/contacts/$CREATED_CONTACT_ID/contactfields/$CREATED_FIELD_ID)
+    $MONICA_API_URL/api/contactfields/$CREATED_FIELD_ID)
 
 if echo "$READ_AFTER_UPDATE" | jq -e '.data' > /dev/null 2>&1; then
     UPDATED_FIELD_CONTENT=$(echo "$READ_AFTER_UPDATE" | jq -r '.data')
@@ -246,7 +248,7 @@ echo "====================================="
 
 log_info "Listing contact fields for contact $CREATED_CONTACT_ID..."
 LIST_FIELDS_RESPONSE=$(curl -s -H "Authorization: Bearer $MONICA_TOKEN" \
-    $MONICA_API_URL/api/contacts/$CREATED_CONTACT_ID/contactfields)
+    $MONICA_API_URL/api/contact/$CREATED_CONTACT_ID/contactfields)
 
 if echo "$LIST_FIELDS_RESPONSE" | jq -e '.data' > /dev/null 2>&1; then
     FIELD_COUNT=$(echo "$LIST_FIELDS_RESPONSE" | jq '.data | length')
@@ -275,7 +277,7 @@ echo "========================================"
 log_info "Deleting contact field with ID: $CREATED_FIELD_ID"
 DELETE_FIELD_RESPONSE=$(curl -s -X DELETE \
     -H "Authorization: Bearer $MONICA_TOKEN" \
-    $MONICA_API_URL/api/contacts/$CREATED_CONTACT_ID/contactfields/$CREATED_FIELD_ID)
+    $MONICA_API_URL/api/contactfields/$CREATED_FIELD_ID)
 
 # Check if delete was successful (could be empty response or success message)
 if [ $? -eq 0 ]; then
@@ -294,7 +296,7 @@ echo "===================================================="
 
 log_info "Attempting to read deleted contact field (should fail)..."
 READ_AFTER_DELETE=$(curl -s -H "Authorization: Bearer $MONICA_TOKEN" \
-    $MONICA_API_URL/api/contacts/$CREATED_CONTACT_ID/contactfields/$CREATED_FIELD_ID)
+    $MONICA_API_URL/api/contactfields/$CREATED_FIELD_ID)
 
 if echo "$READ_AFTER_DELETE" | jq -e '.error // .message' > /dev/null 2>&1; then
     log_success "Contact field properly deleted - read attempt failed as expected"

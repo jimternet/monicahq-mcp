@@ -24,7 +24,7 @@ public class ContactFieldService {
             Long contactId = extractContactId(arguments);
             Map<String, Object> apiRequest = mapToApiFormat(arguments);
             
-            return monicaClient.post("/contacts/" + contactId + "/contactfields", apiRequest)
+            return monicaClient.post("/contactfields", apiRequest)
                 .map(this::formatContactFieldResponse)
                 .doOnSuccess(result -> log.info("Contact field created successfully: {}", result))
                 .doOnError(error -> log.error("Failed to create contact field: {}", error.getMessage()));
@@ -41,20 +41,10 @@ public class ContactFieldService {
         try {
             Long fieldId = extractFieldId(arguments);
             
-            // Try direct endpoint first (if contactId not provided)
-            if (!arguments.containsKey("contactId")) {
-                return monicaClient.get("/contactfields/" + fieldId, null)
-                    .map(this::formatContactFieldResponse)
-                    .doOnSuccess(result -> log.info("Contact field retrieved successfully: {}", fieldId))
-                    .doOnError(error -> log.error("Failed to get contact field {}: {}", fieldId, error.getMessage()));
-            } else {
-                // Use nested endpoint if contactId is provided
-                Long contactId = extractContactId(arguments);
-                return monicaClient.get("/contacts/" + contactId + "/contactfields/" + fieldId, null)
-                    .map(this::formatContactFieldResponse)
-                    .doOnSuccess(result -> log.info("Contact field retrieved successfully: {}", fieldId))
-                    .doOnError(error -> log.error("Failed to get contact field {}: {}", fieldId, error.getMessage()));
-            }
+            return monicaClient.get("/contactfields/" + fieldId, null)
+                .map(this::formatContactFieldResponse)
+                .doOnSuccess(result -> log.info("Contact field retrieved successfully: {}", fieldId))
+                .doOnError(error -> log.error("Failed to get contact field {}: {}", fieldId, error.getMessage()));
                 
         } catch (IllegalArgumentException e) {
             log.error("Invalid arguments for contact field retrieval: {}", e.getMessage());
@@ -70,24 +60,14 @@ public class ContactFieldService {
             
             Map<String, Object> updateData = new HashMap<>(arguments);
             updateData.remove("id");
-            updateData.remove("contactId");
+            // Keep contactId for API request
             
             Map<String, Object> apiRequest = mapToApiFormat(updateData);
             
-            // Try direct endpoint first (if contactId not provided)
-            if (!arguments.containsKey("contactId")) {
-                return monicaClient.put("/contactfields/" + fieldId, apiRequest)
-                    .map(this::formatContactFieldResponse)
-                    .doOnSuccess(result -> log.info("Contact field updated successfully: {}", fieldId))
-                    .doOnError(error -> log.error("Failed to update contact field {}: {}", fieldId, error.getMessage()));
-            } else {
-                // Use nested endpoint if contactId is provided
-                Long contactId = extractContactId(arguments);
-                return monicaClient.put("/contacts/" + contactId + "/contactfields/" + fieldId, apiRequest)
-                    .map(this::formatContactFieldResponse)
-                    .doOnSuccess(result -> log.info("Contact field updated successfully: {}", fieldId))
-                    .doOnError(error -> log.error("Failed to update contact field {}: {}", fieldId, error.getMessage()));
-            }
+            return monicaClient.put("/contactfields/" + fieldId, apiRequest)
+                .map(this::formatContactFieldResponse)
+                .doOnSuccess(result -> log.info("Contact field updated successfully: {}", fieldId))
+                .doOnError(error -> log.error("Failed to update contact field {}: {}", fieldId, error.getMessage()));
                 
         } catch (IllegalArgumentException e) {
             log.error("Invalid arguments for contact field update: {}", e.getMessage());
@@ -99,10 +79,9 @@ public class ContactFieldService {
         log.info("Deleting contact field with arguments: {}", arguments);
         
         try {
-            Long contactId = extractContactId(arguments);
             Long fieldId = extractFieldId(arguments);
             
-            return monicaClient.delete("/contacts/" + contactId + "/contactfields/" + fieldId)
+            return monicaClient.delete("/contactfields/" + fieldId)
                 .map(response -> {
                     String formattedContent = contentFormatter.formatOperationResult(
                         "Delete", "Contact Field", fieldId, true, 
@@ -206,6 +185,7 @@ public class ContactFieldService {
         arguments.forEach((key, value) -> {
             switch (key) {
                 case "contactFieldTypeId" -> apiRequest.put("contact_field_type_id", value);
+                case "contactId" -> apiRequest.put("contact_id", value);
                 default -> apiRequest.put(key, value);
             }
         });
