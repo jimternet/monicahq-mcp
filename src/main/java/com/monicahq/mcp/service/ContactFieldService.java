@@ -110,26 +110,19 @@ public class ContactFieldService {
     public Mono<Map<String, Object>> listContactFields(Map<String, Object> arguments) {
         log.info("Listing contact fields with arguments: {}", arguments);
         
-        // While Monica API documentation indicates /contact/{id}/contactfields should work,
-        // testing against actual Monica instances shows this endpoint returns 404 Not Found.
-        // This appears to be a version/implementation gap between docs and deployment.
-        String message = "Contact field listing endpoint (/contact/{id}/contactfields) is not available in this Monica version. " +
-                        "Individual contact fields can be retrieved using their specific ID via the getContactField operation. " +
-                        "This may be resolved in newer Monica versions.";
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", new ArrayList<>());
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", message
-            )
-        );
-        result.put("content", content);
-        
-        log.info("Contact fields list operation completed with version limitation notice");
-        return Mono.just(result);
+        try {
+            Long contactId = extractContactId(arguments);
+            Map<String, String> queryParams = buildListQueryParams(arguments);
+            
+            return monicaClient.get("/contacts/" + contactId + "/contactfields", queryParams)
+                .map(this::formatContactFieldListResponse)
+                .doOnSuccess(result -> log.info("Contact fields listed successfully"))
+                .doOnError(error -> log.error("Failed to list contact fields: {}", error.getMessage()));
+                
+        } catch (Exception e) {
+            log.error("Error building query parameters: {}", e.getMessage());
+            return Mono.error(e);
+        }
     }
 
     private void validateContactFieldCreateArguments(Map<String, Object> arguments) {
