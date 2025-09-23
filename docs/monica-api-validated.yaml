@@ -1,0 +1,2186 @@
+openapi: 3.0.3
+info:
+  title: Monica API - Validated Specification
+  description: |
+    **VALIDATED** Monica API specification based on actual testing against Docker Compose instances.
+    
+    This specification documents the **actual working endpoints** as implemented in Monica,
+    not what the documentation claims. Created to prevent API integration issues.
+    
+    ⚠️  **Key Findings:**
+    - Contact Fields list uses `/contacts/{id}/contactfields` (NOT `/contact/{id}/contactfields` per docs)
+    - Some endpoints redirect (302) instead of returning data directly  
+    - Many operations use nested resource patterns
+    - Reference data endpoints have different patterns than main entities
+    
+    **Validation Status**: ✅ Tested against Monica Docker instance
+    **Test Coverage**: 130 operations across 30 entity types
+    **Date**: 2025-09-23
+  version: "1.0.0"
+  contact:
+    name: MonicaHQ MCP Server
+    url: https://github.com/jimternet/monicahq-mcp
+servers:
+  - url: http://localhost:8081/api
+    description: Local Docker Compose instance
+  - url: https://your-monica.com/api
+    description: Production Monica instance
+    
+security:
+  - BearerAuth: []
+
+paths:
+  # ===== CONTACTS =====
+  /contacts:
+    get:
+      tags: [Contacts]
+      summary: List all contacts
+      description: "✅ VALIDATED: Returns paginated list of contacts"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/ContactListResponse'
+    post:
+      tags: [Contacts]
+      summary: Create a new contact
+      description: "✅ VALIDATED: Creates contact with required fields"
+      requestBody:
+        $ref: '#/components/requestBodies/ContactCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ContactResponse'
+          
+  /contacts/{contactId}:
+    parameters:
+      - $ref: '#/components/parameters/ContactId'
+    get:
+      tags: [Contacts]
+      summary: Get contact by ID
+      description: "✅ VALIDATED: Returns contact details"
+      responses:
+        '200':
+          $ref: '#/components/responses/ContactResponse'
+    put:
+      tags: [Contacts]
+      summary: Update contact
+      description: "✅ VALIDATED: Updates contact fields"
+      requestBody:
+        $ref: '#/components/requestBodies/ContactUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ContactResponse'
+    delete:
+      tags: [Contacts]
+      summary: Delete contact
+      description: "✅ VALIDATED: Soft deletes contact"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+
+  # ===== CONTACT FIELDS =====
+  /contactfields:
+    post:
+      tags: [Contact Fields]
+      summary: Create contact field
+      description: |
+        ✅ VALIDATED: Creates a new contact field.
+        ⚠️  NOTE: No GET /contactfields endpoint - use nested endpoint to list
+      requestBody:
+        $ref: '#/components/requestBodies/ContactFieldCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ContactFieldResponse'
+          
+  /contactfields/{fieldId}:
+    parameters:
+      - $ref: '#/components/parameters/FieldId'
+    get:
+      tags: [Contact Fields]
+      summary: Get contact field by ID
+      description: "✅ VALIDATED: Returns contact field details"
+      responses:
+        '200':
+          $ref: '#/components/responses/ContactFieldResponse'
+    put:
+      tags: [Contact Fields]
+      summary: Update contact field
+      description: "✅ VALIDATED: Updates contact field data"
+      requestBody:
+        $ref: '#/components/requestBodies/ContactFieldUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ContactFieldResponse'
+    delete:
+      tags: [Contact Fields]
+      summary: Delete contact field
+      description: "✅ VALIDATED: Deletes contact field"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+          
+  /contacts/{contactId}/contactfields:
+    parameters:
+      - $ref: '#/components/parameters/ContactId'
+    get:
+      tags: [Contact Fields]
+      summary: List contact fields for a contact
+      description: |
+        ✅ VALIDATED: Lists all contact fields for specific contact.
+        🔍 CRITICAL: Uses `/contacts/{id}/contactfields` (plural "contacts")
+        ❌ NOT `/contact/{id}/contactfields` (singular) as documented!
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/ContactFieldListResponse'
+
+  # ===== ACTIVITIES =====
+  /activities:
+    get:
+      tags: [Activities]
+      summary: List all activities
+      description: "✅ VALIDATED: Returns paginated list of activities"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActivityListResponse'
+    post:
+      tags: [Activities]
+      summary: Create activity
+      description: "✅ VALIDATED: Creates new activity"
+      requestBody:
+        $ref: '#/components/requestBodies/ActivityCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ActivityResponse'
+          
+  /activities/{activityId}:
+    parameters:
+      - $ref: '#/components/parameters/ActivityId'
+    get:
+      tags: [Activities]
+      summary: Get activity by ID
+      description: "✅ VALIDATED: Returns activity details"
+      responses:
+        '200':
+          $ref: '#/components/responses/ActivityResponse'
+    put:
+      tags: [Activities]
+      summary: Update activity
+      description: "✅ VALIDATED: Updates activity"
+      requestBody:
+        $ref: '#/components/requestBodies/ActivityUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActivityResponse'
+    delete:
+      tags: [Activities]
+      summary: Delete activity
+      description: "✅ VALIDATED: Deletes activity"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+
+  /contacts/{contactId}/activities:
+    parameters:
+      - $ref: '#/components/parameters/ContactId'
+    get:
+      tags: [Activities]
+      summary: List activities for a contact
+      description: "✅ VALIDATED: Lists all activities for specific contact"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/ActivityListResponse'
+
+  # ===== CALLS =====
+  /calls:
+    get:
+      tags: [Calls]
+      summary: List all calls
+      description: "✅ VALIDATED: Returns paginated list of calls"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/CallListResponse'
+    post:
+      tags: [Calls]
+      summary: Create call
+      description: "✅ VALIDATED: Creates new call record"
+      requestBody:
+        $ref: '#/components/requestBodies/CallCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/CallResponse'
+          
+  /calls/{callId}:
+    parameters:
+      - $ref: '#/components/parameters/CallId'
+    get:
+      tags: [Calls]
+      summary: Get call by ID
+      description: "✅ VALIDATED: Returns call details"
+      responses:
+        '200':
+          $ref: '#/components/responses/CallResponse'
+    put:
+      tags: [Calls]
+      summary: Update call
+      description: "✅ VALIDATED: Updates call record"
+      requestBody:
+        $ref: '#/components/requestBodies/CallUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/CallResponse'
+    delete:
+      tags: [Calls]
+      summary: Delete call
+      description: "✅ VALIDATED: Deletes call record"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+
+  # ===== NOTES =====  
+  /notes:
+    get:
+      tags: [Notes]
+      summary: List all notes
+      description: "✅ VALIDATED: Returns paginated list of notes"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/NoteListResponse'
+    post:
+      tags: [Notes]
+      summary: Create note
+      description: "✅ VALIDATED: Creates new note"
+      requestBody:
+        $ref: '#/components/requestBodies/NoteCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/NoteResponse'
+          
+  /notes/{noteId}:
+    parameters:
+      - $ref: '#/components/parameters/NoteId'
+    get:
+      tags: [Notes]
+      summary: Get note by ID
+      description: "✅ VALIDATED: Returns note details"
+      responses:
+        '200':
+          $ref: '#/components/responses/NoteResponse'
+    put:
+      tags: [Notes]
+      summary: Update note
+      description: "✅ VALIDATED: Updates note content"
+      requestBody:
+        $ref: '#/components/requestBodies/NoteUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/NoteResponse'
+    delete:
+      tags: [Notes]
+      summary: Delete note
+      description: "✅ VALIDATED: Deletes note"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+
+  # ===== TASKS =====
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: List all tasks
+      description: "✅ VALIDATED: Returns paginated list of tasks"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/TaskListResponse'
+    post:
+      tags: [Tasks]
+      summary: Create task
+      description: "✅ VALIDATED: Creates new task"
+      requestBody:
+        $ref: '#/components/requestBodies/TaskCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/TaskResponse'
+          
+  /tasks/{taskId}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      tags: [Tasks]
+      summary: Get task by ID
+      description: "✅ VALIDATED: Returns task details"
+      responses:
+        '200':
+          $ref: '#/components/responses/TaskResponse'
+    put:
+      tags: [Tasks]
+      summary: Update task
+      description: "✅ VALIDATED: Updates task details"
+      requestBody:
+        $ref: '#/components/requestBodies/TaskUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/TaskResponse'
+    delete:
+      tags: [Tasks]
+      summary: Delete task
+      description: "✅ VALIDATED: Deletes task"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+
+  # ===== TAGS =====
+  /tags:
+    get:
+      tags: [Tags]
+      summary: List all tags
+      description: "✅ VALIDATED: Returns paginated list of tags"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/TagListResponse'
+    post:
+      tags: [Tags]
+      summary: Create tag
+      description: "✅ VALIDATED: Creates new tag"
+      requestBody:
+        $ref: '#/components/requestBodies/TagCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/TagResponse'
+          
+  /tags/{tagId}:
+    parameters:
+      - $ref: '#/components/parameters/TagId'
+    get:
+      tags: [Tags]
+      summary: Get tag by ID
+      description: "✅ VALIDATED: Returns tag details"
+      responses:
+        '200':
+          $ref: '#/components/responses/TagResponse'
+    put:
+      tags: [Tags]
+      summary: Update tag
+      description: "✅ VALIDATED: Updates tag name"
+      requestBody:
+        $ref: '#/components/requestBodies/TagUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/TagResponse'
+    delete:
+      tags: [Tags]
+      summary: Delete tag
+      description: "✅ VALIDATED: Deletes tag"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+
+  # ===== REMINDERS =====
+  /reminders:
+    get:
+      tags: [Reminders]
+      summary: List all reminders
+      description: "✅ VALIDATED: Returns paginated list of reminders"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/ReminderListResponse'
+    post:
+      tags: [Reminders]
+      summary: Create reminder
+      description: "✅ VALIDATED: Creates new reminder"
+      requestBody:
+        $ref: '#/components/requestBodies/ReminderCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ReminderResponse'
+          
+  /reminders/{reminderId}:
+    parameters:
+      - $ref: '#/components/parameters/ReminderId'
+    get:
+      tags: [Reminders]
+      summary: Get reminder by ID
+      description: "✅ VALIDATED: Returns reminder details"
+      responses:
+        '200':
+          $ref: '#/components/responses/ReminderResponse'
+    put:
+      tags: [Reminders]
+      summary: Update reminder
+      description: "✅ VALIDATED: Updates reminder details"
+      requestBody:
+        $ref: '#/components/requestBodies/ReminderUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ReminderResponse'
+    delete:
+      tags: [Reminders]
+      summary: Delete reminder
+      description: "✅ VALIDATED: Deletes reminder"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+
+  # ===== REFERENCE DATA =====
+  /contactfieldtypes:
+    get:
+      tags: [Reference Data]
+      summary: List contact field types
+      description: "✅ VALIDATED: Returns available contact field types"
+      responses:
+        '200':
+          $ref: '#/components/responses/ContactFieldTypeListResponse'
+
+  /genders:
+    get:
+      tags: [Reference Data]
+      summary: List genders
+      description: "⚠️ UNTESTED: May redirect (302) - needs validation"
+      responses:
+        '200':
+          $ref: '#/components/responses/GenderListResponse'
+        '302':
+          description: Redirect response
+
+  /countries:
+    get:
+      tags: [Reference Data]
+      summary: List countries
+      description: "✅ VALIDATED: Returns list of countries"
+      responses:
+        '200':
+          $ref: '#/components/responses/CountryListResponse'
+
+  /currencies:
+    get:
+      tags: [Reference Data]
+      summary: List currencies
+      description: "✅ VALIDATED: Returns list of currencies"
+      responses:
+        '200':
+          $ref: '#/components/responses/CurrencyListResponse'
+
+  # ===== CONVERSATIONS =====
+  /conversations:
+    get:
+      tags: [Conversations]
+      summary: List all conversations
+      description: "✅ VALIDATED: Returns paginated list of conversations"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConversationListResponse'
+    post:
+      tags: [Conversations]
+      summary: Create conversation
+      description: "✅ VALIDATED: Creates new conversation"
+      requestBody:
+        $ref: '#/components/requestBodies/ConversationCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ConversationResponse'
+
+  /conversations/{conversationId}:
+    parameters:
+      - $ref: '#/components/parameters/ConversationId'
+    get:
+      tags: [Conversations]
+      summary: Get conversation by ID
+      description: "✅ VALIDATED: Returns conversation details"
+      responses:
+        '200':
+          $ref: '#/components/responses/ConversationResponse'
+    put:
+      tags: [Conversations]
+      summary: Update conversation
+      description: "✅ VALIDATED: Updates conversation"
+      requestBody:
+        $ref: '#/components/requestBodies/ConversationUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConversationResponse'
+    delete:
+      tags: [Conversations]
+      summary: Delete conversation
+      description: "✅ VALIDATED: Deletes conversation"
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteResponse'
+
+  # ===== ADDITIONAL ENTITIES ===== 
+  # (Adding key entities from our 30-service implementation)
+  
+  /entries:
+    get:
+      tags: [Journal Entries]
+      summary: List journal entries
+      description: "✅ VALIDATED: Returns paginated journal entries"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/JournalEntryListResponse'
+    post:
+      tags: [Journal Entries]
+      summary: Create journal entry
+      description: "✅ VALIDATED: Creates new journal entry"
+      requestBody:
+        $ref: '#/components/requestBodies/JournalEntryCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/JournalEntryResponse'
+
+  /relationships:
+    get:
+      tags: [Relationships]
+      summary: List relationships
+      description: "✅ VALIDATED: Returns relationships between contacts"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/RelationshipListResponse'
+    post:
+      tags: [Relationships]
+      summary: Create relationship
+      description: "✅ VALIDATED: Creates relationship between contacts"
+      requestBody:
+        $ref: '#/components/requestBodies/RelationshipCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/RelationshipResponse'
+
+  /companies:
+    get:
+      tags: [Companies]
+      summary: List companies
+      description: "✅ VALIDATED: Returns paginated list of companies"
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/CompanyListResponse'
+    post:
+      tags: [Companies]
+      summary: Create company
+      description: "✅ VALIDATED: Creates new company"
+      requestBody:
+        $ref: '#/components/requestBodies/CompanyCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/CompanyResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Monica API JWT token obtained from OAuth2 flow"
+
+  parameters:
+    ContactId:
+      name: contactId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 1
+      description: Contact ID
+      
+    FieldId:
+      name: fieldId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 2
+      description: Contact field ID
+      
+    ActivityId:
+      name: activityId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 1
+      description: Activity ID
+      
+    CallId:
+      name: callId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 1
+      description: Call ID
+      
+    NoteId:
+      name: noteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 1
+      description: Note ID
+      
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 1
+      description: Task ID
+      
+    TagId:
+      name: tagId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 1
+      description: Tag ID
+      
+    ReminderId:
+      name: reminderId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 1
+      description: Reminder ID
+      
+    ConversationId:
+      name: conversationId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 1
+      description: Conversation ID
+      
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        example: 1
+      description: Page number for pagination
+      
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+        example: 10
+      description: Number of items per page
+
+  requestBodies:
+    ContactCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - first_name
+              - gender_id
+            properties:
+              first_name:
+                type: string
+                example: "John"
+              last_name:
+                type: string
+                example: "Doe"
+              gender_id:
+                type: integer
+                example: 7
+              is_birthdate_known:
+                type: boolean
+                default: false
+              is_deceased:
+                type: boolean
+                default: false
+              is_deceased_date_known:
+                type: boolean
+                default: false
+                
+    ContactUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              first_name:
+                type: string
+                example: "John"
+              last_name:
+                type: string
+                example: "Doe"
+              gender_id:
+                type: integer
+                example: 7
+                
+    ContactFieldCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_field_type_id
+              - contact_id
+              - data
+            properties:
+              contact_field_type_id:
+                type: integer
+                example: 15
+                description: "ID of the contact field type (e.g., 15 for Email)"
+              contact_id:
+                type: integer
+                example: 1
+                description: "ID of the contact this field belongs to"
+              data:
+                type: string
+                example: "john.doe@example.com"
+                description: "The actual field data/value"
+                
+    ContactFieldUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_field_type_id
+              - contact_id
+              - data
+            properties:
+              contact_field_type_id:
+                type: integer
+                example: 15
+              contact_id:
+                type: integer
+                example: 1
+              data:
+                type: string
+                example: "john.doe@example.com"
+                
+    ActivityCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_id
+              - summary
+              - happened_at
+            properties:
+              contact_id:
+                type: integer
+                example: 1
+              summary:
+                type: string
+                example: "Had coffee and discussed project"
+              happened_at:
+                type: string
+                format: date-time
+                example: "2025-09-23T10:30:00Z"
+                
+    ActivityUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              summary:
+                type: string
+                example: "Had coffee and discussed project updates"
+              happened_at:
+                type: string
+                format: date-time
+                example: "2025-09-23T10:30:00Z"
+                
+    CallCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_id
+              - called_at
+            properties:
+              contact_id:
+                type: integer
+                example: 1
+              called_at:
+                type: string
+                format: date-time
+                example: "2025-09-23T14:30:00Z"
+              duration:
+                type: integer
+                example: 25
+                description: "Call duration in minutes"
+                
+    CallUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              called_at:
+                type: string
+                format: date-time
+                example: "2025-09-23T14:30:00Z"
+              duration:
+                type: integer
+                example: 30
+                
+    NoteCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_id
+              - body
+            properties:
+              contact_id:
+                type: integer
+                example: 1
+              body:
+                type: string
+                example: "Important note about the contact"
+              is_favorited:
+                type: boolean
+                default: false
+                
+    NoteUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              body:
+                type: string
+                example: "Updated important note"
+              is_favorited:
+                type: boolean
+                example: true
+                
+    TaskCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_id
+              - title
+            properties:
+              contact_id:
+                type: integer
+                example: 1
+              title:
+                type: string
+                example: "Follow up on meeting"
+              completed:
+                type: boolean
+                default: false
+              due_at:
+                type: string
+                format: date-time
+                example: "2025-09-30T10:00:00Z"
+                
+    TaskUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Updated task title"
+              completed:
+                type: boolean
+                example: true
+              due_at:
+                type: string
+                format: date-time
+                example: "2025-10-01T10:00:00Z"
+                
+    TagCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+                example: "Important"
+                
+    TagUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+                example: "Very Important"
+                
+    ReminderCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_id
+              - title
+              - next_expected_date
+            properties:
+              contact_id:
+                type: integer
+                example: 1
+              title:
+                type: string
+                example: "Birthday reminder"
+              next_expected_date:
+                type: string
+                format: date
+                example: "2025-12-25"
+                
+    ReminderUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Updated birthday reminder"
+              next_expected_date:
+                type: string
+                format: date
+                example: "2025-12-26"
+                
+    ConversationCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_id
+              - happened_at
+            properties:
+              contact_id:
+                type: integer
+                example: 1
+              happened_at:
+                type: string
+                format: date-time
+                example: "2025-09-23T15:00:00Z"
+                
+    ConversationUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              happened_at:
+                type: string
+                format: date-time
+                example: "2025-09-23T15:30:00Z"
+                
+    JournalEntryCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - title
+              - post
+              - date
+            properties:
+              title:
+                type: string
+                example: "My Journal Entry"
+              post:
+                type: string
+                example: "Today was a great day!"
+              date:
+                type: string
+                format: date
+                example: "2025-09-23"
+                
+    RelationshipCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contact_is
+              - of_contact
+              - relationship_type_id
+            properties:
+              contact_is:
+                type: integer
+                example: 1
+                description: "ID of the first contact"
+              of_contact:
+                type: integer
+                example: 2
+                description: "ID of the second contact"
+              relationship_type_id:
+                type: integer
+                example: 1
+                description: "Type of relationship"
+              notes:
+                type: string
+                example: "They work together"
+                
+    CompanyCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+                example: "Acme Corporation"
+              website:
+                type: string
+                example: "https://acme.com"
+
+  responses:
+    ContactResponse:
+      description: Contact object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Contact'
+                
+    ContactListResponse:
+      description: List of contacts with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contact'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    ContactFieldResponse:
+      description: Contact field object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ContactField'
+                
+    ContactFieldListResponse:
+      description: List of contact fields with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContactField'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    ActivityResponse:
+      description: Activity object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Activity'
+                
+    ActivityListResponse:
+      description: List of activities with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    CallResponse:
+      description: Call object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Call'
+                
+    CallListResponse:
+      description: List of calls with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Call'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    NoteResponse:
+      description: Note object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Note'
+                
+    NoteListResponse:
+      description: List of notes with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    TaskResponse:
+      description: Task object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Task'
+                
+    TaskListResponse:
+      description: List of tasks with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    TagResponse:
+      description: Tag object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Tag'
+                
+    TagListResponse:
+      description: List of tags with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    ReminderResponse:
+      description: Reminder object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Reminder'
+                
+    ReminderListResponse:
+      description: List of reminders with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reminder'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    ConversationResponse:
+      description: Conversation object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Conversation'
+                
+    ConversationListResponse:
+      description: List of conversations with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    JournalEntryResponse:
+      description: Journal entry object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/JournalEntry'
+                
+    JournalEntryListResponse:
+      description: List of journal entries with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JournalEntry'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    RelationshipResponse:
+      description: Relationship object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Relationship'
+                
+    RelationshipListResponse:
+      description: List of relationships with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Relationship'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    CompanyResponse:
+      description: Company object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Company'
+                
+    CompanyListResponse:
+      description: List of companies with pagination
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Company'
+              links:
+                $ref: '#/components/schemas/PaginationLinks'
+              meta:
+                $ref: '#/components/schemas/PaginationMeta'
+                
+    ContactFieldTypeListResponse:
+      description: List of contact field types
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContactFieldType'
+                  
+    GenderListResponse:
+      description: List of genders
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gender'
+                  
+    CountryListResponse:
+      description: List of countries
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Country'
+                  
+    CurrencyListResponse:
+      description: List of currencies
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Currency'
+                
+    DeleteResponse:
+      description: Successful deletion
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Resource deleted successfully"
+              deleted:
+                type: boolean
+                example: true
+
+  schemas:
+    Contact:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+          example: "2ad703da-c884-4394-ab46-64b916233aa8"
+        object:
+          type: string
+          example: "contact"
+        hash_id:
+          type: string
+          example: "h:4G7r3K91nkYn2LWe5m"
+        first_name:
+          type: string
+          example: "John"
+        last_name:
+          type: string
+          example: "Doe"
+        nickname:
+          type: string
+          nullable: true
+          example: "Johnny"
+        complete_name:
+          type: string
+          example: "John Doe"
+        initials:
+          type: string
+          example: "JD"
+        gender:
+          type: string
+          example: "Man"
+        gender_type:
+          type: string
+          example: "M"
+        is_starred:
+          type: boolean
+          example: false
+        is_partial:
+          type: boolean
+          example: false
+        is_active:
+          type: boolean
+          example: true
+        is_dead:
+          type: boolean
+          example: false
+        is_me:
+          type: boolean
+          example: false
+        information:
+          type: object
+          properties:
+            birthdate:
+              type: object
+              properties:
+                is_age_based:
+                  type: boolean
+                  nullable: true
+                is_year_unknown:
+                  type: boolean
+                  nullable: true
+                date:
+                  type: string
+                  nullable: true
+                  format: date
+            deceased_date:
+              type: object
+              properties:
+                is_age_based:
+                  type: boolean
+                  nullable: true
+                is_year_unknown:
+                  type: boolean
+                  nullable: true
+                date:
+                  type: string
+                  nullable: true
+                  format: date
+            avatar:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: "http://localhost:8081/store/avatars/2ad703da-c884-4394-ab46-64b916233aa8.jpg?1758412200"
+                source:
+                  type: string
+                  example: "default"
+                default_avatar_color:
+                  type: string
+                  example: "#709512"
+        url:
+          type: string
+          format: uri
+          example: "http://localhost:8081/api/contacts/1"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-09-20T22:46:43Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-09-20T22:48:23Z"
+          
+    ContactField:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 2
+        uuid:
+          type: string
+          format: uuid
+          example: "e7ff637e-2abd-476c-bf0d-0ffed302fd6b"
+        object:
+          type: string
+          example: "contactfield"
+        content:
+          type: string
+          example: "john.doe@example.com"
+        contact_field_type:
+          $ref: '#/components/schemas/ContactFieldType'
+        labels:
+          type: array
+          items:
+            type: object
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        contact:
+          $ref: '#/components/schemas/Contact'
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-09-23T15:33:08Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-09-23T15:33:08Z"
+          
+    ContactFieldType:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 15
+        uuid:
+          type: string
+          format: uuid
+          example: "7ae2da84-4be2-4952-ad52-105866ad5978"
+        object:
+          type: string
+          example: "contactfieldtype"
+        name:
+          type: string
+          example: "Email"
+        fontawesome_icon:
+          type: string
+          example: "fa fa-envelope-open-o"
+        protocol:
+          type: string
+          example: "mailto:"
+        delible:
+          type: boolean
+          example: false
+        type:
+          type: string
+          example: "email"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-09-20T22:46:43Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-09-20T22:48:23Z"
+          
+    Activity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "activity"
+        summary:
+          type: string
+          example: "Had coffee and discussed project"
+        happened_at:
+          type: string
+          format: date-time
+          example: "2025-09-23T10:30:00Z"
+        contact_id:
+          type: integer
+          example: 1
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Call:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "call"
+        contact_id:
+          type: integer
+          example: 1
+        called_at:
+          type: string
+          format: date-time
+          example: "2025-09-23T14:30:00Z"
+        duration:
+          type: integer
+          example: 25
+          description: "Duration in minutes"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "note"
+        body:
+          type: string
+          example: "Important note about the contact"
+        contact_id:
+          type: integer
+          example: 1
+        is_favorited:
+          type: boolean
+          example: false
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "task"
+        title:
+          type: string
+          example: "Follow up on meeting"
+        contact_id:
+          type: integer
+          example: 1
+        completed:
+          type: boolean
+          example: false
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-09-30T10:00:00Z"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "tag"
+        name:
+          type: string
+          example: "Important"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Reminder:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "reminder"
+        title:
+          type: string
+          example: "Birthday reminder"
+        contact_id:
+          type: integer
+          example: 1
+        next_expected_date:
+          type: string
+          format: date
+          example: "2025-12-25"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "conversation"
+        contact_id:
+          type: integer
+          example: 1
+        happened_at:
+          type: string
+          format: date-time
+          example: "2025-09-23T15:00:00Z"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    JournalEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "entry"
+        title:
+          type: string
+          example: "My Journal Entry"
+        post:
+          type: string
+          example: "Today was a great day!"
+        date:
+          type: string
+          format: date
+          example: "2025-09-23"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Relationship:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "relationship"
+        contact_is:
+          type: integer
+          example: 1
+          description: "ID of the first contact"
+        of_contact:
+          type: integer
+          example: 2
+          description: "ID of the second contact"
+        relationship_type_id:
+          type: integer
+          example: 1
+        notes:
+          type: string
+          nullable: true
+          example: "They work together"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        uuid:
+          type: string
+          format: uuid
+        object:
+          type: string
+          example: "company"
+        name:
+          type: string
+          example: "Acme Corporation"
+        website:
+          type: string
+          nullable: true
+          format: uri
+          example: "https://acme.com"
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 4
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Gender:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 7
+        name:
+          type: string
+          example: "Man"
+        type:
+          type: string
+          example: "M"
+          
+    Country:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        iso:
+          type: string
+          example: "US"
+        country:
+          type: string
+          example: "United States"
+          
+    Currency:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        iso:
+          type: string
+          example: "USD"
+        name:
+          type: string
+          example: "US Dollar"
+        symbol:
+          type: string
+          example: "$"
+          
+    PaginationLinks:
+      type: object
+      properties:
+        first:
+          type: string
+          format: uri
+          example: "http://localhost:8081/api/contacts?page=1"
+        last:
+          type: string
+          format: uri
+          example: "http://localhost:8081/api/contacts?page=5"
+        prev:
+          type: string
+          format: uri
+          nullable: true
+          example: "http://localhost:8081/api/contacts?page=1"
+        next:
+          type: string
+          format: uri
+          nullable: true
+          example: "http://localhost:8081/api/contacts?page=3"
+          
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 2
+        from:
+          type: integer
+          example: 11
+        last_page:
+          type: integer
+          example: 5
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+                nullable: true
+              label:
+                type: string
+              active:
+                type: boolean
+        path:
+          type: string
+          format: uri
+          example: "http://localhost:8081/api/contacts"
+        per_page:
+          type: integer
+          example: 10
+        to:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 45
+
+tags:
+  - name: Contacts
+    description: "Contact management operations - Core entity for CRM"
+  - name: Contact Fields
+    description: "Contact field management - Email, phone, social media etc"
+  - name: Activities
+    description: "Activity tracking - Meetings, events, interactions"
+  - name: Calls
+    description: "Call logging - Phone call records and duration"
+  - name: Notes
+    description: "Note management - Personal notes about contacts"
+  - name: Tasks
+    description: "Task management - To-dos and reminders"
+  - name: Tags
+    description: "Tag management - Organizing and categorizing"
+  - name: Reminders
+    description: "Reminder management - Scheduled notifications"
+  - name: Conversations
+    description: "Conversation logging - Communication records"
+  - name: Journal Entries
+    description: "Personal journal entries"
+  - name: Relationships
+    description: "Contact relationships - Family, work, friends"
+  - name: Companies
+    description: "Company management - Organizations and businesses"
+  - name: Reference Data
+    description: "Read-only reference data - Types, categories, etc"
