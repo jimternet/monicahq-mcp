@@ -178,6 +178,133 @@ public class ContactService {
         }
     }
 
+    public Mono<Map<String, Object>> searchContacts(Map<String, Object> arguments) {
+        log.info("Searching contacts with arguments: {}", arguments);
+        
+        try {
+            Map<String, String> queryParams = buildSearchQueryParams(arguments);
+            
+            return monicaClient.get("/contacts", queryParams)
+                .map(this::formatContactListResponse)
+                .doOnSuccess(result -> log.info("Contact search completed successfully"))
+                .doOnError(error -> log.error("Failed to search contacts: {}", error.getMessage()));
+                
+        } catch (Exception e) {
+            log.error("Error building search parameters: {}", e.getMessage());
+            return Mono.error(e);
+        }
+    }
+
+    public Mono<Map<String, Object>> updateContactCareer(Map<String, Object> arguments) {
+        log.info("Updating contact career with arguments: {}", arguments);
+        
+        try {
+            Long contactId = extractContactId(arguments);
+            
+            // Create career update data
+            Map<String, Object> careerData = new HashMap<>();
+            if (arguments.containsKey("jobTitle")) {
+                careerData.put("job_title", arguments.get("jobTitle"));
+            }
+            if (arguments.containsKey("company")) {
+                careerData.put("company", arguments.get("company"));
+            }
+            if (arguments.containsKey("startDate")) {
+                careerData.put("start_date", arguments.get("startDate"));
+            }
+            if (arguments.containsKey("endDate")) {
+                careerData.put("end_date", arguments.get("endDate"));
+            }
+            if (arguments.containsKey("salary")) {
+                careerData.put("salary", arguments.get("salary"));
+            }
+            
+            return monicaClient.put("/contacts/" + contactId + "/work", careerData)
+                .map(this::formatContactResponse)
+                .doOnSuccess(result -> log.info("Contact career updated successfully: {}", contactId))
+                .doOnError(error -> log.error("Failed to update contact career {}: {}", contactId, error.getMessage()));
+                
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid arguments for contact career update: {}", e.getMessage());
+            return Mono.error(e);
+        }
+    }
+
+    public Mono<Map<String, Object>> getContactAuditLogs(Map<String, Object> arguments) {
+        log.info("Getting contact audit logs with arguments: {}", arguments);
+        
+        try {
+            Long contactId = extractContactId(arguments);
+            Map<String, String> queryParams = buildListQueryParams(arguments);
+            
+            return monicaClient.get("/contacts/" + contactId + "/logs", queryParams)
+                .map(this::formatAuditLogListResponse)
+                .doOnSuccess(result -> log.info("Contact audit logs retrieved successfully: {}", contactId))
+                .doOnError(error -> log.error("Failed to get contact audit logs {}: {}", contactId, error.getMessage()));
+                
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid arguments for contact audit logs: {}", e.getMessage());
+            return Mono.error(e);
+        }
+    }
+
+    private Map<String, String> buildSearchQueryParams(Map<String, Object> arguments) {
+        Map<String, String> queryParams = new HashMap<>();
+        
+        // Handle pagination
+        if (arguments.containsKey("page")) {
+            queryParams.put("page", arguments.get("page").toString());
+        } else {
+            queryParams.put("page", "1");
+        }
+        
+        if (arguments.containsKey("limit")) {
+            int limit = Math.min(100, Math.max(1, Integer.parseInt(arguments.get("limit").toString())));
+            queryParams.put("limit", String.valueOf(limit));
+        } else {
+            queryParams.put("limit", "10");
+        }
+        
+        // Handle search query (required for search operation)
+        if (arguments.containsKey("query") && arguments.get("query") != null) {
+            queryParams.put("query", arguments.get("query").toString());
+        } else {
+            // Default to empty query for search (list all if no query)
+            queryParams.put("query", "");
+        }
+        
+        return queryParams;
+    }
+
+    private Map<String, Object> formatAuditLogListResponse(Map<String, Object> apiResponse) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> auditLogs = (List<Map<String, Object>>) apiResponse.get("data");
+        
+        // Format content as escaped JSON for Claude Desktop accessibility
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", auditLogs);
+        
+        // Extract and preserve meta from API response
+        @SuppressWarnings("unchecked")
+        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
+        if (meta != null) {
+            result.put("meta", meta);
+        }
+        
+        // Add content field for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
+    }
+
     private void validateContactCreateArguments(Map<String, Object> arguments) {
         if (arguments == null || arguments.isEmpty()) {
             throw new IllegalArgumentException("Contact creation arguments cannot be empty");
