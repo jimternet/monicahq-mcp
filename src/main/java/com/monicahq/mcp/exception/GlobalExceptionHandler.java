@@ -129,6 +129,46 @@ public class GlobalExceptionHandler {
         return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public Mono<ResponseEntity<Map<String, Object>>> handleIllegalStateException(
+            IllegalStateException ex, ServerWebExchange exchange) {
+        
+        LoggingConfig.McpLoggingContext.setServiceContext("GlobalExceptionHandler", "handleIllegalStateException");
+        
+        // Check if this is a known API availability issue
+        if (ex.getMessage().contains("API is not available") || 
+            ex.getMessage().contains("may not be available") ||
+            ex.getMessage().contains("admin-only") ||
+            ex.getMessage().contains("not implemented")) {
+            
+            log.warn("API availability issue: {}", ex.getMessage());
+            
+            Map<String, Object> errorResponse = createMcpErrorResponse(
+                McpErrorCodes.API_NOT_AVAILABLE, // Custom error code for API availability
+                "API endpoint not available: " + ex.getMessage(),
+                Map.of(
+                    "type", "availability_error",
+                    "suggestion", "This API may require administrator privileges or may not be implemented in this Monica version"
+                )
+            );
+            
+            LoggingConfig.McpLoggingContext.clearMcpContext();
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse));
+        }
+        
+        // Handle other IllegalStateException cases
+        log.error("Illegal state: {}", ex.getMessage(), ex);
+        
+        Map<String, Object> errorResponse = createMcpErrorResponse(
+            -32603, // Internal error
+            "System in illegal state: " + ex.getMessage(),
+            Map.of("type", "illegal_state")
+        );
+        
+        LoggingConfig.McpLoggingContext.clearMcpContext();
+        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
+    }
+
     @ExceptionHandler(Exception.class)
     public Mono<ResponseEntity<Map<String, Object>>> handleGenericException(
             Exception ex, ServerWebExchange exchange) {
@@ -213,5 +253,6 @@ public class GlobalExceptionHandler {
         public static final int VALIDATION_ERROR = -32003;
         public static final int TOOL_EXECUTION_ERROR = -32004;
         public static final int WEBSOCKET_ERROR = -32005;
+        public static final int API_NOT_AVAILABLE = -32006; // API Gap Fix: Not available APIs
     }
 }

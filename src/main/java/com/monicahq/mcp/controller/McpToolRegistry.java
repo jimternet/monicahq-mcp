@@ -58,10 +58,14 @@ public class McpToolRegistry {
     // Discovery services - Constitutional Principle VII
     private final GenderService genderService;
     private final ContactFieldTypeService contactFieldTypeService;
+    
+    // API Gap Fix services - Missing Operations Implementation
+    private final UserService userService;
+    private final ComplianceService complianceService;
 
     @PostConstruct
     public void initializeTools() {
-        log.info("Initializing MCP tool registry with 122 operations");
+        log.info("Initializing MCP tool registry with 136 operations"); // 122 + 14 new API gap fix operations
         
         // === CONTACT MANAGEMENT (12 operations) ===
         // Core contact operations (5)
@@ -81,6 +85,12 @@ public class McpToolRegistry {
         // Contact tag operations (2)
         registerTool("contacttag_add", "[Contact Tag] Add a tag to a contact", createContactTagSchema(), "Contact Management");
         registerTool("contacttag_remove", "[Contact Tag] Remove a tag from a contact", createContactTagSchema(), "Contact Management");
+        
+        // Contact gap fix operations (4) - API Gap Implementation
+        registerTool("contact_search", "[Contact] Search contacts by query", createContactSearchSchema(), "Contact Management");
+        registerTool("contact_career_update", "[Contact] Update contact career/work information", createContactCareerSchema(), "Contact Management");
+        registerTool("contact_audit_logs", "[Contact] Get contact audit logs/history", createContactAuditLogSchema(), "Contact Management");
+        registerTool("contacts_by_tag", "[Contact] List contacts filtered by tag", createContactsByTagSchema(), "Contact Management");
         
         // === RELATIONSHIP MANAGEMENT (9 operations) ===
         // Relationship operations (5)
@@ -185,6 +195,22 @@ public class McpToolRegistry {
         // === DISCOVERY TOOLS (Constitutional Principle VII) ===
         registerTool("gender_list", "[Discovery] List all available genders", createListOnlySchema(), "Discovery & Reference");
         registerTool("contact_field_type_list", "[Discovery] List all available contact field types", createListOnlySchema(), "Discovery & Reference");
+        
+        // === USER MANAGEMENT (5 operations) ===
+        // Note: Users API may not be available in all Monica configurations
+        registerTool("user_create", "[User] Create a new user account", createUserSchema(), "User Management");
+        registerTool("user_get", "[User] Get a user by ID", createIdSchema("User ID"), "User Management");
+        registerTool("user_update", "[User] Update an existing user", createUserUpdateSchema(), "User Management");
+        registerTool("user_delete", "[User] Delete a user", createIdSchema("User ID"), "User Management");
+        registerTool("user_list", "[User] List users with pagination", createListSchema(), "User Management");
+        
+        // === COMPLIANCE MANAGEMENT (5 operations) ===
+        // Note: Compliance API endpoints may not be clearly defined in all Monica versions
+        registerTool("compliance_create", "[Compliance] Create a new compliance record", createComplianceSchema(), "Compliance Management");
+        registerTool("compliance_get", "[Compliance] Get a compliance record by ID", createIdSchema("Compliance ID"), "Compliance Management");
+        registerTool("compliance_update", "[Compliance] Update an existing compliance record", createComplianceUpdateSchema(), "Compliance Management");
+        registerTool("compliance_delete", "[Compliance] Delete a compliance record", createIdSchema("Compliance ID"), "Compliance Management");
+        registerTool("compliance_list", "[Compliance] List compliance records with pagination", createListSchema(), "Compliance Management");
         
         // === PRODUCTIVITY & ORGANIZATION (20 operations) ===
         // Note operations (5) - frequently used with contacts
@@ -296,6 +322,12 @@ public class McpToolRegistry {
             case "contact_update" -> contactService.updateContact(arguments);
             case "contact_delete" -> contactService.deleteContact(arguments);
             case "contact_list" -> contactService.listContacts(arguments);
+            
+            // Contact gap fix operations - API Gap Implementation
+            case "contact_search" -> contactService.searchContacts(arguments);
+            case "contact_career_update" -> contactService.updateContactCareer(arguments);
+            case "contact_audit_logs" -> contactService.getContactAuditLogs(arguments);
+            case "contacts_by_tag" -> tagService.listContactsByTag(arguments);
             
             // Activity operations
             case "activity_create" -> activityService.createActivity(arguments);
@@ -472,6 +504,20 @@ public class McpToolRegistry {
             // Discovery operations (Constitutional Principle VII)
             case "gender_list" -> genderService.listGenders(arguments);
             case "contact_field_type_list" -> contactFieldTypeService.listContactFieldTypes(arguments);
+            
+            // User Management operations - API Gap Implementation
+            case "user_create" -> userService.createUser(arguments);
+            case "user_get" -> userService.getUser(arguments);
+            case "user_update" -> userService.updateUser(arguments);
+            case "user_delete" -> userService.deleteUser(arguments);
+            case "user_list" -> userService.listUsers(arguments);
+            
+            // Compliance Management operations - API Gap Implementation
+            case "compliance_create" -> complianceService.createCompliance(arguments);
+            case "compliance_get" -> complianceService.getCompliance(arguments);
+            case "compliance_update" -> complianceService.updateCompliance(arguments);
+            case "compliance_delete" -> complianceService.deleteCompliance(arguments);
+            case "compliance_list" -> complianceService.listCompliance(arguments);
             
             default -> Mono.error(new UnsupportedOperationException("Tool not implemented: " + toolName));
         };
@@ -1488,6 +1534,213 @@ public class McpToolRegistry {
             ),
             "additionalProperties", false
         );
+    }
+    
+    // API Gap Fix Schema Methods - Contact Operations
+    private Map<String, Object> createContactSearchSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "query", Map.of(
+                    "type", "string",
+                    "description", "Search query for contacts (name, email, etc.)"
+                ),
+                "page", Map.of(
+                    "type", "integer",
+                    "description", "Page number (default: 1)",
+                    "minimum", 1
+                ),
+                "limit", Map.of(
+                    "type", "integer",
+                    "description", "Number of results per page (default: 10, max: 100)",
+                    "minimum", 1,
+                    "maximum", 100
+                )
+            ),
+            "required", List.of()
+        );
+    }
+    
+    private Map<String, Object> createContactCareerSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "id", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID (required)"
+                ),
+                "jobTitle", Map.of(
+                    "type", "string",
+                    "description", "Job title"
+                ),
+                "company", Map.of(
+                    "type", "string",
+                    "description", "Company name"
+                ),
+                "startDate", Map.of(
+                    "type", "string",
+                    "format", "date",
+                    "description", "Start date in YYYY-MM-DD format"
+                ),
+                "endDate", Map.of(
+                    "type", "string",
+                    "format", "date",
+                    "description", "End date in YYYY-MM-DD format (optional)"
+                ),
+                "salary", Map.of(
+                    "type", "string",
+                    "description", "Salary information"
+                )
+            ),
+            "required", List.of("id")
+        );
+    }
+    
+    private Map<String, Object> createContactAuditLogSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "id", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID (required)"
+                ),
+                "page", Map.of(
+                    "type", "integer",
+                    "description", "Page number (default: 1)",
+                    "minimum", 1
+                ),
+                "limit", Map.of(
+                    "type", "integer",
+                    "description", "Number of results per page (default: 20, max: 100)",
+                    "minimum", 1,
+                    "maximum", 100
+                )
+            ),
+            "required", List.of("id")
+        );
+    }
+    
+    private Map<String, Object> createContactsByTagSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "tagId", Map.of(
+                    "type", "integer",
+                    "description", "Tag ID (required)"
+                ),
+                "page", Map.of(
+                    "type", "integer",
+                    "description", "Page number (default: 1)",
+                    "minimum", 1
+                ),
+                "limit", Map.of(
+                    "type", "integer",
+                    "description", "Number of results per page (default: 10, max: 100)",
+                    "minimum", 1,
+                    "maximum", 100
+                )
+            ),
+            "required", List.of("tagId")
+        );
+    }
+    
+    // User Management Schema Methods
+    private Map<String, Object> createUserSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "firstName", Map.of(
+                    "type", "string",
+                    "description", "First name (required)",
+                    "maxLength", 255
+                ),
+                "lastName", Map.of(
+                    "type", "string",
+                    "description", "Last name",
+                    "maxLength", 255
+                ),
+                "email", Map.of(
+                    "type", "string",
+                    "format", "email",
+                    "description", "Email address (required)",
+                    "maxLength", 255
+                ),
+                "timezone", Map.of(
+                    "type", "string",
+                    "description", "User timezone"
+                ),
+                "locale", Map.of(
+                    "type", "string",
+                    "description", "User locale"
+                ),
+                "currency", Map.of(
+                    "type", "string",
+                    "description", "User currency"
+                ),
+                "isAdministrator", Map.of(
+                    "type", "boolean",
+                    "description", "Administrator flag"
+                )
+            ),
+            "required", List.of("firstName", "email")
+        );
+    }
+    
+    private Map<String, Object> createUserUpdateSchema() {
+        return createUpdateSchema(createUserSchema());
+    }
+    
+    // Compliance Management Schema Methods
+    private Map<String, Object> createComplianceSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Associated contact ID"
+                ),
+                "type", Map.of(
+                    "type", "string",
+                    "description", "Compliance type (required)",
+                    "maxLength", 100
+                ),
+                "description", Map.of(
+                    "type", "string",
+                    "description", "Compliance description",
+                    "maxLength", 500
+                ),
+                "isActive", Map.of(
+                    "type", "boolean",
+                    "description", "Active status"
+                ),
+                "dataRetentionDays", Map.of(
+                    "type", "integer",
+                    "description", "Data retention period in days"
+                ),
+                "privacyLevel", Map.of(
+                    "type", "string",
+                    "description", "Privacy level"
+                ),
+                "consentGiven", Map.of(
+                    "type", "boolean",
+                    "description", "Consent status"
+                ),
+                "consentDate", Map.of(
+                    "type", "string",
+                    "format", "date-time",
+                    "description", "Consent date"
+                ),
+                "auditRequired", Map.of(
+                    "type", "boolean",
+                    "description", "Audit requirement flag"
+                )
+            ),
+            "required", List.of("type")
+        );
+    }
+    
+    private Map<String, Object> createComplianceUpdateSchema() {
+        return createUpdateSchema(createComplianceSchema());
     }
 
     // Inner class for MCP tools

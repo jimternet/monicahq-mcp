@@ -270,4 +270,78 @@ public class TagService {
         
         return result;
     }
+
+    public Mono<Map<String, Object>> listContactsByTag(Map<String, Object> arguments) {
+        log.info("Listing contacts by tag with arguments: {}", arguments);
+        
+        try {
+            Long tagId = extractTagId(arguments);
+            Map<String, String> queryParams = buildListQueryParams(arguments);
+            
+            return monicaClient.get("/tags/" + tagId + "/contacts", queryParams)
+                .map(this::formatContactsByTagResponse)
+                .doOnSuccess(result -> log.info("Contacts by tag retrieved successfully: {}", tagId))
+                .doOnError(error -> log.error("Failed to get contacts by tag {}: {}", tagId, error.getMessage()));
+                
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid arguments for contacts by tag: {}", e.getMessage());
+            return Mono.error(e);
+        }
+    }
+
+    private Map<String, Object> formatContactsByTagResponse(Map<String, Object> apiResponse) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> contacts = (List<Map<String, Object>>) apiResponse.get("data");
+        
+        // Format contact data
+        List<Map<String, Object>> formattedContacts = contacts.stream()
+            .map(this::mapContactFromApiFormat)
+            .toList();
+        
+        // Format content as escaped JSON for Claude Desktop accessibility
+        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", formattedContacts);
+        
+        // Extract and preserve meta from API response
+        @SuppressWarnings("unchecked")
+        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
+        if (meta != null) {
+            result.put("meta", meta);
+        }
+        
+        // Add content field for Claude Desktop visibility
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+        
+        return result;
+    }
+
+    private Map<String, Object> mapContactFromApiFormat(Map<String, Object> apiData) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // Map snake_case to camelCase for contact data
+        apiData.forEach((key, value) -> {
+            switch (key) {
+                case "first_name" -> result.put("firstName", value);
+                case "last_name" -> result.put("lastName", value);
+                case "gender_id" -> result.put("genderId", value);
+                case "is_birthdate_known" -> result.put("isBirthdateKnown", value);
+                case "is_deceased" -> result.put("isDeceased", value);
+                case "is_deceased_date_known" -> result.put("isDeceasedDateKnown", value);
+                case "job_title" -> result.put("jobTitle", value);
+                case "created_at" -> result.put("createdAt", value);
+                case "updated_at" -> result.put("updatedAt", value);
+                default -> result.put(key, value);
+            }
+        });
+        
+        return result;
+    }
 }

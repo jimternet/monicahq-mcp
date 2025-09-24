@@ -119,7 +119,13 @@ public class TestMonicaHqClient extends MonicaHqClient {
                 data.put("status", "success");
                 data.put("message", "Tag operation completed successfully");
             }
-        } else if (endpoint.contains("/contacts") && !endpoint.contains("/contactfields") && !endpoint.contains("/setTags")) {
+        } else if (endpoint.contains("/work")) {
+            // Handle /contacts/{id}/work endpoint for career updates
+            data.put("job", getValueFromRequest(requestBody, "job", "job", "Software Developer"));
+            data.put("company", getValueFromRequest(requestBody, "company", "company", "Tech Corp"));
+            data.put("salary", getValueFromRequest(requestBody, "salary", "salary", null));
+            data.put("created_at", "2025-09-13T12:00:00Z");
+        } else if (endpoint.contains("/contacts") && !endpoint.contains("/contactfields") && !endpoint.contains("/setTags") && !endpoint.contains("/work")) {
             data.put("id", idFromEndpoint != null ? idFromEndpoint : 123);
             data.put("first_name", getValueFromRequest(requestBody, "firstName", "first_name", "John"));
             data.put("last_name", getValueFromRequest(requestBody, "lastName", "last_name", "Doe"));
@@ -257,7 +263,7 @@ public class TestMonicaHqClient extends MonicaHqClient {
             data.put("date", getValueFromRequest(requestBody, "date", "date", "2025-12-25"));
             data.put("is_for", getValueFromRequest(requestBody, "isFor", "is_for", "Birthday"));
             data.put("created_at", "2025-09-13T21:00:00Z");
-        } else if (endpoint.contains("/auditlogs")) {
+        } else if (endpoint.contains("/auditlogs") || endpoint.contains("/logs")) {
             data.put("id", idFromEndpoint != null ? idFromEndpoint : 1005);
             data.put("action", "create");
             data.put("auditable_type", "Contact");
@@ -281,6 +287,20 @@ public class TestMonicaHqClient extends MonicaHqClient {
             data.put("symbol", "$");
             data.put("exchange_rate", 1.0);
             data.put("created_at", "2025-09-13T23:30:00Z");
+        } else if (endpoint.contains("/users")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1);
+            data.put("first_name", getValueFromRequest(requestBody, "firstName", "first_name", "John"));
+            data.put("last_name", getValueFromRequest(requestBody, "lastName", "last_name", "Doe"));
+            data.put("email", getValueFromRequest(requestBody, "email", "email", "john.doe@example.com"));
+            data.put("is_administrator", getValueFromRequest(requestBody, "isAdministrator", "is_administrator", false));
+            data.put("created_at", "2025-09-13T10:00:00Z");
+        } else if (endpoint.contains("/compliance")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1);
+            data.put("type", getValueFromRequest(requestBody, "type", "type", "terms_of_service"));
+            data.put("description", getValueFromRequest(requestBody, "description", "description", "Terms of Service"));
+            data.put("content", getValueFromRequest(requestBody, "content", "content", "Legal compliance document content"));
+            data.put("version", "1.0");
+            data.put("created_at", "2025-09-13T09:00:00Z");
         } else {
             // Generic response for other endpoints
             data.put("id", 999);
@@ -303,9 +323,11 @@ public class TestMonicaHqClient extends MonicaHqClient {
             || endpoint.equals("/companies")
             || endpoint.equals("/debts") || endpoint.equals("/documents") || endpoint.equals("/photos")
             || endpoint.equals("/gifts") || endpoint.equals("/auditlogs") || endpoint.equals("/countries")
-            || endpoint.equals("/currencies")
+            || endpoint.contains("/logs")
+            || endpoint.equals("/currencies") || endpoint.equals("/users") || endpoint.equals("/compliance")
             || (endpoint.contains("/contactfields") && endpoint.endsWith("/contactfields"))
             || (endpoint.contains("/messages") && endpoint.endsWith("/messages"))
+            || (endpoint.contains("/tags") && endpoint.contains("/contacts"))
         );
         
         if (isListEndpoint) {
@@ -358,12 +380,22 @@ public class TestMonicaHqClient extends MonicaHqClient {
             items.add(Map.of("id", 1003L, "contact_id", 123L, "filename", "photo.jpg", "width", 800, "height", 600, "filesize", 102400));
         } else if (endpoint.equals("/gifts")) {
             items.add(Map.of("id", 1004L, "contact_id", 123L, "name", "Gift name", "value", 99.99, "status", "idea", "date", "2025-12-25"));
-        } else if (endpoint.equals("/auditlogs")) {
-            items.add(Map.of("id", 1005L, "action", "create", "auditable_type", "Contact", "auditable_id", 123L, "user_id", 1L, "user_name", "Test User"));
+        } else if (endpoint.equals("/auditlogs") || endpoint.contains("/logs")) {
+            items.add(Map.of("id", 1005L, "action", "create", "auditable_type", "Contact", "auditable_id", 123L, "user_id", 1L, "user_name", "Test User", "created_at", "2025-09-13T22:00:00Z"));
         } else if (endpoint.equals("/countries")) {
             items.add(Map.of("id", 1006L, "name", "United States", "country_code", "US"));
         } else if (endpoint.equals("/currencies")) {
             items.add(Map.of("id", 1007L, "code", "USD", "name", "US Dollar", "symbol", "$", "exchange_rate", 1.0));
+        } else if (endpoint.contains("/tags") && endpoint.contains("/contacts")) {
+            // For /tags/{id}/contacts endpoint - return contacts associated with a tag
+            items.add(Map.of("id", 123L, "first_name", "John", "last_name", "Doe", "email", "john.doe@example.com"));
+            items.add(Map.of("id", 124L, "first_name", "Jane", "last_name", "Smith", "email", "jane.smith@example.com"));
+        } else if (endpoint.equals("/users")) {
+            items.add(Map.of("id", 1L, "first_name", "John", "last_name", "Admin", "email", "admin@example.com", "is_administrator", true));
+            items.add(Map.of("id", 2L, "first_name", "Jane", "last_name", "User", "email", "user@example.com", "is_administrator", false));
+        } else if (endpoint.equals("/compliance")) {
+            items.add(Map.of("id", 1L, "type", "terms_of_service", "description", "Terms of Service", "version", "1.0"));
+            items.add(Map.of("id", 2L, "type", "privacy_policy", "description", "Privacy Policy", "version", "1.0"));
         }
         
         // Extract pagination params
