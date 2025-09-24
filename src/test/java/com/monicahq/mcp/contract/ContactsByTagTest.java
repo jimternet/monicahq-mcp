@@ -41,7 +41,7 @@ public class ContactsByTagTest {
             "params", Map.of(
                 "name", "contacts_by_tag",
                 "arguments", Map.of(
-                    "tagId", 1L,
+                    "id", 1L,
                     "limit", 10
                 )
             ),
@@ -105,7 +105,7 @@ public class ContactsByTagTest {
         // Should have error field for missing required parameter
         assertTrue(response.has("error"));
         JsonNode error = response.get("error");
-        assertTrue(error.get("message").asText().toLowerCase().contains("tag"));
+        assertTrue(error.get("message").asText().toLowerCase().contains("id"));
     }
 
     @Test
@@ -119,7 +119,7 @@ public class ContactsByTagTest {
             "params", Map.of(
                 "name", "contacts_by_tag",
                 "arguments", Map.of(
-                    "tagId", 1L,
+                    "id", 1L,
                     "page", 2,
                     "limit", 5
                 )
@@ -156,7 +156,7 @@ public class ContactsByTagTest {
             "params", Map.of(
                 "name", "contacts_by_tag",
                 "arguments", Map.of(
-                    "tagId", 888L  // Assume this tag has no contacts
+                    "id", 888L  // Assume this tag has no contacts
                 )
             ),
             "id", "test-empty-tag"
@@ -189,7 +189,7 @@ public class ContactsByTagTest {
             "params", Map.of(
                 "name", "contacts_by_tag",
                 "arguments", Map.of(
-                    "tagId", 99999L  // Non-existent tag
+                    "id", 99999L  // Non-existent tag
                 )
             ),
             "id", "test-nonexistent-tag"
@@ -218,7 +218,7 @@ public class ContactsByTagTest {
             "params", Map.of(
                 "name", "contacts_by_tag",
                 "arguments", Map.of(
-                    "tagId", 1L,
+                    "id", 1L,
                     "limit", -5  // Invalid limit
                 )
             ),

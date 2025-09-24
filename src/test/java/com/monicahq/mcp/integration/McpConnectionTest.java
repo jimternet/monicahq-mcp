@@ -92,7 +92,7 @@ public class McpConnectionTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> tools = (List<Map<String, Object>>) result.get("tools");
         assertNotNull(tools);
-        assertEquals(122, tools.size()); // Phase 4.1-4.3: Total operations including new entities (Debt, Document, Photo, Gift, AuditLog, Country, Currency)
+        assertEquals(136, tools.size()); // Phase 4.1-4.3 + API Gap Fixes: Total operations including new entities (Debt, Document, Photo, Gift, AuditLog, Country, Currency) + 14 API gap fix operations
     }
 
     @Test
