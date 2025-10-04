@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +18,8 @@ public class McpMessageHandler {
 
     private final McpToolRegistry toolRegistry;
     private final ObjectMapper objectMapper;
+    
+    private static final boolean DEBUG_MODE = Boolean.parseBoolean(System.getenv().getOrDefault("MCP_DEBUG", "false"));
 
     public Map<String, Object> handleMessage(JsonNode message) {
         return handleMessage(message, null);
@@ -25,20 +28,38 @@ public class McpMessageHandler {
     public Map<String, Object> handleMessage(JsonNode message, String authHeader) {
         Object id = getMessageId(message);
         
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] Processing message with id: {}", id);
+            log.debug("[MCP-DEBUG] Message content: {}", message.toString());
+            if (authHeader != null) {
+                log.debug("[MCP-DEBUG] Auth header present: {}", authHeader.substring(0, Math.min(20, authHeader.length())) + "...");
+            }
+        }
+        
         try {
             // Validate JSON-RPC format
             if (!message.has("jsonrpc") || !"2.0".equals(message.get("jsonrpc").asText())) {
+                if (DEBUG_MODE) {
+                    log.debug("[MCP-DEBUG] Invalid JSON-RPC format: missing or invalid jsonrpc field");
+                }
                 return createErrorResponse(id, -32600, "Invalid Request", "Missing or invalid jsonrpc field");
             }
             
             if (!message.has("method")) {
+                if (DEBUG_MODE) {
+                    log.debug("[MCP-DEBUG] Invalid message: missing method field");
+                }
                 return createErrorResponse(id, -32600, "Invalid Request", "Missing method field");
             }
             
             String method = message.get("method").asText();
-            log.debug("Handling MCP method: {} with id: {}", method, id);
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] Handling MCP method: {} with id: {}", method, id);
+            } else {
+                log.debug("Handling MCP method: {} with id: {}", method, id);
+            }
             
-            return switch (method) {
+            Map<String, Object> response = switch (method) {
                 case "initialize" -> handleInitialize(message, id);
                 case "tools/list" -> handleToolsList(message, id);
                 case "tools/call" -> handleToolsCall(message, id, authHeader);
@@ -47,6 +68,9 @@ public class McpMessageHandler {
                 case "prompts/list" -> handlePromptsList(message, id);
                 case "resources/list" -> handleResourcesList(message, id);
                 default -> {
+                    if (DEBUG_MODE) {
+                        log.debug("[MCP-DEBUG] Unknown method: {}", method);
+                    }
                     // For notifications (no id), don't send a response
                     if (id == null) {
                         yield null; // No response for notifications
@@ -55,67 +79,189 @@ public class McpMessageHandler {
                 }
             };
             
+            if (DEBUG_MODE && response != null) {
+                log.debug("[MCP-DEBUG] Response for method '{}' (id: {}): {}", method, id, 
+                    response.toString().length() > 200 ? 
+                    response.toString().substring(0, 200) + "..." : 
+                    response.toString());
+            }
+            
+            return response;
+            
         } catch (Exception e) {
-            log.error("Error handling MCP message: {}", e.getMessage(), e);
+            if (DEBUG_MODE) {
+                log.error("[MCP-DEBUG] Error handling MCP message: {}", e.getMessage(), e);
+            } else {
+                log.error("Error handling MCP message: {}", e.getMessage(), e);
+            }
             return createErrorResponse(id, -32603, "Internal error", e.getMessage());
         }
     }
 
     private Map<String, Object> handleInitialize(JsonNode message, Object id) {
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] handleInitialize() called with id: {}", id);
+        }
         log.info("Initializing MCP connection");
         
-        // Extract client info if available
+        // Extract params and validate protocol version
         JsonNode params = message.get("params");
         String clientName = "unknown";
         String clientVersion = "unknown";
+        String clientProtocolVersion = null;
         
-        if (params != null && params.has("clientInfo")) {
-            JsonNode clientInfo = params.get("clientInfo");
-            clientName = clientInfo.has("name") ? clientInfo.get("name").asText() : clientName;
-            clientVersion = clientInfo.has("version") ? clientInfo.get("version").asText() : clientVersion;
+        if (params != null) {
+            // Extract client info
+            if (params.has("clientInfo")) {
+                JsonNode clientInfo = params.get("clientInfo");
+                clientName = clientInfo.has("name") ? clientInfo.get("name").asText() : clientName;
+                clientVersion = clientInfo.has("version") ? clientInfo.get("version").asText() : clientVersion;
+            }
+            
+            // Extract protocol version
+            if (params.has("protocolVersion")) {
+                clientProtocolVersion = params.get("protocolVersion").asText();
+            }
         }
         
-        log.info("MCP client initialized: {} v{}", clientName, clientVersion);
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] Client info - name: {}, version: {}, protocol: {}", 
+                clientName, clientVersion, clientProtocolVersion);
+        }
         
+        // Validate protocol version
+        String serverProtocolVersion = "2024-11-05";
+        if (clientProtocolVersion != null) {
+            if (!isCompatibleProtocolVersion(clientProtocolVersion, serverProtocolVersion)) {
+                String errorMessage = String.format(
+                    "Unsupported protocol version '%s'. Server supports '%s'", 
+                    clientProtocolVersion, serverProtocolVersion);
+                
+                if (DEBUG_MODE) {
+                    log.debug("[MCP-DEBUG] Protocol version mismatch: client={}, server={}", 
+                        clientProtocolVersion, serverProtocolVersion);
+                }
+                
+                return createErrorResponse(id, -32600, "Invalid Request", errorMessage);
+            }
+            
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] Protocol version negotiated successfully: {}", clientProtocolVersion);
+            }
+        } else {
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] No protocol version provided by client, using server default: {}", 
+                    serverProtocolVersion);
+            }
+        }
+        
+        log.info("MCP client initialized: {} v{} (protocol: {})", 
+            clientName, clientVersion, clientProtocolVersion != null ? clientProtocolVersion : serverProtocolVersion);
+        
+        // Build server info
         Map<String, Object> serverInfo = Map.of(
             "name", "monicahq-mcp-server",
             "version", "0.1.0"
         );
         
+        // Build capabilities with enhanced debug support
+        Map<String, Object> toolCapabilities = new HashMap<>();
+        toolCapabilities.put("listChanged", false);
+        
+        if (DEBUG_MODE) {
+            toolCapabilities.put("debugMode", true);
+            toolCapabilities.put("detailedErrors", true);
+        }
+        
         Map<String, Object> capabilities = Map.of(
-            "tools", Map.of(
-                "listChanged", false
+            "tools", toolCapabilities,
+            "logging", Map.of(
+                "level", DEBUG_MODE ? "debug" : "info"
             )
         );
         
+        // Build result with negotiated protocol version
         Map<String, Object> result = Map.of(
-            "protocolVersion", "2024-11-05",
+            "protocolVersion", serverProtocolVersion,
             "serverInfo", serverInfo,
             "capabilities", capabilities
         );
         
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] Initialize response: protocol={}, capabilities={}", 
+                serverProtocolVersion, capabilities);
+        }
+        
         return createSuccessResponse(id, result);
+    }
+    
+    /**
+     * Checks if the client protocol version is compatible with the server
+     * @param clientVersion Client protocol version
+     * @param serverVersion Server protocol version
+     * @return true if compatible, false otherwise
+     */
+    private boolean isCompatibleProtocolVersion(String clientVersion, String serverVersion) {
+        if (clientVersion == null || serverVersion == null) {
+            return false;
+        }
+        
+        // For now, we support exact match or known compatible versions
+        if (clientVersion.equals(serverVersion)) {
+            return true;
+        }
+        
+        // Known compatible versions
+        Set<String> compatibleVersions = Set.of(
+            "2024-11-05",   // Current supported version
+            "2024-10-07",   // Previous compatible version
+            "2024-06-25"    // Legacy compatible version
+        );
+        
+        return compatibleVersions.contains(clientVersion);
     }
 
     private Map<String, Object> handleToolsList(JsonNode message, Object id) {
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] handleToolsList() called with id: {}", id);
+        }
         log.debug("Listing available MCP tools");
         
         Map<String, Object> result = Map.of(
             "tools", toolRegistry.getAllTools()
         );
         
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] Returning {} tools in list", 
+                ((List<?>) result.get("tools")).size());
+        }
+        
         return createSuccessResponse(id, result);
     }
 
     private Map<String, Object> handleToolsCall(JsonNode message, Object id, String authHeader) {
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] handleToolsCall() called with id: {}", id);
+        }
+        
         JsonNode params = message.get("params");
         if (params == null) {
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] Missing params in tools/call");
+            }
             return createErrorResponse(id, -32602, "Invalid params", "Missing parameters");
         }
         
         String toolName = params.has("name") ? params.get("name").asText() : null;
         if (toolName == null || toolName.trim().isEmpty()) {
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] Missing or empty tool name");
+            }
             return createErrorResponse(id, -32602, "Invalid params", "Tool name is required");
+        }
+        
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] Calling tool: {} with id: {}", toolName, id);
         }
         
         JsonNode argumentsNode = params.get("arguments");
@@ -138,10 +284,19 @@ public class McpMessageHandler {
             }
         }
         
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] Tool arguments processed: {}", arguments);
+            log.debug("[MCP-DEBUG] Invoking tool registry for: {}", toolName);
+        }
         log.debug("Calling MCP tool: {} with arguments: {}", toolName, arguments);
         
         try {
             Object toolResult = toolRegistry.callTool(toolName, arguments);
+            
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] Tool {} executed successfully, result type: {}", 
+                    toolName, toolResult != null ? toolResult.getClass().getSimpleName() : "null");
+            }
             
             // Format the response according to MCP protocol expectations
             Map<String, Object> formattedResult = new HashMap<>();
@@ -174,10 +329,16 @@ public class McpMessageHandler {
             return createSuccessResponse(id, formattedResult);
             
         } catch (IllegalArgumentException e) {
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] Tool {} failed with IllegalArgumentException: {}", toolName, e.getMessage());
+            }
             log.warn("Invalid tool call: {}", e.getMessage());
             return createErrorResponse(id, -32602, "Invalid params", e.getMessage());
             
         } catch (RuntimeException e) {
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] Tool {} failed with RuntimeException: {}", toolName, e.getMessage(), e);
+            }
             // Check if this is an authentication failure
             if (e.getMessage() != null && e.getMessage().contains("Authentication failed")) {
                 log.warn("Authentication error for tool {}: {}", toolName, e.getMessage());
@@ -188,23 +349,35 @@ public class McpMessageHandler {
             return createErrorResponse(id, -32000, "Tool execution error", e.getMessage());
             
         } catch (Exception e) {
+            if (DEBUG_MODE) {
+                log.debug("[MCP-DEBUG] Tool {} failed with Exception: {}", toolName, e.getMessage(), e);
+            }
             log.error("Tool execution error for {}: {}", toolName, e.getMessage(), e);
             return createErrorResponse(id, -32000, "Tool execution error", e.getMessage());
         }
     }
 
     private Map<String, Object> handlePing(JsonNode message, Object id) {
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] handlePing() called with id: {}", id);
+        }
         log.debug("Handling ping request");
         return createSuccessResponse(id, Map.of("status", "pong"));
     }
     
     private Map<String, Object> handleNotificationInitialized(JsonNode message) {
         // Notifications don't require a response
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] handleNotificationInitialized() called");
+        }
         log.debug("Received initialization notification");
         return null;
     }
     
     private Map<String, Object> handlePromptsList(JsonNode message, Object id) {
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] handlePromptsList() called with id: {}", id);
+        }
         log.debug("Listing available prompts (empty list - not supported)");
         
         Map<String, Object> result = Map.of(
@@ -215,6 +388,9 @@ public class McpMessageHandler {
     }
     
     private Map<String, Object> handleResourcesList(JsonNode message, Object id) {
+        if (DEBUG_MODE) {
+            log.debug("[MCP-DEBUG] handleResourcesList() called with id: {}", id);
+        }
         log.debug("Listing available resources (empty list - not supported)");
         
         Map<String, Object> result = Map.of(
@@ -253,7 +429,7 @@ public class McpMessageHandler {
         } else if (node.isDouble()) {
             return node.asDouble();
         } else if (node.isArray()) {
-            return objectMapper.convertValue(node, Object[].class);
+            return objectMapper.convertValue(node, List.class);
         } else if (node.isObject()) {
             return objectMapper.convertValue(node, Map.class);
         }

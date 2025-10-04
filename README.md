@@ -458,17 +458,58 @@ deploy:
 
 ### Debug Mode
 
-**Enable Detailed Logging:**
+**Enable MCP Protocol Debug Logging:**
 ```bash
-# Spring Boot JAR
+# Enable MCP-specific debug logging (recommended for Claude Desktop issues)
+export MCP_DEBUG=true
+
+# Spring Boot JAR with MCP debug
+MCP_DEBUG=true java -jar monicahqmcp-0.1.0.jar --stdio
+
+# Docker with MCP debug
+docker run -e MCP_DEBUG=true -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
+
+# Claude Desktop configuration with debug mode
+{
+  "mcpServers": {
+    "monicahq": {
+      "command": "/usr/bin/java",
+      "args": ["-jar", "/path/to/monicahqmcp-0.1.0.jar", "--stdio"],
+      "env": {
+        "MONICA_API_URL": "https://your-instance.com/api",
+        "MONICA_API_TOKEN": "your-token",
+        "MCP_DEBUG": "true"
+      }
+    }
+  }
+}
+```
+
+**Enable General Application Logging:**
+```bash
+# Spring Boot JAR with full debug
 LOG_LEVEL=DEBUG LOG_LEVEL_MCP=TRACE java -jar monicahqmcp-0.1.0.jar --stdio
 
-# Docker
+# Docker with full debug
 docker run -e LOG_LEVEL=DEBUG -e LOG_LEVEL_MCP=TRACE -e MONICA_API_URL -e MONICA_API_TOKEN monicahq-mcp
 
 # Docker Compose
 LOG_LEVEL=DEBUG docker-compose up
 ```
+
+**Debug Mode Features:**
+- **MCP Protocol Tracing**: Detailed request/response logging to stderr
+- **Parameter Validation**: Enhanced error messages with suggestions
+- **Performance Monitoring**: Request timing and resource usage
+- **Connection Diagnostics**: Protocol negotiation and tool discovery details
+- **Error Context**: Stack traces and troubleshooting hints
+
+**What MCP_DEBUG=true provides:**
+- `[MCP-DEBUG]` prefixed logs to stderr (keeps stdout clean for JSON-RPC)
+- Detailed message processing flow
+- Parameter validation details
+- Tool execution timing
+- Enhanced error messages with troubleshooting guidance
 
 ### MCP Inspector Integration
 

@@ -1,0 +1,496 @@
+{
+  "activity_examples": {
+    "description": "Complete examples for MonicaHQ activity management via MCP",
+    "examples": [
+      {
+        "name": "create_activity_minimal",
+        "description": "Create activity with minimal required parameters",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-1",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "summary": "Quick coffee chat",
+              "attendees": ["John Doe"]
+            }
+          }
+        },
+        "notes": [
+          "Only required fields: summary and attendees",
+          "Attendees as string array - simplest format",
+          "System will auto-generate timestamp"
+        ]
+      },
+      {
+        "name": "create_activity_string_attendees",
+        "description": "Create activity with multiple string attendees",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-2",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "summary": "Team meeting - Q1 planning",
+              "description": "Quarterly planning session for Q1 goals and objectives",
+              "attendees": ["John Doe", "Jane Smith", "Bob Johnson"],
+              "happenedAt": "2024-01-15T10:30:00Z",
+              "duration": 90
+            }
+          }
+        },
+        "notes": [
+          "Multiple attendees as string names",
+          "Full ISO 8601 timestamp format",
+          "Duration in minutes",
+          "Description provides additional context"
+        ]
+      },
+      {
+        "name": "create_activity_contact_id_attendees",
+        "description": "Create activity with contact ID attendees",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-3",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "summary": "Client presentation",
+              "description": "Presenting new product features to key client",
+              "attendees": [
+                {"contactId": 123},
+                {"contactId": 456}
+              ],
+              "happenedAt": "2024-01-16T14:00:00Z",
+              "duration": 120
+            }
+          }
+        },
+        "notes": [
+          "Attendees specified by contact ID",
+          "Links directly to existing contacts",
+          "Ensures data consistency",
+          "Preferred format when contact IDs are known"
+        ]
+      },
+      {
+        "name": "create_activity_mixed_attendees",
+        "description": "Create activity with mixed attendee formats",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-4",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "summary": "Project kickoff meeting",
+              "description": "Initial meeting for the new project with internal team and external consultant",
+              "attendees": [
+                {"contactId": 123},
+                "External Consultant",
+                {"contactId": 456}
+              ],
+              "happenedAt": "2024-01-17T09:00:00Z",
+              "duration": 60
+            }
+          }
+        },
+        "notes": [
+          "Mix of contact IDs and string names",
+          "Useful when some attendees are in system, others aren't",
+          "Server normalizes all to proper format",
+          "Best of both worlds approach"
+        ]
+      },
+      {
+        "name": "create_activity_with_type",
+        "description": "Create activity with specific activity type",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-5",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "summary": "Annual performance review",
+              "description": "Year-end performance evaluation and goal setting",
+              "attendees": [{"contactId": 789}],
+              "happenedAt": "2024-01-18T15:30:00Z",
+              "duration": 45,
+              "activityTypeId": 2
+            }
+          }
+        },
+        "notes": [
+          "activityTypeId links to predefined activity types",
+          "Check MonicaHQ for available activity type IDs",
+          "Helps categorize activities for reporting",
+          "Optional parameter - system will use default if not specified"
+        ]
+      },
+      {
+        "name": "get_activity",
+        "description": "Retrieve specific activity by ID",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-6",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_get",
+            "arguments": {
+              "id": 42
+            }
+          }
+        },
+        "notes": [
+          "Simple retrieval by activity ID",
+          "Returns complete activity details",
+          "Includes attendees in normalized format"
+        ]
+      },
+      {
+        "name": "update_activity",
+        "description": "Update existing activity",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-7",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_update",
+            "arguments": {
+              "id": 42,
+              "summary": "Updated meeting title",
+              "description": "Added more details about the meeting outcome",
+              "duration": 75
+            }
+          }
+        },
+        "notes": [
+          "ID is required for updates",
+          "Only include fields you want to change",
+          "Attendees can be updated but need complete list",
+          "Partial updates supported"
+        ]
+      },
+      {
+        "name": "delete_activity",
+        "description": "Delete an activity",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-8",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_delete",
+            "arguments": {
+              "id": 42
+            }
+          }
+        },
+        "notes": [
+          "Permanent deletion - cannot be undone",
+          "Only ID required",
+          "Returns success confirmation"
+        ]
+      },
+      {
+        "name": "list_activities_basic",
+        "description": "List activities with default pagination",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-9",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_list",
+            "arguments": {}
+          }
+        },
+        "notes": [
+          "No parameters uses defaults: page 1, limit 10",
+          "Returns paginated results",
+          "Includes metadata about total results"
+        ]
+      },
+      {
+        "name": "list_activities_paginated",
+        "description": "List activities with custom pagination",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-10",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_list",
+            "arguments": {
+              "page": 2,
+              "limit": 25
+            }
+          }
+        },
+        "notes": [
+          "Custom pagination: page 2, 25 items per page",
+          "Maximum limit is 100",
+          "Page numbers start from 1"
+        ]
+      },
+      {
+        "name": "list_activities_by_contact",
+        "description": "List activities filtered by contact",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "activity-11",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_list",
+            "arguments": {
+              "contactId": 123,
+              "limit": 20
+            }
+          }
+        },
+        "notes": [
+          "Filter activities by specific contact",
+          "Shows all activities involving that contact",
+          "Useful for contact timeline views"
+        ]
+      }
+    ],
+    "error_examples": [
+      {
+        "name": "missing_required_field",
+        "description": "Example of missing required field error",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-1",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "description": "Meeting about something"
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": "Required parameter 'summary' is missing"
+        },
+        "notes": [
+          "Missing required 'summary' field",
+          "Also missing required 'attendees' field",
+          "Error message will indicate first missing field found"
+        ]
+      },
+      {
+        "name": "invalid_attendees_format",
+        "description": "Example of invalid attendees format",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-2",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "summary": "Test meeting",
+              "attendees": "John Doe"
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": "attendees must be an array"
+        },
+        "notes": [
+          "Attendees must be array, not string",
+          "Common mistake when passing single attendee",
+          "Should be: [\"John Doe\"] not \"John Doe\""
+        ]
+      },
+      {
+        "name": "empty_attendees_array",
+        "description": "Example of empty attendees array",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-3",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "summary": "Solo meeting",
+              "attendees": []
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": "attendees cannot be empty"
+        },
+        "notes": [
+          "At least one attendee required",
+          "Empty arrays not allowed",
+          "Use person creating activity as attendee if needed"
+        ]
+      },
+      {
+        "name": "invalid_date_format",
+        "description": "Example of invalid date format",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-4",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:activity_create",
+            "arguments": {
+              "summary": "Test meeting",
+              "attendees": ["John Doe"],
+              "happenedAt": "2024-01-15"
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": "Date must be in ISO 8601 format (e.g., 2024-01-15T10:30:00Z)"
+        },
+        "notes": [
+          "Date-only format not accepted",
+          "Must include time component",
+          "Use full ISO 8601: 2024-01-15T10:30:00Z"
+        ]
+      }
+    ],
+    "response_examples": [
+      {
+        "name": "create_activity_success_response",
+        "description": "Successful activity creation response",
+        "response": {
+          "jsonrpc": "2.0",
+          "id": "activity-1",
+          "result": {
+            "data": {
+              "id": 123,
+              "summary": "Team meeting - Q1 planning",
+              "description": "Quarterly planning session for Q1 goals and objectives",
+              "happenedAt": "2024-01-15T10:30:00Z",
+              "duration": 90,
+              "attendees": [
+                {"name": "John Doe"},
+                {"name": "Jane Smith"}
+              ],
+              "createdAt": "2024-01-14T15:22:33Z",
+              "updatedAt": "2024-01-14T15:22:33Z"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"id\":123,\"summary\":\"Team meeting - Q1 planning\",\"description\":\"Quarterly planning session for Q1 goals and objectives\",\"happenedAt\":\"2024-01-15T10:30:00Z\",\"duration\":90,\"attendees\":[{\"name\":\"John Doe\"},{\"name\":\"Jane Smith\"}],\"createdAt\":\"2024-01-14T15:22:33Z\",\"updatedAt\":\"2024-01-14T15:22:33Z\"}"
+              }
+            ]
+          }
+        },
+        "notes": [
+          "Response includes both structured data and content fields",
+          "All attendees normalized to consistent format",
+          "Timestamps added by server",
+          "Content field contains escaped JSON for Claude Desktop display"
+        ]
+      },
+      {
+        "name": "list_activities_success_response",
+        "description": "Successful activity list response",
+        "response": {
+          "jsonrpc": "2.0",
+          "id": "activity-9",
+          "result": {
+            "data": [
+              {
+                "id": 123,
+                "summary": "Team meeting - Q1 planning",
+                "happenedAt": "2024-01-15T10:30:00Z",
+                "duration": 90,
+                "attendees": [{"name": "John Doe"}, {"name": "Jane Smith"}]
+              },
+              {
+                "id": 124,
+                "summary": "Client presentation",
+                "happenedAt": "2024-01-16T14:00:00Z",
+                "duration": 120,
+                "attendees": [{"contactId": 123}, {"contactId": 456}]
+              }
+            ],
+            "meta": {
+              "current_page": 1,
+              "last_page": 5,
+              "per_page": 10,
+              "total": 47
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Found 47 activities:\n\n• Team meeting - Q1 planning (ID: 123)\n  Date: 2024-01-15T10:30:00Z\n  Duration: 90 minutes\n  Attendees: John Doe, Jane Smith\n\n• Client presentation (ID: 124)\n  Date: 2024-01-16T14:00:00Z\n  Duration: 120 minutes\n  Attendees: Contact ID 123, Contact ID 456\n\nPage 1 of 5 (Total: 47 activities)"
+              }
+            ]
+          }
+        },
+        "notes": [
+          "List responses include data array and meta information",
+          "Content field provides human-readable summary",
+          "Pagination metadata helps with navigation",
+          "Different attendee formats preserved in responses"
+        ]
+      }
+    ],
+    "usage_tips": [
+      "Always include both 'summary' and 'attendees' - they are required",
+      "Use ISO 8601 format for all dates: 2024-01-15T10:30:00Z",
+      "Attendees can be strings or objects with contactId",
+      "Duration is in minutes, not hours",
+      "Enable debug mode (MCP_DEBUG=true) for detailed validation errors",
+      "Use pagination for large result sets to improve performance",
+      "Contact IDs ensure data consistency when linking to existing contacts",
+      "Mixed attendee formats are supported in a single activity",
+      "Activity types are optional but help with categorization",
+      "Update operations only modify specified fields"
+    ],
+    "claude_desktop_examples": [
+      {
+        "user_request": "Create an activity for a team meeting with John and Jane tomorrow at 2 PM",
+        "claude_interpretation": "User wants to create an activity with specific attendees and time",
+        "likely_mcp_call": {
+          "name": "monicahq:activity_create",
+          "arguments": {
+            "summary": "Team meeting",
+            "attendees": ["John", "Jane"],
+            "happenedAt": "2024-01-16T14:00:00Z"
+          }
+        }
+      },
+      {
+        "user_request": "Show me all activities from last week",
+        "claude_interpretation": "User wants to list activities with date filtering",
+        "likely_mcp_call": {
+          "name": "monicahq:activity_list",
+          "arguments": {
+            "limit": 50
+          }
+        },
+        "note": "Date filtering would need to be handled by Claude post-processing"
+      },
+      {
+        "user_request": "Log a 30-minute call with client Sarah about the proposal",
+        "claude_interpretation": "User wants to create an activity representing a phone call",
+        "likely_mcp_call": {
+          "name": "monicahq:activity_create",
+          "arguments": {
+            "summary": "Call with client Sarah about proposal",
+            "attendees": ["Sarah"],
+            "duration": 30
+          }
+        }
+      }
+    ]
+  }
+}

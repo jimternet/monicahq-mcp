@@ -138,6 +138,41 @@ public class ActivityService {
         if (!arguments.containsKey("attendees") || arguments.get("attendees") == null) {
             throw new IllegalArgumentException("attendees is required");
         }
+        
+        // Validate attendees format
+        Object attendees = arguments.get("attendees");
+        if (attendees instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<?> attendeeList = (List<?>) attendees;
+            if (attendeeList.isEmpty()) {
+                throw new IllegalArgumentException("attendees cannot be empty");
+            }
+            
+            // Validate each attendee format
+            for (Object attendee : attendeeList) {
+                if (attendee instanceof Map) {
+                    // Object format validation - should have contactId
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> attendeeMap = (Map<String, Object>) attendee;
+                    if (!attendeeMap.containsKey("contactId")) {
+                        throw new IllegalArgumentException("Invalid attendees format: object must contain 'contactId' field");
+                    }
+                } else if (attendee instanceof String) {
+                    // String format validation - should not be empty
+                    if (((String) attendee).trim().isEmpty()) {
+                        throw new IllegalArgumentException("Invalid attendees format: attendee name cannot be empty");
+                    }
+                } else if (attendee instanceof Number || attendee instanceof Boolean) {
+                    // Numbers and booleans are allowed - will be converted to string
+                    continue;
+                } else {
+                    // Other types are not allowed
+                    throw new IllegalArgumentException("Invalid attendees format: attendee must be a string or object with contactId, got: " + attendee.getClass().getSimpleName());
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("attendees must be an array");
+        }
     }
 
     private Long extractActivityId(Map<String, Object> arguments) {
@@ -166,13 +201,34 @@ public class ActivityService {
                 case "attendees" -> {
                     if (value instanceof List) {
                         @SuppressWarnings("unchecked")
-                        List<Map<String, Object>> attendeeList = (List<Map<String, Object>>) value;
+                        List<?> attendeeList = (List<?>) value;
                         List<Map<String, Object>> formattedAttendees = attendeeList.stream()
                             .map(attendee -> {
                                 Map<String, Object> formatted = new HashMap<>();
-                                if (attendee.containsKey("contactId")) {
-                                    formatted.put("contact_id", attendee.get("contactId"));
+                                
+                                // Handle object format: {"contactId": 123}
+                                if (attendee instanceof Map) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, Object> attendeeMap = (Map<String, Object>) attendee;
+                                    if (attendeeMap.containsKey("contactId")) {
+                                        formatted.put("contact_id", attendeeMap.get("contactId"));
+                                    }
+                                    // Copy other properties as-is
+                                    attendeeMap.forEach((k, v) -> {
+                                        if (!"contactId".equals(k)) {
+                                            formatted.put(k, v);
+                                        }
+                                    });
                                 }
+                                // Handle string format: "John Doe" 
+                                else if (attendee instanceof String) {
+                                    formatted.put("name", attendee);
+                                }
+                                // Handle other types by converting to string
+                                else {
+                                    formatted.put("name", attendee.toString());
+                                }
+                                
                                 return formatted;
                             })
                             .toList();

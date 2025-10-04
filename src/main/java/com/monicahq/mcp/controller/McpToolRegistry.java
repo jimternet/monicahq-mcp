@@ -714,11 +714,11 @@ public class McpToolRegistry {
             "properties", Map.of(
                 "contactId", Map.of(
                     "type", "integer",
-                    "description", "ID of the contact associated with this activity (required)"
+                    "description", "ID of the contact associated with this activity (optional)"
                 ),
                 "activityTypeId", Map.of(
                     "type", "integer",
-                    "description", "Activity type ID from Monica (required). Common types: 1=Simple Activity"
+                    "description", "Activity type ID from Monica (optional). Common types: 1=Simple Activity"
                 ),
                 "summary", Map.of(
                     "type", "string",
@@ -731,11 +731,38 @@ public class McpToolRegistry {
                 ),
                 "happenedAt", Map.of(
                     "type", "string",
-                    "format", "date",
-                    "description", "Date when activity happened in YYYY-MM-DD format (required)"
+                    "format", "date-time",
+                    "description", "Date when activity happened in ISO 8601 format (optional, e.g., '2025-01-15T10:00:00Z')"
+                ),
+                "attendees", Map.of(
+                    "type", "array",
+                    "description", "List of activity attendees (required). Supports both string names ['John Doe'] and contact objects [{'contactId': 123}]",
+                    "items", Map.of(
+                        "oneOf", List.of(
+                            Map.of(
+                                "type", "string",
+                                "description", "Attendee name (e.g., 'John Doe')"
+                            ),
+                            Map.of(
+                                "type", "object",
+                                "properties", Map.of(
+                                    "contactId", Map.of(
+                                        "type", "integer",
+                                        "description", "Contact ID from MonicaHQ"
+                                    ),
+                                    "name", Map.of(
+                                        "type", "string",
+                                        "description", "Contact name (optional)"
+                                    )
+                                ),
+                                "required", List.of("contactId")
+                            )
+                        )
+                    ),
+                    "minItems", 1
                 )
             ),
-            "required", List.of("contactId", "activityTypeId", "summary", "happenedAt")
+            "required", List.of("summary", "attendees")
         );
     }
 

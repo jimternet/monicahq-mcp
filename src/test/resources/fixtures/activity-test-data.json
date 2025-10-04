@@ -1,0 +1,173 @@
+{
+  "validActivities": {
+    "simpleActivity": {
+      "summary": "Team meeting",
+      "attendees": [
+        {
+          "contactId": 123
+        }
+      ],
+      "description": "Discussed Q4 objectives"
+    },
+    "activityWithArrayAttendees": {
+      "summary": "Coffee with John",
+      "attendees": ["John Doe"],
+      "description": "Casual catch-up"
+    },
+    "activityWithObjectAttendees": {
+      "summary": "Project kickoff",
+      "attendees": [
+        {
+          "contactId": 456
+        },
+        {
+          "contactId": 789
+        }
+      ],
+      "happenedAt": "2025-01-15T10:00:00Z",
+      "description": "Started new client project"
+    },
+    "fullActivity": {
+      "contactId": 123,
+      "activityTypeId": 1,
+      "summary": "Business lunch",
+      "description": "Discussed partnership opportunities",
+      "happenedAt": "2025-01-20T12:30:00Z",
+      "attendees": [
+        {
+          "contactId": 123
+        },
+        {
+          "contactId": 456
+        }
+      ]
+    }
+  },
+  "invalidActivities": {
+    "missingSummary": {
+      "attendees": [
+        {
+          "contactId": 123
+        }
+      ]
+    },
+    "missingAttendees": {
+      "summary": "Meeting without attendees"
+    },
+    "emptyAttendees": {
+      "summary": "Meeting with empty attendees",
+      "attendees": []
+    },
+    "invalidAttendeesFormat": {
+      "summary": "Meeting with invalid attendees",
+      "attendees": "not-an-array"
+    },
+    "nullValues": {
+      "summary": null,
+      "attendees": null
+    }
+  },
+  "edgeCases": {
+    "veryLongSummary": {
+      "summary": "This is an extremely long summary that exceeds the normal character limit for activity summaries and should be handled properly by the validation logic to ensure it doesn't cause issues in the system when processing or storing the activity data",
+      "attendees": [
+        {
+          "contactId": 123
+        }
+      ]
+    },
+    "specialCharacters": {
+      "summary": "Meeting with special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?",
+      "attendees": [
+        {
+          "contactId": 123
+        }
+      ],
+      "description": "Testing unicode: 日本語 العربية emoji: 😀 🎉"
+    },
+    "manyAttendees": {
+      "summary": "Large team meeting",
+      "attendees": [
+        {"contactId": 100},
+        {"contactId": 101},
+        {"contactId": 102},
+        {"contactId": 103},
+        {"contactId": 104},
+        {"contactId": 105},
+        {"contactId": 106},
+        {"contactId": 107},
+        {"contactId": 108},
+        {"contactId": 109}
+      ]
+    }
+  },
+  "expectedResponses": {
+    "successResponse": {
+      "jsonrpc": "2.0",
+      "result": {
+        "data": {
+          "id": 1234,
+          "summary": "Team meeting",
+          "description": "Discussed Q4 objectives",
+          "happenedAt": "2025-01-15T10:00:00Z",
+          "attendees": [
+            {
+              "contactId": 123,
+              "name": "John Doe"
+            }
+          ],
+          "createdAt": "2025-01-15T10:30:00Z",
+          "updatedAt": "2025-01-15T10:30:00Z"
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"id\":1234,\"summary\":\"Team meeting\"}"
+          }
+        ]
+      },
+      "id": 1
+    },
+    "errorResponse": {
+      "jsonrpc": "2.0",
+      "error": {
+        "code": -32602,
+        "message": "Invalid params",
+        "data": "summary is required"
+      },
+      "id": 1
+    }
+  },
+  "mcpRequests": {
+    "createActivityRequest": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "activity_create",
+        "arguments": {
+          "summary": "Team meeting",
+          "attendees": [
+            {
+              "contactId": 123
+            }
+          ],
+          "description": "Discussed Q4 objectives"
+        }
+      },
+      "id": 1
+    },
+    "createActivityWithArrayAttendees": {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "activity_create",
+        "arguments": {
+          "summary": "Coffee with John",
+          "attendees": ["John Doe"],
+          "description": "Casual catch-up"
+        }
+      },
+      "id": 2
+    }
+  }
+}

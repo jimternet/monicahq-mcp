@@ -143,6 +143,11 @@ public class TestMonicaHqClient extends MonicaHqClient {
             data.put("description", getValueFromRequest(requestBody, "description", "description", "Discussed upcoming project collaboration"));
             data.put("happened_at", getValueFromRequest(requestBody, "happenedAt", "happened_at", "2025-09-13T10:30:00Z"));
             data.put("created_at", "2025-09-13T10:35:00Z");
+            
+            // Include attendees if provided in request
+            if (requestBody != null && requestBody.containsKey("attendees")) {
+                data.put("attendees", requestBody.get("attendees"));
+            }
         } else if (endpoint.contains("/calls")) {
             data.put("id", idFromEndpoint != null ? idFromEndpoint : 789);
             data.put("contact_id", getValueFromRequest(requestBody, "contactId", "contact_id", 12345));
