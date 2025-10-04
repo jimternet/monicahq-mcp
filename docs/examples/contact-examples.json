@@ -1,0 +1,718 @@
+{
+  "contact_examples": {
+    "description": "Complete examples for MonicaHQ contact management via MCP",
+    "examples": [
+      {
+        "name": "create_contact_minimal",
+        "description": "Create contact with only required field",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-1",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "firstName": "John"
+            }
+          }
+        },
+        "notes": [
+          "Only firstName is required",
+          "System generates other fields as needed",
+          "Simple contact creation"
+        ]
+      },
+      {
+        "name": "create_contact_full_name",
+        "description": "Create contact with full name",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-2",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "firstName": "Jane",
+              "lastName": "Smith"
+            }
+          }
+        },
+        "notes": [
+          "Both first and last names provided",
+          "Common pattern for complete names",
+          "lastName is optional but recommended"
+        ]
+      },
+      {
+        "name": "create_contact_with_contact_info",
+        "description": "Create contact with email and phone",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-3",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "firstName": "Bob",
+              "lastName": "Johnson",
+              "email": "bob.johnson@example.com",
+              "phone": "+1-555-123-4567"
+            }
+          }
+        },
+        "notes": [
+          "Email and phone validation performed",
+          "Contact information enables communication",
+          "Standard business contact format"
+        ]
+      },
+      {
+        "name": "create_contact_complete",
+        "description": "Create contact with all available fields",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-4",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "firstName": "Alice",
+              "lastName": "Williams",
+              "nickname": "Ali",
+              "gender": "female",
+              "email": "alice.williams@example.com",
+              "phone": "+1-555-987-6543",
+              "birthdate": "1990-06-15"
+            }
+          }
+        },
+        "notes": [
+          "All optional fields included",
+          "Birthdate in YYYY-MM-DD format",
+          "Gender field for personalization",
+          "Nickname for informal reference"
+        ]
+      },
+      {
+        "name": "create_contact_international",
+        "description": "Create contact with international information",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-5",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "firstName": "Hiroshi",
+              "lastName": "Tanaka",
+              "email": "h.tanaka@example.jp",
+              "phone": "+81-3-1234-5678"
+            }
+          }
+        },
+        "notes": [
+          "International names and formats",
+          "Country code in phone number",
+          "International email domain",
+          "Unicode character support"
+        ]
+      },
+      {
+        "name": "get_contact",
+        "description": "Retrieve specific contact by ID",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-6",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_get",
+            "arguments": {
+              "id": 123
+            }
+          }
+        },
+        "notes": [
+          "Simple retrieval by contact ID",
+          "Returns complete contact details",
+          "Includes all associated information"
+        ]
+      },
+      {
+        "name": "update_contact",
+        "description": "Update existing contact information",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-7",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_update",
+            "arguments": {
+              "id": 123,
+              "email": "new.email@example.com",
+              "phone": "+1-555-999-8888"
+            }
+          }
+        },
+        "notes": [
+          "ID is required for updates",
+          "Only include fields to change",
+          "Partial updates supported",
+          "Other fields remain unchanged"
+        ]
+      },
+      {
+        "name": "update_contact_full",
+        "description": "Complete contact information update",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-8",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_update",
+            "arguments": {
+              "id": 123,
+              "firstName": "John",
+              "lastName": "Doe-Smith",
+              "nickname": "Johnny",
+              "email": "john.doe-smith@example.com",
+              "phone": "+1-555-111-2222",
+              "gender": "male"
+            }
+          }
+        },
+        "notes": [
+          "Complete profile update",
+          "Name change handling",
+          "Contact information updates",
+          "Profile enhancement"
+        ]
+      },
+      {
+        "name": "delete_contact",
+        "description": "Delete a contact",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-9",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_delete",
+            "arguments": {
+              "id": 123
+            }
+          }
+        },
+        "notes": [
+          "Permanent deletion - cannot be undone",
+          "Only ID required",
+          "Returns success confirmation",
+          "Associated data may be affected"
+        ]
+      },
+      {
+        "name": "list_contacts_basic",
+        "description": "List contacts with default settings",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-10",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_list",
+            "arguments": {}
+          }
+        },
+        "notes": [
+          "Default pagination: page 1, limit 10",
+          "Returns basic contact information",
+          "Includes pagination metadata"
+        ]
+      },
+      {
+        "name": "list_contacts_paginated",
+        "description": "List contacts with custom pagination",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-11",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_list",
+            "arguments": {
+              "page": 3,
+              "limit": 50
+            }
+          }
+        },
+        "notes": [
+          "Custom pagination settings",
+          "Page 3 with 50 contacts per page",
+          "Maximum limit is 100",
+          "Efficient for large contact lists"
+        ]
+      },
+      {
+        "name": "search_contacts",
+        "description": "Search contacts by name",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-12",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_list",
+            "arguments": {
+              "query": "Smith",
+              "limit": 20
+            }
+          }
+        },
+        "notes": [
+          "Text search across contact names",
+          "Finds matches in first, last, or complete names",
+          "Case-insensitive search",
+          "Useful for finding specific contacts"
+        ]
+      },
+      {
+        "name": "search_contacts_email",
+        "description": "Search contacts by email domain",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "contact-13",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_list",
+            "arguments": {
+              "query": "@example.com",
+              "limit": 25
+            }
+          }
+        },
+        "notes": [
+          "Search by email domain or pattern",
+          "Finds all contacts from specific domain",
+          "Useful for business contact management",
+          "Can search partial email addresses"
+        ]
+      }
+    ],
+    "error_examples": [
+      {
+        "name": "missing_first_name",
+        "description": "Example of missing required field",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-1",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "lastName": "Doe",
+              "email": "john.doe@example.com"
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": "Required parameter 'firstName' is missing"
+        },
+        "notes": [
+          "firstName is the only required field",
+          "All other fields are optional",
+          "Cannot create contact without first name"
+        ]
+      },
+      {
+        "name": "empty_first_name",
+        "description": "Example of empty first name",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-2",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "firstName": "",
+              "lastName": "Doe"
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": "First name cannot be empty"
+        },
+        "notes": [
+          "Empty strings not allowed for firstName",
+          "Must provide actual name value",
+          "Whitespace-only names also rejected"
+        ]
+      },
+      {
+        "name": "invalid_email",
+        "description": "Example of invalid email format",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-3",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "firstName": "John",
+              "email": "not-an-email"
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": "Invalid email format"
+        },
+        "notes": [
+          "Email validation performed",
+          "Must be valid email format",
+          "Common patterns: user@domain.com"
+        ]
+      },
+      {
+        "name": "invalid_phone",
+        "description": "Example of invalid phone format",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-4",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_create",
+            "arguments": {
+              "firstName": "John",
+              "phone": "abc-def-ghij"
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": "Invalid phone number format"
+        },
+        "notes": [
+          "Phone number validation",
+          "Must contain valid phone characters",
+          "International formats supported"
+        ]
+      },
+      {
+        "name": "contact_not_found",
+        "description": "Example of contact not found error",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": "error-5",
+          "method": "tools/call",
+          "params": {
+            "name": "monicahq:contact_get",
+            "arguments": {
+              "id": 99999
+            }
+          }
+        },
+        "expected_error": {
+          "code": -32000,
+          "message": "Resource not found",
+          "data": "Contact with ID 99999 not found"
+        },
+        "notes": [
+          "Contact ID doesn't exist",
+          "May have been deleted",
+          "Check ID is correct"
+        ]
+      }
+    ],
+    "response_examples": [
+      {
+        "name": "create_contact_success_response",
+        "description": "Successful contact creation response",
+        "response": {
+          "jsonrpc": "2.0",
+          "id": "contact-3",
+          "result": {
+            "data": {
+              "id": 456,
+              "firstName": "Bob",
+              "lastName": "Johnson",
+              "completeName": "Bob Johnson",
+              "nickname": null,
+              "gender": null,
+              "email": "bob.johnson@example.com",
+              "phone": "+1-555-123-4567",
+              "birthdate": null,
+              "createdAt": "2024-01-14T16:30:22Z",
+              "updatedAt": "2024-01-14T16:30:22Z"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"id\":456,\"firstName\":\"Bob\",\"lastName\":\"Johnson\",\"completeName\":\"Bob Johnson\",\"email\":\"bob.johnson@example.com\",\"phone\":\"+1-555-123-4567\",\"createdAt\":\"2024-01-14T16:30:22Z\",\"updatedAt\":\"2024-01-14T16:30:22Z\"}"
+              }
+            ]
+          }
+        },
+        "notes": [
+          "Response includes generated ID",
+          "Complete name automatically generated",
+          "Null fields for unspecified optional data",
+          "Timestamps added by system",
+          "Content field contains escaped JSON"
+        ]
+      },
+      {
+        "name": "list_contacts_success_response",
+        "description": "Successful contact list response",
+        "response": {
+          "jsonrpc": "2.0",
+          "id": "contact-10",
+          "result": {
+            "data": [
+              {
+                "id": 123,
+                "firstName": "John",
+                "lastName": "Doe",
+                "completeName": "John Doe",
+                "email": "john.doe@example.com",
+                "phone": "+1-555-111-2222",
+                "nickname": "Johnny"
+              },
+              {
+                "id": 456,
+                "firstName": "Jane",
+                "lastName": "Smith",
+                "completeName": "Jane Smith",
+                "email": "jane.smith@example.com",
+                "phone": "+1-555-333-4444",
+                "nickname": null
+              }
+            ],
+            "meta": {
+              "current_page": 1,
+              "last_page": 12,
+              "per_page": 10,
+              "total": 115
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Found 115 contact(s):\n\n• John Doe (ID: 123)\n  Email: john.doe@example.com\n  Phone: +1-555-111-2222\n  Nickname: Johnny\n\n• Jane Smith (ID: 456)\n  Email: jane.smith@example.com\n  Phone: +1-555-333-4444\n\nPage 1 of 12 (Total: 115 contacts)"
+              }
+            ]
+          }
+        },
+        "notes": [
+          "Array of contacts with basic information",
+          "Pagination metadata included",
+          "Content provides human-readable format",
+          "Empty fields omitted from display",
+          "Summary includes page navigation info"
+        ]
+      },
+      {
+        "name": "search_contacts_success_response",
+        "description": "Successful contact search response",
+        "response": {
+          "jsonrpc": "2.0",
+          "id": "contact-12",
+          "result": {
+            "data": [
+              {
+                "id": 456,
+                "firstName": "Jane",
+                "lastName": "Smith",
+                "completeName": "Jane Smith",
+                "email": "jane.smith@example.com"
+              },
+              {
+                "id": 789,
+                "firstName": "Bob",
+                "lastName": "Smith",
+                "completeName": "Bob Smith",
+                "email": "bob.smith@company.com"
+              }
+            ],
+            "meta": {
+              "current_page": 1,
+              "last_page": 1,
+              "per_page": 20,
+              "total": 2,
+              "query": "Smith"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Found 2 contact(s):\n\n• Jane Smith (ID: 456)\n  Email: jane.smith@example.com\n\n• Bob Smith (ID: 789)\n  Email: bob.smith@company.com\n\nSearch query: \"Smith\"\nPage 1 of 1 (Total: 2 contacts)"
+              }
+            ]
+          }
+        },
+        "notes": [
+          "Search results filtered by query",
+          "Meta includes search query",
+          "Fewer results due to filtering",
+          "Content shows search context",
+          "Relevant matches highlighted"
+        ]
+      }
+    ],
+    "usage_tips": [
+      "firstName is the only required field for contact creation",
+      "Use completeName for searching - it includes first and last names",
+      "Email and phone validation helps maintain data quality",
+      "Pagination is essential for large contact databases",
+      "Search works across multiple name fields",
+      "Update operations only modify specified fields",
+      "International phone formats supported with country codes",
+      "Nicknames provide alternative reference names",
+      "Gender field helps with personalization",
+      "Birthdate format: YYYY-MM-DD",
+      "IDs are automatically generated and permanent"
+    ],
+    "field_descriptions": {
+      "firstName": {
+        "type": "string",
+        "required": true,
+        "description": "Contact's first name",
+        "validation": "Non-empty string, max 255 characters"
+      },
+      "lastName": {
+        "type": "string",
+        "required": false,
+        "description": "Contact's last name",
+        "validation": "String, max 255 characters"
+      },
+      "nickname": {
+        "type": "string",
+        "required": false,
+        "description": "Informal name or alias",
+        "validation": "String, max 255 characters"
+      },
+      "gender": {
+        "type": "string",
+        "required": false,
+        "description": "Contact's gender",
+        "validation": "String, common values: male, female, other"
+      },
+      "email": {
+        "type": "string",
+        "required": false,
+        "description": "Contact's email address",
+        "validation": "Valid email format (user@domain.ext)"
+      },
+      "phone": {
+        "type": "string",
+        "required": false,
+        "description": "Contact's phone number",
+        "validation": "Valid phone format, international codes supported"
+      },
+      "birthdate": {
+        "type": "string",
+        "required": false,
+        "description": "Contact's birth date",
+        "validation": "YYYY-MM-DD format"
+      }
+    },
+    "claude_desktop_examples": [
+      {
+        "user_request": "Create a contact for my colleague Sarah Johnson with email sarah@company.com",
+        "claude_interpretation": "User wants to create a business contact with name and email",
+        "likely_mcp_call": {
+          "name": "monicahq:contact_create",
+          "arguments": {
+            "firstName": "Sarah",
+            "lastName": "Johnson",
+            "email": "sarah@company.com"
+          }
+        }
+      },
+      {
+        "user_request": "Find all contacts with @gmail.com email addresses",
+        "claude_interpretation": "User wants to search contacts by email domain",
+        "likely_mcp_call": {
+          "name": "monicahq:contact_list",
+          "arguments": {
+            "query": "@gmail.com",
+            "limit": 50
+          }
+        }
+      },
+      {
+        "user_request": "Show me my contacts, but only 5 at a time",
+        "claude_interpretation": "User wants paginated contact list with small page size",
+        "likely_mcp_call": {
+          "name": "monicahq:contact_list",
+          "arguments": {
+            "limit": 5
+          }
+        }
+      },
+      {
+        "user_request": "Update John Doe's phone number to +1-555-987-6543",
+        "claude_interpretation": "User wants to update specific contact's phone number",
+        "steps": [
+          "First find John Doe's contact ID",
+          "Then update with new phone number"
+        ],
+        "likely_mcp_calls": [
+          {
+            "name": "monicahq:contact_list",
+            "arguments": {
+              "query": "John Doe"
+            }
+          },
+          {
+            "name": "monicahq:contact_update",
+            "arguments": {
+              "id": 123,
+              "phone": "+1-555-987-6543"
+            }
+          }
+        ]
+      },
+      {
+        "user_request": "Add a new contact: Dr. Maria Garcia, phone +34-91-123-4567",
+        "claude_interpretation": "User wants to create contact with title, international phone",
+        "likely_mcp_call": {
+          "name": "monicahq:contact_create",
+          "arguments": {
+            "firstName": "Maria",
+            "lastName": "Garcia",
+            "phone": "+34-91-123-4567"
+          }
+        },
+        "note": "Title 'Dr.' would likely be omitted or added to firstName"
+      }
+    ],
+    "integration_patterns": [
+      {
+        "pattern": "contact_with_activity",
+        "description": "Create contact then immediately log an activity",
+        "steps": [
+          "Create contact with monicahq:contact_create",
+          "Use returned contact ID in activity attendees",
+          "Create activity with monicahq:activity_create"
+        ]
+      },
+      {
+        "pattern": "contact_with_notes",
+        "description": "Create contact and add initial notes",
+        "steps": [
+          "Create contact with monicahq:contact_create", 
+          "Use returned contact ID",
+          "Create note with monicahq:note_create"
+        ]
+      },
+      {
+        "pattern": "bulk_contact_operations",
+        "description": "Process multiple contacts efficiently",
+        "steps": [
+          "Use contact_list with appropriate pagination",
+          "Process contacts in batches",
+          "Update or create as needed"
+        ]
+      }
+    ]
+  }
+}

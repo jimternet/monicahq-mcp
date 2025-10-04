@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Debug mode configuration for MCP server - logs to stderr only -->
+    
+    <!-- Console appender for stderr output -->
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- File appender for detailed debug logs -->
+    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/mcp-debug.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/mcp-debug-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- MCP Protocol Debug Logger -->
+    <logger name="com.monicahq.mcp.McpStdioServer" level="DEBUG" additivity="false">
+        <appender-ref ref="STDERR"/>
+        <appender-ref ref="DEBUG_FILE"/>
+    </logger>
+    
+    <!-- Message Handler Debug Logger -->
+    <logger name="com.monicahq.mcp.controller.McpMessageHandler" level="DEBUG" additivity="false">
+        <appender-ref ref="STDERR"/>
+        <appender-ref ref="DEBUG_FILE"/>
+    </logger>
+    
+    <!-- Tool Registry Debug Logger -->
+    <logger name="com.monicahq.mcp.controller.McpToolRegistry" level="DEBUG" additivity="false">
+        <appender-ref ref="STDERR"/>
+        <appender-ref ref="DEBUG_FILE"/>
+    </logger>
+    
+    <!-- Service Layer Debug Logger -->
+    <logger name="com.monicahq.mcp.service" level="DEBUG" additivity="false">
+        <appender-ref ref="STDERR"/>
+        <appender-ref ref="DEBUG_FILE"/>
+    </logger>
+    
+    <!-- Spring Framework at INFO level to reduce noise -->
+    <logger name="org.springframework" level="INFO"/>
+    
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="STDERR"/>
+    </root>
+</configuration>
