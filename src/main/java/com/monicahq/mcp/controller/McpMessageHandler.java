@@ -213,6 +213,7 @@ public class McpMessageHandler {
         
         // Known compatible versions
         Set<String> compatibleVersions = Set.of(
+            "2025-06-18",   // Latest Claude Desktop version
             "2024-11-05",   // Current supported version
             "2024-10-07",   // Previous compatible version
             "2024-06-25"    // Legacy compatible version
