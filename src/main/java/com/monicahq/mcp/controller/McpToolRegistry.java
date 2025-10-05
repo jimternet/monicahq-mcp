@@ -683,11 +683,11 @@ public class McpToolRegistry {
         properties.put("birthdate", Map.of(
             "type", "string",
             "format", "date",
-            "description", "Birthdate in YYYY-MM-DD format (optional)"
+            "description", "Birthdate in YYYY-MM-DD format (optional). When provided, isBirthdateKnown will automatically be set to true."
         ));
         properties.put("isBirthdateKnown", Map.of(
             "type", "boolean",
-            "description", "Whether the birthdate is known (optional - defaults to existing value)"
+            "description", "Whether the birthdate is known (optional - defaults to existing value, automatically set to true when birthdate is provided)"
         ));
         properties.put("isDeceased", Map.of(
             "type", "boolean",
