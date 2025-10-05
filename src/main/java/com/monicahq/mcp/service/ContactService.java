@@ -391,15 +391,16 @@ public class ContactService {
                 case "isDeceasedDateKnown" -> apiRequest.put("is_deceased_date_known", value);
                 case "jobTitle" -> apiRequest.put("job_title", value);
                 case "birthdate" -> {
-                    // MonicaHQ API expects day, month, year instead of YYYY-MM-DD
+                    // MonicaHQ API expects day, month, year as integers instead of YYYY-MM-DD
                     if (value != null && !value.toString().trim().isEmpty()) {
                         try {
                             String birthdateStr = value.toString();
                             String[] parts = birthdateStr.split("-");
                             if (parts.length == 3) {
-                                apiRequest.put("year", parts[0]);
-                                apiRequest.put("month", parts[1]);
-                                apiRequest.put("day", parts[2]);
+                                // Convert to integers - Monica API requires integers not strings
+                                apiRequest.put("year", Integer.parseInt(parts[0]));
+                                apiRequest.put("month", Integer.parseInt(parts[1]));
+                                apiRequest.put("day", Integer.parseInt(parts[2]));
                                 log.info("Converted birthdate {} to year={}, month={}, day={}", 
                                     birthdateStr, parts[0], parts[1], parts[2]);
                             } else {
