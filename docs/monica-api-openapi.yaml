@@ -10,11 +10,6 @@ info:
     
     This specification represents the actual working Monica API as discovered through comprehensive testing,
     not just the documented endpoints. Many operations listed here go beyond the official documentation.
-    
-    **Key Discoveries**:
-    - Contact updates require certain fields (first_name, is_deceased, is_deceased_date_known, is_birthdate_known) even when not changing them
-    - Birthdate updates must use separate integer fields (day, month, year) instead of date strings
-    - The API expects integers, not strings, for numeric date components
   version: "1.0.0"
   contact:
     name: MonicaHQ MCP Server
@@ -24,7 +19,7 @@ info:
     url: https://www.gnu.org/licenses/agpl-3.0.html
 
 servers:
-  - url: https://app.monicahq.com/api
+  - url: https://monica.noofincnet.synology.me/api
     description: Production Monica API
   - url: http://localhost:8081/api
     description: Local Development (Docker Compose)
@@ -65,81 +60,12 @@ components:
         is_dead:
           type: boolean
           example: false
-        is_deceased:
-          type: boolean
-          example: false
-        is_deceased_date_known:
-          type: boolean
-          example: false
-        is_birthdate_known:
-          type: boolean
-          example: false
-        day:
-          type: integer
-          description: "Day of birth (1-31) - required when updating birthdate"
-          example: 15
-        month:
-          type: integer
-          description: "Month of birth (1-12) - required when updating birthdate"
-          example: 10
-        year:
-          type: integer
-          description: "Year of birth - required when updating birthdate"
-          example: 1990
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
-
-    ContactUpdate:
-      type: object
-      description: "Contact update schema - all fields optional except for required ones maintained from existing contact"
-      properties:
-        first_name:
-          type: string
-          description: "First name (required by API - will be preserved from existing contact if not provided)"
-          example: "John"
-        last_name:
-          type: string
-          description: "Last name"
-          example: "Doe"
-        nickname:
-          type: string
-          example: "Johnny"
-        gender_id:
-          type: integer
-          description: "Gender ID (required by API - will be preserved from existing contact if not provided)"
-          example: 1
-        is_deceased:
-          type: boolean
-          description: "Whether contact is deceased (required by API)"
-          example: false
-        is_deceased_date_known:
-          type: boolean
-          description: "Whether deceased date is known (required by API)"
-          example: false
-        is_birthdate_known:
-          type: boolean
-          description: "Whether birthdate is known (required by API - automatically set to true if day/month/year provided)"
-          example: true
-        day:
-          type: integer
-          description: "Day of birth (1-31) - use with month/year for birthdate updates"
-          minimum: 1
-          maximum: 31
-          example: 15
-        month:
-          type: integer
-          description: "Month of birth (1-12) - use with day/year for birthdate updates"
-          minimum: 1
-          maximum: 12
-          example: 10
-        year:
-          type: integer
-          description: "Year of birth - use with day/month for birthdate updates"
-          example: 1990
 
     Activity:
       type: object
@@ -276,6 +202,114 @@ components:
             code:
               type: integer
 
+    # List Response Schemas for Monica API wrapped format
+    ContactListApiResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+            current_page:
+              type: integer
+            per_page:
+              type: integer
+        links:
+          type: object
+          properties:
+            first:
+              type: string
+              nullable: true
+            last:
+              type: string
+              nullable: true
+            prev:
+              type: string
+              nullable: true
+            next:
+              type: string
+              nullable: true
+
+    ActivityListApiResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          type: object
+        links:
+          type: object
+
+    GiftListApiResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          type: object
+        links:
+          type: object
+
+    TagListApiResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          type: object
+        links:
+          type: object
+
+    # Generic list response for endpoints that return lists but don't have specific schemas
+    ListApiResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+            current_page:
+              type: integer
+            per_page:
+              type: integer
+        links:
+          type: object
+          properties:
+            first:
+              type: string
+              nullable: true
+            last:
+              type: string
+              nullable: true
+            prev:
+              type: string
+              nullable: true
+            next:
+              type: string
+              nullable: true
+
+    ContactApiResponse:
+      type: object
+      properties:
+        data:
+          type: object
+
 paths:
   # Contact Endpoints
   /contacts:
@@ -304,7 +338,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/ContactListApiResponse'
 
     post:
       summary: Create a new contact
@@ -332,7 +366,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/ContactApiResponse'
 
   /contacts/{id}:
     get:
@@ -350,16 +384,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/ContactApiResponse'
 
     put:
       summary: Update a contact
-      description: |
-        Update a contact. The Monica API requires certain fields (first_name, is_deceased, is_deceased_date_known, is_birthdate_known) 
-        even when not changing them - the MCP server automatically handles this by fetching existing values.
-        
-        **Birthdate Updates**: Use separate day, month, year integer fields instead of a single date string.
-        When any birthdate field is provided, is_birthdate_known is automatically set to true.
       tags: [Contacts]
       parameters:
         - name: id
@@ -372,43 +400,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ContactUpdate'
-            examples:
-              simple_update:
-                summary: Simple field update
-                value:
-                  first_name: "Jane"
-                  last_name: "Smith"
-              birthdate_update:
-                summary: Birthdate update
-                value:
-                  day: 15
-                  month: 10
-                  year: 1990
-                  # is_birthdate_known automatically set to true
-              full_update:
-                summary: Complete contact update
-                value:
-                  first_name: "John"
-                  last_name: "Doe"
-                  nickname: "Johnny"
-                  gender_id: 1
-                  day: 25
-                  month: 12
-                  year: 1985
+              $ref: '#/components/schemas/Contact'
       responses:
         '200':
           description: Contact updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '400':
-          description: Validation error - missing required fields
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       summary: Delete a contact
@@ -464,7 +459,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/ListApiResponse'
 
   # Activity Endpoints
   /activities:
@@ -477,7 +472,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/ActivityListApiResponse'
 
     post:
       summary: Create a new activity
@@ -568,7 +563,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/GiftListApiResponse'
 
     post:
       summary: Create a new gift
@@ -659,7 +654,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/TagListApiResponse'
 
     post:
       summary: Create a new tag
@@ -741,7 +736,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/ContactListApiResponse'
 
   # Note Endpoints
   /notes:
