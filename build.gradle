@@ -46,7 +46,16 @@ dependencies {
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+	// Configure JUnit Platform
+	useJUnitPlatform {
+		excludeEngines 'junit-vintage'
+		includeEngines 'junit-jupiter'
+	}
+	
+	// Exclude tests that require Monica instance by package
+	exclude '**/contract/**'
+	exclude '**/integration/**' 
+	exclude '**/performance/**'
 	
 	// Configure test execution for maximum parallelization
 	maxParallelForks = Runtime.runtime.availableProcessors()  // Use all available cores
@@ -56,4 +65,24 @@ tasks.named('test') {
 	
 	// JVM options for better performance
 	jvmArgs '-Xmx512m', '-XX:MaxMetaspaceSize=256m'
+}
+
+// Separate task for integration tests that require live Monica instance
+task integrationTest(type: Test) {
+	useJUnitPlatform()
+	
+	// Include only tests that require Monica instance
+	include '**/contract/**'
+	include '**/integration/**'
+	include '**/performance/**'
+	
+	// Configure test execution
+	maxParallelForks = 1  // Serial execution for integration tests
+	timeout = java.time.Duration.ofMinutes(10)
+	jvmArgs '-Xmx512m', '-XX:MaxMetaspaceSize=256m'
+	
+	// These tests require Monica instance to be running
+	doFirst {
+		println "Running integration tests - ensure Monica instance is running at ${System.getenv('MONICA_API_URL') ?: 'http://localhost:8081'}"
+	}
 }
