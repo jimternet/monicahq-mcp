@@ -90,6 +90,14 @@ public class ContactService {
                         updateData.put("genderId", existingData.get("gender_id"));
                     }
                     
+                    // Handle birthdate logic - if birthdate is provided, automatically set isBirthdateKnown to true
+                    if (updateData.containsKey("birthdate") && updateData.get("birthdate") != null 
+                        && !updateData.get("birthdate").toString().trim().isEmpty()) {
+                        // If birthdate is provided, ensure isBirthdateKnown is true
+                        updateData.put("isBirthdateKnown", true);
+                        log.info("Setting isBirthdateKnown=true because birthdate was provided");
+                    }
+                    
                     // Always include required boolean fields
                     if (!updateData.containsKey("isBirthdateKnown")) {
                         Object value = existingData.get("is_birthdate_known");
@@ -382,6 +390,27 @@ public class ContactService {
                 case "isDeceased" -> apiRequest.put("is_deceased", value);
                 case "isDeceasedDateKnown" -> apiRequest.put("is_deceased_date_known", value);
                 case "jobTitle" -> apiRequest.put("job_title", value);
+                case "birthdate" -> {
+                    // MonicaHQ API expects day, month, year as integers instead of YYYY-MM-DD
+                    if (value != null && !value.toString().trim().isEmpty()) {
+                        try {
+                            String birthdateStr = value.toString();
+                            String[] parts = birthdateStr.split("-");
+                            if (parts.length == 3) {
+                                // Convert to integers - Monica API requires integers not strings
+                                apiRequest.put("year", Integer.parseInt(parts[0]));
+                                apiRequest.put("month", Integer.parseInt(parts[1]));
+                                apiRequest.put("day", Integer.parseInt(parts[2]));
+                                log.info("Converted birthdate {} to year={}, month={}, day={}", 
+                                    birthdateStr, parts[0], parts[1], parts[2]);
+                            } else {
+                                log.warn("Invalid birthdate format: {}, expected YYYY-MM-DD", birthdateStr);
+                            }
+                        } catch (Exception e) {
+                            log.error("Error parsing birthdate {}: {}", value, e.getMessage());
+                        }
+                    }
+                }
                 default -> apiRequest.put(key, value);
             }
         });

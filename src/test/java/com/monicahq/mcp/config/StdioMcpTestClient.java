@@ -38,7 +38,8 @@ public class StdioMcpTestClient {
         if (mcpProcess != null) {
             stdinWriter.close();
             mcpProcess.destroyForcibly();
-            mcpProcess.waitFor(5, TimeUnit.SECONDS);
+            int timeoutSeconds = System.getenv("CI") != null ? 10 : 5;
+            mcpProcess.waitFor(timeoutSeconds, TimeUnit.SECONDS);
         }
     }
     
@@ -92,15 +93,18 @@ public class StdioMcpTestClient {
             }
         });
         
-        // Wait up to 10 seconds for server to be ready
-        readyFuture.get(10, TimeUnit.SECONDS);
+        // Wait up to 30 seconds for server to be ready (CI environments are slower)
+        int timeoutSeconds = System.getenv("CI") != null ? 30 : 10;
+        readyFuture.get(timeoutSeconds, TimeUnit.SECONDS);
     }
     
     /**
      * Send MCP JSON-RPC request and wait for response
      */
     public JsonNode sendMcpRequest(Map<String, Object> request) throws Exception {
-        return sendMcpRequest(request, 5000); // 5 second timeout
+        // Use longer timeout for CI environments
+        long timeoutMs = System.getenv("CI") != null ? 15000 : 5000;
+        return sendMcpRequest(request, timeoutMs);
     }
     
     /**
