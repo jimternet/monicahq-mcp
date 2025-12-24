@@ -22,15 +22,16 @@ repositories {
 // See: https://github.com/jimternet/monicahq-mcp/security/dependabot
 ext {
 	// Spring Framework - fixes CVE-2025-41249 (high) and CVE-2025-41254 (medium)
-	set('springFrameworkVersion', '6.2.6')
-	// Netty - security patched version
-	set('nettyVersion', '4.1.116.Final')
-	// Tomcat - security patched version
-	set('tomcatVersion', '10.1.33')
-	// Logback - security patched version
-	set('logbackVersion', '1.5.13')
-	// Commons Lang - security patched version
-	set('commonsLang3Version', '3.17.0')
+	// Must be >= 6.2.10 for compatibility with Spring Boot 3.5.5
+	set('springFrameworkVersion', '6.2.12')
+	// Netty - fixes CRLF injection (CVE) and DoS via zip bomb
+	set('nettyVersion', '4.1.129.Final')
+	// Tomcat - fixes path traversal and escape sequence vulnerabilities
+	set('tomcatVersion', '10.1.47')
+	// Logback - fixes arbitrary code execution vulnerability
+	set('logbackVersion', '1.5.19')
+	// Commons Lang - fixes DoS via uncontrolled recursion
+	set('commonsLang3Version', '3.18.0')
 	// Rhino - fixes DoS vulnerability in toFixed()
 	set('rhinoVersion', '1.7.14.1')
 }
@@ -44,28 +45,49 @@ springBoot {
 // Uses Spring Dependency Management plugin to enforce these versions across all configurations
 dependencyManagement {
 	dependencies {
-		// Spring Framework - override all core modules to patched version
-		dependency "org.springframework:spring-core:${springFrameworkVersion}"
-		dependency "org.springframework:spring-context:${springFrameworkVersion}"
-		dependency "org.springframework:spring-web:${springFrameworkVersion}"
-		dependency "org.springframework:spring-webflux:${springFrameworkVersion}"
-		dependency "org.springframework:spring-websocket:${springFrameworkVersion}"
+		// Spring Framework - override ALL modules using dependencySet for consistency
+		// This ensures all Spring modules are at the same version to avoid binary incompatibility
+		dependencySet(group: 'org.springframework', version: springFrameworkVersion) {
+			entry 'spring-aop'
+			entry 'spring-beans'
+			entry 'spring-context'
+			entry 'spring-context-support'
+			entry 'spring-core'
+			entry 'spring-expression'
+			entry 'spring-jcl'
+			entry 'spring-messaging'
+			entry 'spring-web'
+			entry 'spring-webflux'
+			entry 'spring-webmvc'
+			entry 'spring-websocket'
+		}
 
 		// Netty - override all modules to patched version (fixes CRLF injection, DoS)
-		dependency "io.netty:netty-codec-http:${nettyVersion}"
-		dependency "io.netty:netty-codec:${nettyVersion}"
-		dependency "io.netty:netty-common:${nettyVersion}"
-		dependency "io.netty:netty-buffer:${nettyVersion}"
-		dependency "io.netty:netty-transport:${nettyVersion}"
-		dependency "io.netty:netty-handler:${nettyVersion}"
+		dependencySet(group: 'io.netty', version: nettyVersion) {
+			entry 'netty-buffer'
+			entry 'netty-codec'
+			entry 'netty-codec-http'
+			entry 'netty-codec-http2'
+			entry 'netty-common'
+			entry 'netty-handler'
+			entry 'netty-resolver'
+			entry 'netty-transport'
+			entry 'netty-transport-native-epoll'
+			entry 'netty-transport-native-unix-common'
+		}
 
 		// Tomcat - override embedded Tomcat modules (fixes path traversal)
-		dependency "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}"
-		dependency "org.apache.tomcat.embed:tomcat-embed-websocket:${tomcatVersion}"
+		dependencySet(group: 'org.apache.tomcat.embed', version: tomcatVersion) {
+			entry 'tomcat-embed-core'
+			entry 'tomcat-embed-el'
+			entry 'tomcat-embed-websocket'
+		}
 
 		// Logback - override core logging modules (fixes arbitrary code execution)
-		dependency "ch.qos.logback:logback-core:${logbackVersion}"
-		dependency "ch.qos.logback:logback-classic:${logbackVersion}"
+		dependencySet(group: 'ch.qos.logback', version: logbackVersion) {
+			entry 'logback-core'
+			entry 'logback-classic'
+		}
 
 		// Commons Lang - override to patched version (fixes DoS via uncontrolled recursion)
 		dependency "org.apache.commons:commons-lang3:${commonsLang3Version}"
