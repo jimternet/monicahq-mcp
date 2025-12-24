@@ -198,3 +198,21 @@ task extractOpenApiSpec {
 		}
 	}
 }
+
+// Task to compare OpenAPI specs and detect breaking changes
+// Uses SpecComparator to compare documented spec against generated spec
+task compareOpenApiSpecs(type: JavaExec) {
+	dependsOn extractOpenApiSpec
+	group = 'documentation'
+	description = 'Compare generated OpenAPI spec against documented spec for breaking changes'
+
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.monicahq.mcp.openapi.SpecComparator'
+	args = ['docs/monica-api-openapi.yaml', 'build/openapi/openapi.json']
+
+	doFirst {
+		println "Comparing OpenAPI specifications..."
+		println "  Documented spec: docs/monica-api-openapi.yaml"
+		println "  Generated spec:  build/openapi/openapi.json"
+	}
+}
