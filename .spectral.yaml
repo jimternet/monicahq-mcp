@@ -3,8 +3,7 @@
 # for MonicaHQ MCP Server API conformance
 
 extends:
-  - spectral:oas
-  - spectral:recommended
+  - "spectral:oas"
 
 rules:
   # Operation-level rules (enforce consistent API documentation)
