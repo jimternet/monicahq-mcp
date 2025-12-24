@@ -34,11 +34,18 @@ dependencies {
 	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 	implementation 'org.projectlombok:lombok'
-	
+
+	// OpenAPI Documentation (WebFlux variant - CRITICAL for Spring WebFlux)
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.0'
+
 	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// OpenAPI Validation
+	testImplementation 'org.openapitools.openapidiff:openapi-diff-core:2.1.0-beta.11'
+	testImplementation 'io.swagger.parser.v3:swagger-parser:2.1.25'
 	
 	// Annotation Processors
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
