@@ -1,0 +1,21 @@
+# Spectral OpenAPI Linting Configuration
+# This file configures Spectral to validate OpenAPI specifications
+# for MonicaHQ MCP Server API conformance
+
+extends:
+  - spectral:oas
+  - spectral:recommended
+
+rules:
+  # Operation-level rules (enforce consistent API documentation)
+  operation-operationId: error      # Every operation must have an operationId
+  operation-description: warn        # Operations should have descriptions
+  operation-tags: error              # Every operation must have at least one tag
+
+  # Server and info rules
+  oas3-api-servers: warn             # Recommend servers array in OpenAPI 3.x
+  info-contact: warn                 # Recommend contact info in specification
+
+  # Additional recommended rules for API quality
+  operation-success-response: warn   # Operations should have success responses
+  oas3-unused-component: warn        # Warn about unused components
