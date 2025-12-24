@@ -10,6 +10,8 @@ import org.openapitools.openapidiff.core.model.DiffResult;
 import org.openapitools.openapidiff.core.output.ConsoleRender;
 
 import java.io.File;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -74,8 +76,13 @@ public class SpecComparator {
         // Render the diff output to console
         if (result.getChangedApi() != null) {
             ConsoleRender render = new ConsoleRender();
-            String output = render.render(result.getChangedApi());
-            System.out.println(output);
+            OutputStreamWriter writer = new OutputStreamWriter(System.out, StandardCharsets.UTF_8);
+            render.render(result.getChangedApi(), writer);
+            try {
+                writer.flush();
+            } catch (Exception e) {
+                // Ignore flush errors
+            }
         }
 
         // Report summary
