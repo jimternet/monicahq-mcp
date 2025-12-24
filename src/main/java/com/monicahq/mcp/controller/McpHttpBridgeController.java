@@ -2,6 +2,9 @@ package com.monicahq.mcp.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +25,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "MCP", description = "Model Context Protocol HTTP bridge for JSON-RPC message processing")
 public class McpHttpBridgeController {
 
     private final McpMessageHandler messageHandler;
@@ -31,6 +35,13 @@ public class McpHttpBridgeController {
     private boolean authenticationEnabled;
 
     @PostMapping("/mcp")
+    @Operation(
+        summary = "Process MCP JSON-RPC request",
+        description = "Processes Model Context Protocol (MCP) JSON-RPC 2.0 requests over HTTP. Supports tool invocations, resource requests, and protocol messages. Requires Bearer token authentication."
+    )
+    @ApiResponse(responseCode = "200", description = "MCP request processed successfully - includes both successful responses and application-level errors (method not found, unknown tool)")
+    @ApiResponse(responseCode = "400", description = "Invalid request - JSON parse error or JSON-RPC protocol validation error")
+    @ApiResponse(responseCode = "401", description = "Authentication required or authentication failed - missing, invalid, or expired Bearer token")
     public Mono<ResponseEntity<Map<String, Object>>> handleMcpRequest(
             @RequestBody String body,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {

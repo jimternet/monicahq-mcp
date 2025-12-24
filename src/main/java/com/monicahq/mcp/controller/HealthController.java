@@ -2,6 +2,9 @@ package com.monicahq.mcp.controller;
 
 import com.monicahq.mcp.client.MonicaHqClient;
 import com.monicahq.mcp.config.LoggingConfig;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @RequestMapping("/health")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Health", description = "Health check endpoints for monitoring service status")
 public class HealthController {
 
     private final MonicaHqClient monicaClient;
@@ -29,6 +33,12 @@ public class HealthController {
     private final Instant startTime = Instant.now();
 
     @GetMapping
+    @Operation(
+        summary = "Health check",
+        description = "Returns overall health status including component health for MonicaHQ, WebSocket, and tool registry"
+    )
+    @ApiResponse(responseCode = "200", description = "Service is healthy")
+    @ApiResponse(responseCode = "503", description = "Service is unhealthy - one or more components are down")
     public Mono<ResponseEntity<Map<String, Object>>> health() {
         return buildHealthResponse()
             .map(ResponseEntity::ok)
@@ -40,6 +50,11 @@ public class HealthController {
     }
 
     @GetMapping("/live")
+    @Operation(
+        summary = "Liveness probe",
+        description = "Kubernetes liveness probe endpoint - returns UP if the service is running"
+    )
+    @ApiResponse(responseCode = "200", description = "Service is alive")
     public Mono<ResponseEntity<Map<String, Object>>> liveness() {
         Map<String, Object> response = Map.of(
             "status", "UP",
@@ -50,6 +65,12 @@ public class HealthController {
     }
 
     @GetMapping("/ready")
+    @Operation(
+        summary = "Readiness probe",
+        description = "Kubernetes readiness probe endpoint - returns UP if the service can accept traffic (MonicaHQ API is accessible)"
+    )
+    @ApiResponse(responseCode = "200", description = "Service is ready to accept traffic")
+    @ApiResponse(responseCode = "503", description = "Service is not ready - MonicaHQ API is not accessible")
     public Mono<ResponseEntity<Map<String, Object>>> readiness() {
         return checkMonicaConnectivity()
             .map(monicaHealthy -> {
@@ -76,6 +97,11 @@ public class HealthController {
     }
 
     @GetMapping("/detailed")
+    @Operation(
+        summary = "Detailed health check",
+        description = "Returns comprehensive health status including component health, system metrics, uptime, and request count"
+    )
+    @ApiResponse(responseCode = "200", description = "Detailed health information returned successfully")
     public Mono<ResponseEntity<Map<String, Object>>> detailedHealth() {
         LoggingConfig.McpLoggingContext.setServiceContext("HealthController", "detailedHealth");
         
@@ -172,6 +198,11 @@ public class HealthController {
     }
 
     @GetMapping("/ping")
+    @Operation(
+        summary = "Ping endpoint",
+        description = "Simple ping/pong endpoint for basic connectivity testing with correlation ID"
+    )
+    @ApiResponse(responseCode = "200", description = "Pong response with timestamp and correlation ID")
     public Mono<ResponseEntity<Map<String, Object>>> ping() {
         Map<String, Object> response = Map.of(
             "message", "pong",
