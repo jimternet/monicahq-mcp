@@ -77,19 +77,124 @@ tasks.named('test') {
 // Separate task for integration tests that require live Monica instance
 task integrationTest(type: Test) {
 	useJUnitPlatform()
-	
+
 	// Include only tests that require Monica instance
 	include '**/contract/**'
 	include '**/integration/**'
 	include '**/performance/**'
-	
+
 	// Configure test execution
 	maxParallelForks = 1  // Serial execution for integration tests
 	timeout = java.time.Duration.ofMinutes(10)
 	jvmArgs '-Xmx512m', '-XX:MaxMetaspaceSize=256m'
-	
+
 	// These tests require Monica instance to be running
 	doFirst {
 		println "Running integration tests - ensure Monica instance is running at ${System.getenv('MONICA_API_URL') ?: 'http://localhost:8081'}"
+	}
+}
+
+// Task to extract OpenAPI spec from running server
+// Starts server in background, fetches /v3/api-docs, saves to build/openapi/openapi.json
+task extractOpenApiSpec {
+	dependsOn bootJar
+	group = 'documentation'
+	description = 'Extract OpenAPI specification from running server'
+
+	def outputDir = file("${buildDir}/openapi")
+	def outputFile = file("${outputDir}/openapi.json")
+	def serverPort = 8080
+	def maxWaitSeconds = 60
+	def pollIntervalMs = 1000
+
+	outputs.file outputFile
+
+	doLast {
+		// Create output directory
+		outputDir.mkdirs()
+
+		// Build the command to run the jar
+		def jarFile = tasks.bootJar.archiveFile.get().asFile
+		def command = ['java', '-jar', jarFile.absolutePath, "--server.port=${serverPort}"]
+
+		println "Starting server from: ${jarFile.absolutePath}"
+
+		// Start the server process
+		def processBuilder = new ProcessBuilder(command)
+		processBuilder.redirectErrorStream(true)
+		processBuilder.environment().put('SPRING_PROFILES_ACTIVE', 'default')
+		def process = processBuilder.start()
+
+		// Consume output in background thread to prevent blocking
+		def outputReader = new Thread({
+			process.inputStream.eachLine { line ->
+				logger.info "[Server] ${line}"
+			}
+		})
+		outputReader.daemon = true
+		outputReader.start()
+
+		try {
+			// Wait for server to be ready by polling health endpoint
+			def serverUrl = "http://localhost:${serverPort}"
+			def healthUrl = "${serverUrl}/health"
+			def ready = false
+			def startTime = System.currentTimeMillis()
+
+			println "Waiting for server to be ready at ${healthUrl}..."
+
+			while (!ready && (System.currentTimeMillis() - startTime) < (maxWaitSeconds * 1000)) {
+				try {
+					def connection = new URL(healthUrl).openConnection() as HttpURLConnection
+					connection.connectTimeout = 2000
+					connection.readTimeout = 2000
+					connection.requestMethod = 'GET'
+
+					if (connection.responseCode == 200) {
+						ready = true
+						println "Server is ready!"
+					}
+					connection.disconnect()
+				} catch (Exception e) {
+					// Server not ready yet, wait and retry
+					Thread.sleep(pollIntervalMs)
+				}
+			}
+
+			if (!ready) {
+				throw new GradleException("Server failed to start within ${maxWaitSeconds} seconds")
+			}
+
+			// Fetch the OpenAPI spec
+			def apiDocsUrl = "${serverUrl}/v3/api-docs"
+			println "Fetching OpenAPI spec from ${apiDocsUrl}..."
+
+			def connection = new URL(apiDocsUrl).openConnection() as HttpURLConnection
+			connection.connectTimeout = 5000
+			connection.readTimeout = 10000
+			connection.requestMethod = 'GET'
+			connection.setRequestProperty('Accept', 'application/json')
+
+			if (connection.responseCode != 200) {
+				throw new GradleException("Failed to fetch OpenAPI spec: HTTP ${connection.responseCode}")
+			}
+
+			def specContent = connection.inputStream.text
+			connection.disconnect()
+
+			// Save the spec to file
+			outputFile.text = specContent
+			println "OpenAPI spec saved to: ${outputFile.absolutePath}"
+
+		} finally {
+			// Always stop the server
+			println "Stopping server..."
+			process.destroy()
+			process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)
+			if (process.isAlive()) {
+				process.destroyForcibly()
+			}
+			println "Server stopped."
+		}
 	}
 }
