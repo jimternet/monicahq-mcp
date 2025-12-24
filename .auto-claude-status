@@ -3,23 +3,23 @@
   "spec": "004-enforce-api-conformance-to-openapi-spec",
   "state": "building",
   "subtasks": {
-    "completed": 1,
+    "completed": 3,
     "total": 15,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Dependencies & Configuration",
+    "current": "Controller OpenAPI Annotations",
     "id": null,
-    "total": 2
+    "total": 3
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 2,
+    "number": 4,
     "started_at": "2025-12-23T22:17:35.075544"
   },
-  "last_update": "2025-12-23T22:19:20.277440"
+  "last_update": "2025-12-23T22:23:42.268558"
 }
