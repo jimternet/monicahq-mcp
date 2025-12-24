@@ -256,12 +256,18 @@ jobs:
       run: npm install -g @stoplight/spectral-cli
 
     - name: Extract OpenAPI Spec
+      env:
+        MONICA_API_URL: http://localhost:8081/api
+        MONICA_API_TOKEN: mock-token-for-ci-testing
       run: ./gradlew extractOpenApiSpec
 
     - name: Lint OpenAPI Spec with Spectral
       run: spectral lint build/openapi/openapi.json --fail-severity=error
 
     - name: Compare with Documented Spec
+      env:
+        MONICA_API_URL: http://localhost:8081/api
+        MONICA_API_TOKEN: mock-token-for-ci-testing
       run: ./gradlew compareOpenApiSpecs
 
     - name: Upload OpenAPI Spec Artifact
