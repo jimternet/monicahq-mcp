@@ -18,6 +18,21 @@ repositories {
 	mavenCentral()
 }
 
+// Security patch version overrides for vulnerable dependencies
+// See: https://github.com/jimternet/monicahq-mcp/security/dependabot
+ext {
+	// Spring Framework - fixes CVE-2025-41249 (high) and CVE-2025-41254 (medium)
+	set('springFrameworkVersion', '6.2.6')
+	// Netty - security patched version
+	set('nettyVersion', '4.1.116.Final')
+	// Tomcat - security patched version
+	set('tomcatVersion', '10.1.33')
+	// Logback - security patched version
+	set('logbackVersion', '1.5.13')
+	// Commons Lang - security patched version
+	set('commonsLang3Version', '3.17.0')
+}
+
 // Specify main class for Spring Boot
 springBoot {
 	mainClass = 'com.monicahq.mcp.MonicaHqMcpApplication'
