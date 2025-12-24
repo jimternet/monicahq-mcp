@@ -137,7 +137,7 @@ task extractOpenApiSpec {
 		try {
 			// Wait for server to be ready by polling health endpoint
 			def serverUrl = "http://localhost:${serverPort}"
-			def healthUrl = "${serverUrl}/health"
+			def healthUrl = "${serverUrl}/actuator/health"
 			def ready = false
 			def startTime = System.currentTimeMillis()
 
