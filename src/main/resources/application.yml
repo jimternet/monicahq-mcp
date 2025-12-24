@@ -21,6 +21,16 @@ mcp:
     ping-interval: 30s
     pong-timeout: 10s
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+
 resilience4j:
   circuitbreaker:
     instances:
