@@ -31,11 +31,48 @@ ext {
 	set('logbackVersion', '1.5.13')
 	// Commons Lang - security patched version
 	set('commonsLang3Version', '3.17.0')
+	// Rhino - fixes DoS vulnerability in toFixed()
+	set('rhinoVersion', '1.7.14.1')
 }
 
 // Specify main class for Spring Boot
 springBoot {
 	mainClass = 'com.monicahq.mcp.MonicaHqMcpApplication'
+}
+
+// Override vulnerable transitive dependency versions with security-patched versions
+// Uses Spring Dependency Management plugin to enforce these versions across all configurations
+dependencyManagement {
+	dependencies {
+		// Spring Framework - override all core modules to patched version
+		dependency "org.springframework:spring-core:${springFrameworkVersion}"
+		dependency "org.springframework:spring-context:${springFrameworkVersion}"
+		dependency "org.springframework:spring-web:${springFrameworkVersion}"
+		dependency "org.springframework:spring-webflux:${springFrameworkVersion}"
+		dependency "org.springframework:spring-websocket:${springFrameworkVersion}"
+
+		// Netty - override all modules to patched version (fixes CRLF injection, DoS)
+		dependency "io.netty:netty-codec-http:${nettyVersion}"
+		dependency "io.netty:netty-codec:${nettyVersion}"
+		dependency "io.netty:netty-common:${nettyVersion}"
+		dependency "io.netty:netty-buffer:${nettyVersion}"
+		dependency "io.netty:netty-transport:${nettyVersion}"
+		dependency "io.netty:netty-handler:${nettyVersion}"
+
+		// Tomcat - override embedded Tomcat modules (fixes path traversal)
+		dependency "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}"
+		dependency "org.apache.tomcat.embed:tomcat-embed-websocket:${tomcatVersion}"
+
+		// Logback - override core logging modules (fixes arbitrary code execution)
+		dependency "ch.qos.logback:logback-core:${logbackVersion}"
+		dependency "ch.qos.logback:logback-classic:${logbackVersion}"
+
+		// Commons Lang - override to patched version (fixes DoS via uncontrolled recursion)
+		dependency "org.apache.commons:commons-lang3:${commonsLang3Version}"
+
+		// Rhino - override to patched version (fixes DoS in toFixed())
+		dependency "org.mozilla:rhino:${rhinoVersion}"
+	}
 }
 
 dependencies {
