@@ -115,7 +115,7 @@ task extractOpenApiSpec {
 
 		// Build the command to run the jar
 		def jarFile = tasks.bootJar.archiveFile.get().asFile
-		def command = ['java', '-jar', jarFile.absolutePath, "--server.port=${serverPort}".toString()]
+		def command = ['java', '-Dspring.main.web-application-type=reactive', '-jar', jarFile.absolutePath, "--server.port=${serverPort}".toString()]
 
 		println "Starting server from: ${jarFile.absolutePath}"
 
