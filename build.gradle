@@ -110,7 +110,7 @@ dependencies {
 	implementation 'org.projectlombok:lombok'
 
 	// OpenAPI Documentation (WebFlux variant - CRITICAL for Spring WebFlux)
-	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.0'
 
 	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
