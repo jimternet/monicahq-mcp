@@ -119,7 +119,7 @@ dependencies {
 
 	// OpenAPI Validation
 	testImplementation 'org.openapitools.openapidiff:openapi-diff-core:2.1.0-beta.11'
-	testImplementation 'io.swagger.parser.v3:swagger-parser:2.1.25'
+	testImplementation 'io.swagger.parser.v3:swagger-parser:2.1.37'
 	
 	// Annotation Processors
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
