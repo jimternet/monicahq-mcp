@@ -6,7 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR/../.."
 
 echo "🏛️  MonicaHQ MCP Server Constitutional Compliance Validator"
 echo "Constitution Version: 1.2.0"
@@ -115,7 +115,7 @@ echo "Principle III: Spring Boot Architecture Excellence"
 echo "=================================================="
 
 # Check Spring Boot 3.x
-if grep "spring-boot.*3\." build.gradle >/dev/null 2>&1; then
+if grep -E "spring.*boot.*3\." build.gradle >/dev/null 2>&1; then
     success "Spring Boot 3.x dependency found"
 else
     violation "Spring Boot 3.x not found in dependencies"
