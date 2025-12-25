@@ -6,7 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR/../.."
 
 echo "🏛️  MonicaHQ MCP Server Constitutional Compliance Validator"
 echo "Constitution Version: 1.2.0"
