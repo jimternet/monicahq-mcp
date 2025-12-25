@@ -189,7 +189,7 @@ task extractOpenApiSpec {
 
 		// Build the command to run the jar
 		def jarFile = tasks.bootJar.archiveFile.get().asFile
-		def command = ['java', '-jar', jarFile.absolutePath, "--server.port=${serverPort}"]
+		def command = ['java', '-Dspring.main.web-application-type=reactive', '-jar', jarFile.absolutePath, "--server.port=${serverPort}".toString()]
 
 		println "Starting server from: ${jarFile.absolutePath}"
 
@@ -211,7 +211,7 @@ task extractOpenApiSpec {
 		try {
 			// Wait for server to be ready by polling health endpoint
 			def serverUrl = "http://localhost:${serverPort}"
-			def healthUrl = "${serverUrl}/health"
+			def healthUrl = "${serverUrl}/actuator/health"
 			def ready = false
 			def startTime = System.currentTimeMillis()
 
