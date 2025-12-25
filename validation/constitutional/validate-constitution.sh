@@ -115,7 +115,7 @@ echo "Principle III: Spring Boot Architecture Excellence"
 echo "=================================================="
 
 # Check Spring Boot 3.x
-if grep "spring-boot.*3\." build.gradle >/dev/null 2>&1; then
+if grep -E "spring.*boot.*3\." build.gradle >/dev/null 2>&1; then
     success "Spring Boot 3.x dependency found"
 else
     violation "Spring Boot 3.x not found in dependencies"
