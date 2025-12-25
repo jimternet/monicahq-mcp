@@ -135,8 +135,9 @@ tasks.named('test') {
 	
 	// Exclude tests that require Monica instance by package
 	exclude '**/contract/**'
-	exclude '**/integration/**' 
+	exclude '**/integration/**'
 	exclude '**/performance/**'
+	exclude '**/docker/**'
 	
 	// Configure test execution for maximum parallelization
 	maxParallelForks = Runtime.runtime.availableProcessors()  // Use all available cores
@@ -157,6 +158,9 @@ task integrationTest(type: Test) {
 	include '**/integration/**'
 	include '**/performance/**'
 
+	// Exclude Docker tests (they have their own task)
+	exclude '**/docker/**'
+
 	// Configure test execution
 	maxParallelForks = 1  // Serial execution for integration tests
 	timeout = java.time.Duration.ofMinutes(10)
@@ -165,6 +169,24 @@ task integrationTest(type: Test) {
 	// These tests require Monica instance to be running
 	doFirst {
 		println "Running integration tests - ensure Monica instance is running at ${System.getenv('MONICA_API_URL') ?: 'http://localhost:8081'}"
+	}
+}
+
+// Separate task for Docker integration tests that require live Monica API
+task dockerTest(type: Test) {
+	useJUnitPlatform()
+
+	// Include only Docker integration tests
+	include '**/docker/**'
+
+	// Configure test execution
+	maxParallelForks = 1  // Serial execution for API tests to avoid rate limiting
+	timeout = java.time.Duration.ofMinutes(15)
+	jvmArgs '-Xmx512m', '-XX:MaxMetaspaceSize=256m'
+
+	// These tests require Monica API instance
+	doFirst {
+		println "Running Docker tests - ensure Monica API is accessible at ${System.getenv('MONICA_API_URL') ?: 'https://app.monicahq.com/api'}"
 	}
 }
 

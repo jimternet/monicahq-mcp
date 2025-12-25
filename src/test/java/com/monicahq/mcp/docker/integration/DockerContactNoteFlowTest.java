@@ -50,7 +50,7 @@ public class DockerContactNoteFlowTest extends DockerBaseTest {
 
         // Step 3: Retrieve contact to verify it exists
         Map<String, Object> getResponse = callTool("contact_get", Map.of(
-            "contactId", contactId
+            "id", contactId
         ), 3);
 
         assertNotNull(getResponse);
@@ -129,7 +129,7 @@ public class DockerContactNoteFlowTest extends DockerBaseTest {
 
         // Step 6: Verify contact still accessible
         Map<String, Object> getResponse = callTool("contact_get", Map.of(
-            "contactId", contactId
+            "id", contactId
         ), 5);
 
         assertTrue(isSuccessResponse(getResponse), "Contact should still be retrievable after adding notes");
@@ -177,7 +177,7 @@ public class DockerContactNoteFlowTest extends DockerBaseTest {
 
         // Step 3: Retrieve contact
         Map<String, Object> getResponse = callTool("contact_get", Map.of(
-            "contactId", contactId
+            "id", contactId
         ), 3);
 
         assertNotNull(getResponse);

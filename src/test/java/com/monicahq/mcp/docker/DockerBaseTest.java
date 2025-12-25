@@ -215,7 +215,7 @@ public abstract class DockerBaseTest {
     private void deleteContact(Long contactId) {
         try {
             Map<String, Object> response = callTool("contact_delete", Map.of(
-                "contactId", contactId
+                "id", contactId
             ), 999);
             log.debug("Deleted contact with ID: {}", contactId);
         } catch (Exception e) {
@@ -231,7 +231,7 @@ public abstract class DockerBaseTest {
     private void deleteNote(Long noteId) {
         try {
             Map<String, Object> response = callTool("note_delete", Map.of(
-                "noteId", noteId
+                "id", noteId
             ), 998);
             log.debug("Deleted note with ID: {}", noteId);
         } catch (Exception e) {
