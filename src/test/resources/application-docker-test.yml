@@ -1,0 +1,76 @@
+# Docker Test Profile Configuration
+# This profile is used for integration tests against a live Monica API instance
+# Requires MONICA_API_URL and MONICA_API_TOKEN environment variables
+
+spring:
+  profiles:
+    active: docker-test
+  main:
+    web-application-type: none  # Disable web server for faster test startup
+    banner-mode: off
+
+server:
+  port: 0  # Use random port if web server is enabled
+
+monica:
+  api:
+    url: ${MONICA_API_URL:https://app.monicahq.com/api}
+    token: ${MONICA_API_TOKEN}
+    timeout: 30s
+    max-retries: 3
+    rate-limit:
+      requests-per-minute: 60
+
+mcp:
+  websocket:
+    path: /mcp
+    allowed-origins: "*"
+    buffer-size: 8192
+  auth:
+    enabled: true  # Enable authentication for Docker tests
+
+# Enable actuator health endpoint for health check verification
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+
+# Resilience4j configuration for real API testing
+resilience4j:
+  circuitbreaker:
+    instances:
+      monicaApi:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 5s
+  retry:
+    instances:
+      monicaApi:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+
+logging:
+  level:
+    com.monicahq.mcp: DEBUG
+    com.monicahq.mcp.client: DEBUG
+    org.springframework.web: INFO
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: WARN
+  pattern:
+    console: "%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n"
