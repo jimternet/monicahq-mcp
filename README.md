@@ -19,6 +19,7 @@ This project includes specialized documentation for different use cases:
 | **[CLAUDE.md](CLAUDE.md)** | Claude Code context and development notes | AI-assisted development, codebase understanding |
 | **[TESTING-GUIDE.md](TESTING-GUIDE.md)** | Comprehensive testing procedures | Running tests, constitutional compliance validation |
 | **[MCP-STDIO-LOGGING.md](MCP-STDIO-LOGGING.md)** | MCP protocol compliance requirements | Debugging Claude Desktop integration issues |
+| **[docs/API-LIMITATIONS.md](docs/API-LIMITATIONS.md)** | MonicaHQ API limitations and workarounds | Understanding unsupported features, debugging HTTP 405 errors |
 | **[IMPLEMENTATION-SUCCESS.md](IMPLEMENTATION-SUCCESS.md)** | Historical implementation record | Understanding project completion milestones |
 
 ### Quick Reference Links
@@ -409,6 +410,37 @@ deploy:
 - **Supported Versions**: Monica 4.x and 5.x
 - **Required**: OAuth2 Bearer token authentication
 - **API Coverage**: 91% of Monica API endpoints (122 operations)
+
+## ⚠️ API Limitations
+
+The MonicaHQ API has some endpoints that don't work as documented. This MCP server implements workarounds for most issues, but some features are unavailable.
+
+### Unsupported Features
+
+| Feature | Status | Reason |
+|---------|--------|--------|
+| **Photo Upload** | ❌ NOT SUPPORTED | MonicaHQ API returns HTTP 405 - no workaround exists |
+| **Document Upload** | ❌ NOT SUPPORTED | MonicaHQ API returns HTTP 405 - no workaround exists |
+
+**What this means:**
+- `photo_create` and `document_create` operations are not available
+- Photos and documents must be uploaded manually through the MonicaHQ web interface
+- This is a limitation of the MonicaHQ API itself, not this MCP server
+
+### Implemented Workarounds
+
+This MCP server automatically handles these MonicaHQ API quirks:
+
+| Issue | Workaround | Affected Operations |
+|-------|------------|---------------------|
+| Nested POST endpoints return HTTP 405 | Uses root-level POST with `contact_id` in body | `relationship_create`, `address_create`, `contactfield_create`, `pet_create`, `call_create` |
+| Conversation messages endpoint returns HTTP 405 | Extracts messages from conversation GET response | `conversation_message_list` |
+
+**You don't need to do anything special** - the workarounds are transparent and all affected operations work normally.
+
+### More Information
+
+For complete technical details on API limitations and workarounds, see [docs/API-LIMITATIONS.md](docs/API-LIMITATIONS.md).
 
 ## Troubleshooting
 
