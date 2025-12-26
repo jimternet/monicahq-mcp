@@ -63,9 +63,12 @@ public class McpToolRegistry {
     private final UserService userService;
     private final ComplianceService complianceService;
 
+    // Pet Management service - API Workaround Implementation
+    private final PetService petService;
+
     @PostConstruct
     public void initializeTools() {
-        log.info("Initializing MCP tool registry with 136 operations"); // 122 + 14 new API gap fix operations
+        log.info("Initializing MCP tool registry with 141 operations"); // 136 + 5 pet operations
         
         // === CONTACT MANAGEMENT (12 operations) ===
         // Core contact operations (5)
@@ -176,7 +179,15 @@ public class McpToolRegistry {
         registerTool("gift_update", "[Gift] Update an existing gift", createGiftUpdateSchema(), "Gift Management");
         registerTool("gift_delete", "[Gift] Delete a gift", createIdSchema("Gift ID"), "Gift Management");
         registerTool("gift_list", "[Gift] List gifts with pagination", createListSchema(), "Gift Management");
-        
+
+        // === PET MANAGEMENT (5 operations) ===
+        // Note: Uses root-level POST /pets endpoint (not /contacts/{id}/pets) to avoid HTTP 405 errors
+        registerTool("pet_create", "[Pet] Create a new pet for a contact", createPetSchema(), "Pet Management");
+        registerTool("pet_get", "[Pet] Get a pet by ID", createIdSchema("Pet ID"), "Pet Management");
+        registerTool("pet_update", "[Pet] Update an existing pet", createPetUpdateSchema(), "Pet Management");
+        registerTool("pet_delete", "[Pet] Delete a pet", createIdSchema("Pet ID"), "Pet Management");
+        registerTool("pet_list", "[Pet] List pets with pagination", createListSchema(), "Pet Management");
+
         // === AUDIT LOG MANAGEMENT (3 operations) ===
         registerTool("auditlog_get", "[Audit Log] Get an audit log by ID", createIdSchema("Audit Log ID"), "System & Reference");
         registerTool("auditlog_list", "[Audit Log] List audit logs with pagination", createListSchema(), "System & Reference");
@@ -485,7 +496,14 @@ public class McpToolRegistry {
             case "gift_update" -> giftService.updateGift(arguments);
             case "gift_delete" -> giftService.deleteGift(arguments);
             case "gift_list" -> giftService.listGifts(arguments);
-            
+
+            // Pet operations - uses root-level POST /pets endpoint to avoid HTTP 405 errors
+            case "pet_create" -> petService.createPet(arguments);
+            case "pet_get" -> petService.getPet(arguments);
+            case "pet_update" -> petService.updatePet(arguments);
+            case "pet_delete" -> petService.deletePet(arguments);
+            case "pet_list" -> petService.listPets(arguments);
+
             // Audit Log operations
             case "auditlog_get" -> auditLogService.getAuditLog(arguments);
             case "auditlog_list" -> auditLogService.listAuditLogs(arguments);
@@ -1482,7 +1500,37 @@ public class McpToolRegistry {
     private Map<String, Object> createGiftUpdateSchema() {
         return createUpdateSchema(createGiftSchema());
     }
-    
+
+    /**
+     * Schema for creating pets associated with contacts.
+     * Uses root-level POST /pets endpoint with contact_id in body to avoid HTTP 405 errors.
+     */
+    private Map<String, Object> createPetSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID this pet belongs to (required)"
+                ),
+                "petCategoryId", Map.of(
+                    "type", "integer",
+                    "description", "Pet category ID (required) - defines the type of pet (e.g., dog, cat, bird)"
+                ),
+                "name", Map.of(
+                    "type", "string",
+                    "description", "Pet's name (optional)",
+                    "maxLength", 255
+                )
+            ),
+            "required", List.of("contactId", "petCategoryId")
+        );
+    }
+
+    private Map<String, Object> createPetUpdateSchema() {
+        return createUpdateSchema(createPetSchema());
+    }
+
     private Map<String, Object> createAuditLogSearchSchema() {
         return Map.of(
             "type", "object",
