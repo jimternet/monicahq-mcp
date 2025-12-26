@@ -387,6 +387,13 @@ public abstract class ServiceTestBase {
         return new CompanyDataBuilder();
     }
 
+    /**
+     * Builder for creating mock gift data.
+     */
+    protected GiftDataBuilder giftBuilder() {
+        return new GiftDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -970,6 +977,82 @@ public abstract class ServiceTestBase {
         }
 
         public CompanyDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock gift data.
+     */
+    public static class GiftDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public GiftDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("name", "Test Gift");
+            data.put("status", "idea");
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public GiftDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public GiftDataBuilder name(String name) {
+            data.put("name", name);
+            return this;
+        }
+
+        public GiftDataBuilder contactId(Long contactId) {
+            data.put("contact_id", contactId);
+            data.put("contact", Map.of("id", contactId));
+            return this;
+        }
+
+        public GiftDataBuilder comment(String comment) {
+            data.put("comment", comment);
+            return this;
+        }
+
+        public GiftDataBuilder url(String url) {
+            data.put("url", url);
+            return this;
+        }
+
+        public GiftDataBuilder value(Object value) {
+            data.put("value", value);
+            return this;
+        }
+
+        public GiftDataBuilder valueInBaseCurrency(Object value) {
+            data.put("value_in_base_currency", value);
+            return this;
+        }
+
+        public GiftDataBuilder status(String status) {
+            data.put("status", status);
+            return this;
+        }
+
+        public GiftDataBuilder date(String date) {
+            data.put("date", date);
+            return this;
+        }
+
+        public GiftDataBuilder isFor(String isFor) {
+            data.put("is_for", isFor);
+            return this;
+        }
+
+        public GiftDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
