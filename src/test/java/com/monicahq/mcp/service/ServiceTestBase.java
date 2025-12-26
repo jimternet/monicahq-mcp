@@ -394,6 +394,13 @@ public abstract class ServiceTestBase {
         return new GiftDataBuilder();
     }
 
+    /**
+     * Builder for creating mock debt data.
+     */
+    protected DebtDataBuilder debtBuilder() {
+        return new DebtDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1053,6 +1060,68 @@ public abstract class ServiceTestBase {
         }
 
         public GiftDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock debt data.
+     */
+    public static class DebtDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public DebtDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("amount", "100.00");
+            data.put("status", "inprogress");
+            data.put("in_debt", "yes");
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public DebtDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public DebtDataBuilder contactId(Long contactId) {
+            data.put("contact_id", contactId);
+            data.put("contact", Map.of("id", contactId));
+            return this;
+        }
+
+        public DebtDataBuilder amount(Object amount) {
+            data.put("amount", amount);
+            return this;
+        }
+
+        public DebtDataBuilder currency(String currency) {
+            data.put("currency", currency);
+            return this;
+        }
+
+        public DebtDataBuilder inDebt(String inDebt) {
+            data.put("in_debt", inDebt);
+            return this;
+        }
+
+        public DebtDataBuilder status(String status) {
+            data.put("status", status);
+            return this;
+        }
+
+        public DebtDataBuilder reason(String reason) {
+            data.put("reason", reason);
+            return this;
+        }
+
+        public DebtDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
