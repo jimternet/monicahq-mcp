@@ -373,6 +373,13 @@ public abstract class ServiceTestBase {
         return new ReminderDataBuilder();
     }
 
+    /**
+     * Builder for creating mock relationship data.
+     */
+    protected RelationshipDataBuilder relationshipBuilder() {
+        return new RelationshipDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -859,6 +866,57 @@ public abstract class ServiceTestBase {
         }
 
         public ReminderDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock relationship data.
+     */
+    public static class RelationshipDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public RelationshipDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("contact_is", 1L);
+            data.put("of_contact", 2L);
+            data.put("relationship_type_id", 1);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public RelationshipDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public RelationshipDataBuilder contactIs(Long contactId) {
+            data.put("contact_is", contactId);
+            return this;
+        }
+
+        public RelationshipDataBuilder ofContact(Long contactId) {
+            data.put("of_contact", contactId);
+            return this;
+        }
+
+        public RelationshipDataBuilder relationshipTypeId(Integer typeId) {
+            data.put("relationship_type_id", typeId);
+            return this;
+        }
+
+        public RelationshipDataBuilder notes(String notes) {
+            data.put("notes", notes);
+            return this;
+        }
+
+        public RelationshipDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
