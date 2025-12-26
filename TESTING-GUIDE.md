@@ -285,6 +285,458 @@ The constitutional framework enforces these quality gates:
 3. **MCP protocol compliance** verified
 4. **Production readiness** validated
 
+## Service Unit Testing Patterns
+
+This section documents the Mockito-based unit testing patterns used for service layer testing. These tests run without requiring a live MonicaHQ instance, providing fast feedback during development.
+
+### Overview
+
+The service layer tests use **Mockito** to mock the `MonicaHqClient` and `ContentFormatter` dependencies. This allows testing service logic in isolation, including:
+
+- Input validation
+- Field name mapping (camelCase ↔ snake_case)
+- ID type parsing (Long, Integer, String)
+- Response formatting
+- Pagination handling
+
+### ServiceTestBase
+
+All service tests extend `ServiceTestBase`, which provides reusable mocking patterns and test data builders.
+
+**Location:** `src/test/java/com/monicahq/mcp/service/ServiceTestBase.java`
+
+#### Key Features
+
+1. **Mock Response Builders** - Create standardized API response structures
+2. **MonicaHqClient Mock Helpers** - Set up GET/POST/PUT/DELETE mock behaviors
+3. **ContentFormatter Mock Helpers** - Mock JSON formatting
+4. **Entity Data Builders** - Fluent builders for test data
+5. **Argument Matchers** - Custom matchers for request verification
+
+### Basic Test Structure
+
+```java
+package com.monicahq.mcp.service;
+
+import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.util.ContentFormatter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class MyServiceTest extends ServiceTestBase {
+
+    @Mock
+    private MonicaHqClient monicaClient;
+
+    @Mock
+    private ContentFormatter contentFormatter;
+
+    @InjectMocks
+    private MyService myService;
+
+    private Map<String, Object> mockEntityData;
+    private Map<String, Object> mockApiResponse;
+
+    @BeforeEach
+    void setUp() {
+        // Build mock entity data using builders from ServiceTestBase
+        mockEntityData = contactBuilder()
+            .id(1L)
+            .firstName("John")
+            .lastName("Doe")
+            .build();
+
+        // Wrap in standard API response format
+        mockApiResponse = createSingleEntityResponse(mockEntityData);
+    }
+
+    @Test
+    void createEntity_ValidArgs_ReturnsFormattedResponse() {
+        // Given
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("firstName", "John");
+        arguments.put("lastName", "Doe");
+        arguments.put("genderId", 1);
+
+        when(monicaClient.post(eq("/contacts"), any())).thenReturn(Mono.just(mockApiResponse));
+        when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted JSON");
+
+        // When
+        Map<String, Object> result = myService.createContact(arguments).block();
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.containsKey("content"));
+
+        // Verify API was called with correct field mapping
+        verify(monicaClient).post(eq("/contacts"), argThat(data ->
+            "John".equals(data.get("first_name")) &&  // camelCase → snake_case
+            "Doe".equals(data.get("last_name"))
+        ));
+    }
+}
+```
+
+### Mocking MonicaHqClient
+
+#### GET Requests
+
+```java
+// Simple GET mock
+mockGet(monicaClient, "/contacts/123", mockApiResponse);
+
+// GET with query parameter matching
+mockGetWithParams(monicaClient, "/contacts",
+    params -> "1".equals(params.get("page")) && "10".equals(params.get("limit")),
+    mockListResponse);
+
+// GET with endpoint pattern matching
+mockGetWithPattern(monicaClient, "/contacts/\\d+", mockApiResponse);
+```
+
+#### POST Requests
+
+```java
+// Simple POST mock
+mockPost(monicaClient, "/contacts", mockApiResponse);
+
+// POST with request body verification
+mockPostWithBody(monicaClient, "/contacts",
+    body -> "John".equals(body.get("first_name")),
+    mockApiResponse);
+```
+
+#### PUT Requests
+
+```java
+// Simple PUT mock
+mockPut(monicaClient, "/contacts/123", mockApiResponse);
+
+// PUT with request body verification
+mockPutWithBody(monicaClient, "/contacts/123",
+    body -> !body.containsKey("id"),  // Verify ID removed from body
+    mockApiResponse);
+```
+
+#### DELETE Requests
+
+```java
+mockDelete(monicaClient, "/contacts/123", createDeleteResponse(123L));
+```
+
+### Response Builders
+
+#### Single Entity Response
+
+```java
+// Wraps entity in {"data": entityData} format
+Map<String, Object> response = createSingleEntityResponse(entityData);
+```
+
+#### List Response with Pagination
+
+```java
+List<Map<String, Object>> entities = List.of(entity1, entity2, entity3);
+
+// Default pagination (page 1, 10 per page)
+Map<String, Object> response = createListResponse(entities);
+
+// Custom pagination
+Map<String, Object> response = createListResponse(entities, page, perPage, total);
+```
+
+#### Delete Response
+
+```java
+Map<String, Object> response = createDeleteResponse(123L);
+// Returns: {"deleted": true, "id": 123}
+```
+
+### Entity Data Builders
+
+ServiceTestBase provides fluent builders for all entity types. Each builder initializes with sensible defaults.
+
+#### Contact Builder
+
+```java
+Map<String, Object> contact = contactBuilder()
+    .id(1L)
+    .firstName("John")
+    .lastName("Doe")
+    .genderId(1)
+    .email("john@example.com")
+    .phone("+1-555-1234")
+    .nickname("Johnny")
+    .company("Acme Inc")
+    .jobTitle("Developer")
+    .birthdate("1990-05-15")
+    .build();
+```
+
+#### Activity Builder
+
+```java
+Map<String, Object> activity = activityBuilder()
+    .id(1L)
+    .summary("Team meeting")
+    .description("Weekly standup")
+    .activityTypeId(1)
+    .happenedAt("2024-01-15")
+    .attendees(List.of(1L, 2L))
+    .build();
+```
+
+#### Other Available Builders
+
+- `taskBuilder()` - Tasks with title, contactId, completed status
+- `noteBuilder()` - Notes with body, contactId, favorited status
+- `tagBuilder()` - Tags with name, nameSlug, contactCount
+- `callBuilder()` - Calls with content, contactId, calledAt
+- `reminderBuilder()` - Reminders with title, initialDate, frequencyType
+- `relationshipBuilder()` - Relationships with contactIs, ofContact, typeId
+- `companyBuilder()` - Companies with name, website, numberOfEmployees
+- `giftBuilder()` - Gifts with name, status, value, recipient
+- `debtBuilder()` - Debts with amount, currency, inDebt status
+- `occupationBuilder()` - Occupations with title, companyId, dates
+- `conversationBuilder()` - Conversations with happenedAt, messages
+- `journalEntryBuilder()` - Journal entries with title, date, content
+- `documentBuilder()` - Documents with filename, mimeType, size
+- `photoBuilder()` - Photos with filename, mimeType, dimensions
+- `addressBuilder()` - Addresses with street, city, coordinates
+- `contactFieldBuilder()` - Custom fields with data, typeId
+- `groupBuilder()` - Groups with name, description
+- `userBuilder()` - Users with name, email, admin status
+- `activityTypeBuilder()` - Activity types with name, categoryId
+- `activityTypeCategoryBuilder()` - Activity type categories
+
+### Argument Matchers
+
+ServiceTestBase provides custom argument matchers for request verification:
+
+```java
+// Check map contains specific key-value pair
+verify(monicaClient).post(eq("/contacts"), argThat(hasEntry("first_name", "John")));
+
+// Check map contains specific key
+verify(monicaClient).post(eq("/contacts"), argThat(hasKey("first_name")));
+
+// Check map contains multiple keys
+verify(monicaClient).post(eq("/contacts"), argThat(hasKeys("first_name", "last_name", "gender_id")));
+
+// Check string map entry
+mockGetWithParams(monicaClient, "/contacts", hasStringEntry("page", "1"), response);
+
+// Custom predicate matching
+verify(monicaClient).post(eq("/contacts"), argThat(matching(data ->
+    data.containsKey("first_name") && !data.containsKey("id")
+)));
+```
+
+### Common Test Patterns
+
+#### Testing Validation Errors
+
+```java
+@Test
+void createEntity_MissingRequiredField_ThrowsException() {
+    Map<String, Object> arguments = new HashMap<>();
+    // Missing required 'firstName' field
+
+    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        myService.createContact(arguments).block();
+    });
+
+    assertEquals("firstName is required", exception.getMessage());
+    verifyNoInteractions(monicaClient);  // API should not be called
+}
+```
+
+#### Testing Field Name Mapping
+
+```java
+@Test
+void createEntity_MapsFieldNames_ToSnakeCase() {
+    Map<String, Object> arguments = Map.of(
+        "firstName", "John",
+        "lastName", "Doe",
+        "genderId", 1
+    );
+
+    when(monicaClient.post(eq("/contacts"), any())).thenReturn(Mono.just(mockApiResponse));
+    when(contentFormatter.formatAsEscapedJson(any())).thenReturn("JSON");
+
+    myService.createContact(arguments).block();
+
+    verify(monicaClient).post(eq("/contacts"), argThat(data ->
+        data.containsKey("first_name") &&   // camelCase → snake_case
+        data.containsKey("last_name") &&
+        data.containsKey("gender_id") &&
+        !data.containsKey("firstName")      // Original key should not be present
+    ));
+}
+```
+
+#### Testing ID Type Parsing
+
+```java
+@Test
+void getEntity_StringId_ParsesCorrectly() {
+    Map<String, Object> arguments = Map.of("id", "123");  // String ID
+
+    when(monicaClient.get(eq("/contacts/123"), any())).thenReturn(Mono.just(mockApiResponse));
+    when(contentFormatter.formatAsEscapedJson(any())).thenReturn("JSON");
+
+    Map<String, Object> result = myService.getContact(arguments).block();
+
+    assertNotNull(result);
+    verify(monicaClient).get(eq("/contacts/123"), any());
+}
+
+@Test
+void getEntity_IntegerId_ParsesCorrectly() {
+    Map<String, Object> arguments = Map.of("id", 123);  // Integer ID
+
+    when(monicaClient.get(eq("/contacts/123"), any())).thenReturn(Mono.just(mockApiResponse));
+    when(contentFormatter.formatAsEscapedJson(any())).thenReturn("JSON");
+
+    myService.getContact(arguments).block();
+
+    verify(monicaClient).get(eq("/contacts/123"), any());
+}
+```
+
+#### Testing Pagination and Limit Clamping
+
+```java
+@Test
+void listEntities_ExceedsMaxLimit_ClampedTo100() {
+    Map<String, Object> arguments = Map.of("limit", 500);  // Exceeds max
+
+    when(monicaClient.get(eq("/contacts"), any())).thenReturn(Mono.just(mockListResponse));
+    when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("JSON");
+
+    myService.listContacts(arguments).block();
+
+    verify(monicaClient).get(eq("/contacts"), argThat(params ->
+        "100".equals(params.get("limit"))  // Clamped to 100
+    ));
+}
+
+@Test
+void listEntities_BelowMinLimit_ClampedTo1() {
+    Map<String, Object> arguments = Map.of("limit", 0);
+
+    when(monicaClient.get(eq("/contacts"), any())).thenReturn(Mono.just(mockListResponse));
+    when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("JSON");
+
+    myService.listContacts(arguments).block();
+
+    verify(monicaClient).get(eq("/contacts"), argThat(params ->
+        "1".equals(params.get("limit"))
+    ));
+}
+```
+
+#### Testing Update Operations (ID Removal)
+
+```java
+@Test
+void updateEntity_RemovesIdFromBody() {
+    Map<String, Object> arguments = Map.of(
+        "id", 123L,
+        "firstName", "Jane"
+    );
+
+    when(monicaClient.put(eq("/contacts/123"), any())).thenReturn(Mono.just(mockApiResponse));
+    when(contentFormatter.formatAsEscapedJson(any())).thenReturn("JSON");
+
+    myService.updateContact(arguments).block();
+
+    verify(monicaClient).put(eq("/contacts/123"), argThat(data ->
+        !data.containsKey("id") &&     // ID removed from body
+        "Jane".equals(data.get("first_name"))
+    ));
+}
+```
+
+### Running Unit Tests
+
+```bash
+# Run all tests
+./gradlew test
+
+# Run service tests only
+./gradlew test --tests 'com.monicahq.mcp.service.*Test'
+
+# Run specific test class
+./gradlew test --tests 'com.monicahq.mcp.service.ContactServiceTest'
+
+# Run specific test method
+./gradlew test --tests 'com.monicahq.mcp.service.ContactServiceTest.createContact_ValidArgs_ReturnsFormattedResponse'
+```
+
+### Test Coverage
+
+The unit test suite covers:
+
+| Service | Test Class | Test Count |
+|---------|------------|------------|
+| ActivityService | ActivityServiceTest | 38 |
+| TaskService | TaskServiceTest | 38 |
+| NoteService | NoteServiceTest | 38 |
+| TagService | TagServiceTest | 48 |
+| CallService | CallServiceTest | 52 |
+| ReminderService | ReminderServiceTest | 52 |
+| RelationshipService | RelationshipServiceTest | 52 |
+| CompanyService | CompanyServiceTest | 48 |
+| GiftService | GiftServiceTest | 52 |
+| DebtService | DebtServiceTest | 60 |
+| OccupationService | OccupationServiceTest | 70 |
+| ConversationService | ConversationServiceTest | 52 |
+| JournalEntryService | JournalEntryServiceTest | 60 |
+| DocumentService | DocumentServiceTest | 70 |
+| PhotoService | PhotoServiceTest | 70 |
+| AddressService | AddressServiceTest | 70 |
+| ContactFieldService | ContactFieldServiceTest | 60 |
+| ContactTagService | ContactTagServiceTest | 52 |
+| ContactService | ContactServiceTest | 75 |
+| UserService | UserServiceTest | 70 |
+| ComplianceService | ComplianceServiceTest | 72 |
+| AuditLogService | AuditLogServiceTest | 60 |
+| ActivityTypeService | ActivityTypeServiceTest | 45 |
+| ActivityTypeCategoryService | ActivityTypeCategoryServiceTest | 45 |
+| CurrencyService | CurrencyServiceTest | 25 |
+| CountryService | CountryServiceTest | 25 |
+| GenderService | GenderServiceTest | 15 |
+| GroupService | GroupServiceTest | 60 |
+| RelationshipTypeService | RelationshipTypeServiceTest | 20 |
+| RelationshipTypeGroupService | RelationshipTypeGroupServiceTest | 22 |
+
+### Best Practices
+
+1. **Use Builders for Test Data** - Always use ServiceTestBase builders instead of manually creating maps
+2. **Verify Field Mapping** - Test that camelCase fields are mapped to snake_case for API calls
+3. **Test All ID Types** - Verify Long, Integer, and String ID parsing works correctly
+4. **Test Validation Early** - Validate required fields before making API calls
+5. **Mock ContentFormatter** - Always mock the formatter to avoid test dependencies
+6. **Use Specific Assertions** - Prefer specific assertions over generic `assertNotNull`
+7. **Verify No Interactions** - Use `verifyNoInteractions(monicaClient)` when validation should prevent API calls
+
+---
+
 ## Advanced Testing
 
 ### MCP Inspector Integration
