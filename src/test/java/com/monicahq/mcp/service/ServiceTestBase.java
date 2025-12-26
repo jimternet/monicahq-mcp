@@ -401,6 +401,13 @@ public abstract class ServiceTestBase {
         return new DebtDataBuilder();
     }
 
+    /**
+     * Builder for creating mock occupation data.
+     */
+    protected OccupationDataBuilder occupationBuilder() {
+        return new OccupationDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1122,6 +1129,83 @@ public abstract class ServiceTestBase {
         }
 
         public DebtDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock occupation data.
+     */
+    public static class OccupationDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public OccupationDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("title", "Software Engineer");
+            data.put("currently_works_here", true);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public OccupationDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public OccupationDataBuilder contactId(Long contactId) {
+            data.put("contact_id", contactId);
+            data.put("contact", Map.of("id", contactId));
+            return this;
+        }
+
+        public OccupationDataBuilder companyId(Long companyId) {
+            data.put("company_id", companyId);
+            data.put("company", Map.of("id", companyId));
+            return this;
+        }
+
+        public OccupationDataBuilder title(String title) {
+            data.put("title", title);
+            return this;
+        }
+
+        public OccupationDataBuilder description(String description) {
+            data.put("description", description);
+            return this;
+        }
+
+        public OccupationDataBuilder salary(Object salary) {
+            data.put("salary", salary);
+            return this;
+        }
+
+        public OccupationDataBuilder salaryUnit(String salaryUnit) {
+            data.put("salary_unit", salaryUnit);
+            return this;
+        }
+
+        public OccupationDataBuilder currentlyWorksHere(boolean currentlyWorksHere) {
+            data.put("currently_works_here", currentlyWorksHere);
+            return this;
+        }
+
+        public OccupationDataBuilder startDate(String startDate) {
+            data.put("start_date", startDate);
+            return this;
+        }
+
+        public OccupationDataBuilder endDate(String endDate) {
+            data.put("end_date", endDate);
+            return this;
+        }
+
+        public OccupationDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
