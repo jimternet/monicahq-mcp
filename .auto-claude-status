@@ -9,17 +9,17 @@
     "failed": 0
   },
   "phase": {
-    "current": "Domain Registry - Contact Management",
+    "current": "Domain Registry - Activities & Communication",
     "id": null,
-    "total": 3
+    "total": 2
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 4,
+    "number": 9,
     "started_at": "2025-12-25T21:00:38.156918"
   },
-  "last_update": "2025-12-25T21:14:56.890817"
+  "last_update": "2025-12-25T21:30:19.801662"
 }
