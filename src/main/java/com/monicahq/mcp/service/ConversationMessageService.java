@@ -110,22 +110,82 @@ public class ConversationMessageService {
         }
     }
 
+    /**
+     * Lists conversation messages by extracting from the conversation GET response.
+     *
+     * WORKAROUND: GET /conversations/{id}/messages returns HTTP 405 (Method Not Allowed),
+     * so we fetch the full conversation via GET /conversations/{id} and extract the
+     * messages from the "data.messages" field in the response.
+     *
+     * See docs/API-LIMITATIONS.md for details on MonicaHQ API limitations.
+     */
     public Mono<Map<String, Object>> listConversationMessages(Map<String, Object> arguments) {
         log.info("Listing conversation messages with arguments: {}", arguments);
-        
+
         try {
             Long conversationId = extractConversationId(arguments);
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/conversations/" + conversationId + "/messages", queryParams)
-                .map(this::formatConversationMessageListResponse)
+
+            // WORKAROUND: Use GET /conversations/{id} instead of GET /conversations/{id}/messages
+            // The /messages endpoint returns HTTP 405, but messages are included in the conversation response
+            return monicaClient.get("/conversations/" + conversationId, null)
+                .map(this::extractMessagesFromConversation)
                 .doOnSuccess(result -> log.info("Conversation messages listed successfully"))
                 .doOnError(error -> log.error("Failed to list conversation messages: {}", error.getMessage()));
-                
+
         } catch (Exception e) {
-            log.error("Error building query parameters: {}", e.getMessage());
+            log.error("Error extracting conversation messages: {}", e.getMessage());
             return Mono.error(e);
         }
+    }
+
+    /**
+     * Extracts messages from a conversation GET response.
+     * The messages are nested under data.messages in the API response.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> extractMessagesFromConversation(Map<String, Object> apiResponse) {
+        // Extract the data object from the response
+        Map<String, Object> data = (Map<String, Object>) apiResponse.get("data");
+
+        // Extract messages array - handle null/missing messages gracefully
+        List<Map<String, Object>> messages = Collections.emptyList();
+        if (data != null && data.containsKey("messages")) {
+            Object messagesObj = data.get("messages");
+            if (messagesObj instanceof List) {
+                messages = (List<Map<String, Object>>) messagesObj;
+            }
+        }
+
+        // Convert each message to consistent format
+        List<Map<String, Object>> formattedMessages = messages.stream()
+            .map(this::mapFromApiFormat)
+            .toList();
+
+        // Build synthetic API response structure for formatting
+        Map<String, Object> syntheticResponse = new HashMap<>();
+        syntheticResponse.put("data", messages);
+        syntheticResponse.put("meta", Map.of("total", messages.size()));
+
+        // Format content for Claude Desktop visibility
+        String formattedContent = contentFormatter.formatListAsEscapedJson(syntheticResponse);
+
+        // Return both data and content fields for protocol compliance
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", formattedMessages);
+        result.put("meta", Map.of(
+            "total", messages.size(),
+            "source", "extracted_from_conversation"
+        ));
+
+        List<Map<String, Object>> content = List.of(
+            Map.of(
+                "type", "text",
+                "text", formattedContent
+            )
+        );
+        result.put("content", content);
+
+        return result;
     }
 
     private void validateConversationMessageCreateArguments(Map<String, Object> arguments) {
