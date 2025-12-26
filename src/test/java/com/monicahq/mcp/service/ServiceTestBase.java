@@ -415,6 +415,13 @@ public abstract class ServiceTestBase {
         return new ConversationDataBuilder();
     }
 
+    /**
+     * Builder for creating mock journal entry data.
+     */
+    protected JournalEntryDataBuilder journalEntryBuilder() {
+        return new JournalEntryDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1258,6 +1265,57 @@ public abstract class ServiceTestBase {
         }
 
         public ConversationDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock journal entry data.
+     */
+    public static class JournalEntryDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public JournalEntryDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("title", "Test Journal Entry");
+            data.put("post", "Test journal content");
+            data.put("date", LocalDateTime.now().format(DATE_FORMATTER));
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public JournalEntryDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public JournalEntryDataBuilder title(String title) {
+            data.put("title", title);
+            return this;
+        }
+
+        public JournalEntryDataBuilder post(String post) {
+            data.put("post", post);
+            return this;
+        }
+
+        public JournalEntryDataBuilder date(String date) {
+            data.put("date", date);
+            return this;
+        }
+
+        public JournalEntryDataBuilder journalEntry(String journalEntry) {
+            data.put("journal_entry", journalEntry);
+            return this;
+        }
+
+        public JournalEntryDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
