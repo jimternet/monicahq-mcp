@@ -436,6 +436,13 @@ public abstract class ServiceTestBase {
         return new PhotoDataBuilder();
     }
 
+    /**
+     * Builder for creating mock address data.
+     */
+    protected AddressDataBuilder addressBuilder() {
+        return new AddressDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1468,6 +1475,86 @@ public abstract class ServiceTestBase {
         }
 
         public PhotoDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock address data.
+     */
+    public static class AddressDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public AddressDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("name", "Home");
+            data.put("street", "123 Main St");
+            data.put("city", "Springfield");
+            data.put("province", "IL");
+            data.put("postal_code", "62701");
+            data.put("country", "US");
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public AddressDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public AddressDataBuilder contactId(Long contactId) {
+            data.put("contact_id", contactId);
+            data.put("contact", Map.of("id", contactId));
+            return this;
+        }
+
+        public AddressDataBuilder name(String name) {
+            data.put("name", name);
+            return this;
+        }
+
+        public AddressDataBuilder street(String street) {
+            data.put("street", street);
+            return this;
+        }
+
+        public AddressDataBuilder city(String city) {
+            data.put("city", city);
+            return this;
+        }
+
+        public AddressDataBuilder province(String province) {
+            data.put("province", province);
+            return this;
+        }
+
+        public AddressDataBuilder postalCode(String postalCode) {
+            data.put("postal_code", postalCode);
+            return this;
+        }
+
+        public AddressDataBuilder country(String country) {
+            data.put("country", country);
+            return this;
+        }
+
+        public AddressDataBuilder latitude(Double latitude) {
+            data.put("latitude", latitude);
+            return this;
+        }
+
+        public AddressDataBuilder longitude(Double longitude) {
+            data.put("longitude", longitude);
+            return this;
+        }
+
+        public AddressDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
