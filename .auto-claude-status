@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "011-add-missing-spring-boot-health-actuator-dependenci",
-  "state": "complete",
+  "spec": "013-implement-working-endpoint-workarounds-for-6-depre",
+  "state": "building",
   "subtasks": {
-    "completed": 1,
-    "total": 1,
-    "in_progress": 0,
+    "completed": 10,
+    "total": 14,
+    "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Fix Spring Boot Version",
-    "id": 1,
-    "total": 1
+    "current": "Comprehensive Testing",
+    "id": null,
+    "total": 3
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 1,
-    "started_at": "2025-12-24T23:09:38.096138"
+    "number": 11,
+    "started_at": "2025-12-25T18:10:27.965212"
   },
-  "last_update": "2025-12-24T23:10:31.860099"
+  "last_update": "2025-12-25T18:32:37.033825"
 }
