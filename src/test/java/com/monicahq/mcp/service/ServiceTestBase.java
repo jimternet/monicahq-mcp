@@ -422,6 +422,13 @@ public abstract class ServiceTestBase {
         return new JournalEntryDataBuilder();
     }
 
+    /**
+     * Builder for creating mock document data.
+     */
+    protected DocumentDataBuilder documentBuilder() {
+        return new DocumentDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1316,6 +1323,74 @@ public abstract class ServiceTestBase {
         }
 
         public JournalEntryDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock document data.
+     */
+    public static class DocumentDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public DocumentDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("filename", "document.pdf");
+            data.put("original_filename", "My Document.pdf");
+            data.put("mime_type", "application/pdf");
+            data.put("size", 1024);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public DocumentDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public DocumentDataBuilder contactId(Long contactId) {
+            data.put("contact_id", contactId);
+            data.put("contact", Map.of("id", contactId));
+            return this;
+        }
+
+        public DocumentDataBuilder filename(String filename) {
+            data.put("filename", filename);
+            return this;
+        }
+
+        public DocumentDataBuilder originalFilename(String originalFilename) {
+            data.put("original_filename", originalFilename);
+            return this;
+        }
+
+        public DocumentDataBuilder mimeType(String mimeType) {
+            data.put("mime_type", mimeType);
+            return this;
+        }
+
+        public DocumentDataBuilder size(Long size) {
+            data.put("size", size);
+            return this;
+        }
+
+        public DocumentDataBuilder downloadUrl(String downloadUrl) {
+            data.put("download_url", downloadUrl);
+            return this;
+        }
+
+        public DocumentDataBuilder description(String description) {
+            data.put("description", description);
+            return this;
+        }
+
+        public DocumentDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
