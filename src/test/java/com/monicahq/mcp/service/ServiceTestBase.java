@@ -443,6 +443,13 @@ public abstract class ServiceTestBase {
         return new AddressDataBuilder();
     }
 
+    /**
+     * Builder for creating mock contact field data.
+     */
+    protected ContactFieldDataBuilder contactFieldBuilder() {
+        return new ContactFieldDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1555,6 +1562,57 @@ public abstract class ServiceTestBase {
         }
 
         public AddressDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock contact field data.
+     */
+    public static class ContactFieldDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public ContactFieldDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("data", "test@example.com");
+            data.put("contact_field_type_id", 1);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public ContactFieldDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public ContactFieldDataBuilder contactId(Long contactId) {
+            data.put("contact_id", contactId);
+            data.put("contact", Map.of("id", contactId));
+            return this;
+        }
+
+        public ContactFieldDataBuilder fieldData(String fieldData) {
+            data.put("data", fieldData);
+            return this;
+        }
+
+        public ContactFieldDataBuilder contactFieldTypeId(Integer typeId) {
+            data.put("contact_field_type_id", typeId);
+            return this;
+        }
+
+        public ContactFieldDataBuilder labels(List<String> labels) {
+            data.put("labels", labels);
+            return this;
+        }
+
+        public ContactFieldDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
