@@ -429,6 +429,13 @@ public abstract class ServiceTestBase {
         return new DocumentDataBuilder();
     }
 
+    /**
+     * Builder for creating mock photo data.
+     */
+    protected PhotoDataBuilder photoBuilder() {
+        return new PhotoDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1391,6 +1398,76 @@ public abstract class ServiceTestBase {
         }
 
         public DocumentDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock photo data.
+     */
+    public static class PhotoDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public PhotoDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("filename", "photo.jpg");
+            data.put("original_filename", "My Photo.jpg");
+            data.put("mime_type", "image/jpeg");
+            data.put("filesize", 2048);
+            data.put("width", 1920);
+            data.put("height", 1080);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public PhotoDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public PhotoDataBuilder contactId(Long contactId) {
+            data.put("contact_id", contactId);
+            data.put("contact", Map.of("id", contactId));
+            return this;
+        }
+
+        public PhotoDataBuilder filename(String filename) {
+            data.put("filename", filename);
+            return this;
+        }
+
+        public PhotoDataBuilder originalFilename(String originalFilename) {
+            data.put("original_filename", originalFilename);
+            return this;
+        }
+
+        public PhotoDataBuilder mimeType(String mimeType) {
+            data.put("mime_type", mimeType);
+            return this;
+        }
+
+        public PhotoDataBuilder filesize(Long filesize) {
+            data.put("filesize", filesize);
+            return this;
+        }
+
+        public PhotoDataBuilder width(Integer width) {
+            data.put("width", width);
+            return this;
+        }
+
+        public PhotoDataBuilder height(Integer height) {
+            data.put("height", height);
+            return this;
+        }
+
+        public PhotoDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
