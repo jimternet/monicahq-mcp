@@ -408,6 +408,13 @@ public abstract class ServiceTestBase {
         return new OccupationDataBuilder();
     }
 
+    /**
+     * Builder for creating mock conversation data.
+     */
+    protected ConversationDataBuilder conversationBuilder() {
+        return new ConversationDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1206,6 +1213,51 @@ public abstract class ServiceTestBase {
         }
 
         public OccupationDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock conversation data.
+     */
+    public static class ConversationDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public ConversationDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("happened_at", LocalDateTime.now().format(DATE_FORMATTER));
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public ConversationDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public ConversationDataBuilder contactId(Long contactId) {
+            data.put("contact_id", contactId);
+            data.put("contact", Map.of("id", contactId));
+            return this;
+        }
+
+        public ConversationDataBuilder happenedAt(String happenedAt) {
+            data.put("happened_at", happenedAt);
+            return this;
+        }
+
+        public ConversationDataBuilder messages(List<Map<String, Object>> messages) {
+            data.put("messages", messages);
+            return this;
+        }
+
+        public ConversationDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
