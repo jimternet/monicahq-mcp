@@ -464,6 +464,20 @@ public abstract class ServiceTestBase {
         return new UserDataBuilder();
     }
 
+    /**
+     * Builder for creating mock activity type data.
+     */
+    protected ActivityTypeDataBuilder activityTypeBuilder() {
+        return new ActivityTypeDataBuilder();
+    }
+
+    /**
+     * Builder for creating mock activity type category data.
+     */
+    protected ActivityTypeCategoryDataBuilder activityTypeCategoryBuilder() {
+        return new ActivityTypeCategoryDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1729,6 +1743,105 @@ public abstract class ServiceTestBase {
         }
 
         public UserDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock activity type data.
+     */
+    public static class ActivityTypeDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public ActivityTypeDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("name", "Test Activity Type");
+            data.put("category_id", 1);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public ActivityTypeDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public ActivityTypeDataBuilder name(String name) {
+            data.put("name", name);
+            return this;
+        }
+
+        public ActivityTypeDataBuilder categoryId(Integer categoryId) {
+            data.put("category_id", categoryId);
+            return this;
+        }
+
+        public ActivityTypeDataBuilder description(String description) {
+            data.put("description", description);
+            return this;
+        }
+
+        public ActivityTypeDataBuilder icon(String icon) {
+            data.put("icon", icon);
+            return this;
+        }
+
+        public ActivityTypeDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock activity type category data.
+     */
+    public static class ActivityTypeCategoryDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public ActivityTypeCategoryDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("name", "Test Activity Type Category");
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public ActivityTypeCategoryDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public ActivityTypeCategoryDataBuilder name(String name) {
+            data.put("name", name);
+            return this;
+        }
+
+        public ActivityTypeCategoryDataBuilder parentId(Long parentId) {
+            data.put("parent_id", parentId);
+            return this;
+        }
+
+        public ActivityTypeCategoryDataBuilder sortOrder(Integer sortOrder) {
+            data.put("sort_order", sortOrder);
+            return this;
+        }
+
+        public ActivityTypeCategoryDataBuilder description(String description) {
+            data.put("description", description);
+            return this;
+        }
+
+        public ActivityTypeCategoryDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
