@@ -450,6 +450,13 @@ public abstract class ServiceTestBase {
         return new ContactFieldDataBuilder();
     }
 
+    /**
+     * Builder for creating mock group data.
+     */
+    protected GroupDataBuilder groupBuilder() {
+        return new GroupDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1613,6 +1620,51 @@ public abstract class ServiceTestBase {
         }
 
         public ContactFieldDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock group data.
+     */
+    public static class GroupDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public GroupDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("name", "Test Group");
+            data.put("account_id", 1);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public GroupDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public GroupDataBuilder name(String name) {
+            data.put("name", name);
+            return this;
+        }
+
+        public GroupDataBuilder description(String description) {
+            data.put("description", description);
+            return this;
+        }
+
+        public GroupDataBuilder accountId(Integer accountId) {
+            data.put("account_id", accountId);
+            return this;
+        }
+
+        public GroupDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
