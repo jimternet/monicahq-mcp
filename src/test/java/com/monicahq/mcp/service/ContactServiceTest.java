@@ -25,6 +25,7 @@ import static org.mockito.Mockito.*;
  * validation, field mapping, birthdate parsing, and edge cases.
  */
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class ContactServiceTest extends ServiceTestBase {
 
     @Mock

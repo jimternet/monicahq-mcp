@@ -407,11 +407,11 @@ class UserServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("id", null);
 
-        // When & Then - null id entry means id is "missing" for extractUserId
+        // When & Then - null id value should throw IllegalArgumentException
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             userService.getUser(arguments).block();
         });
-        // The check for null happens after containsKey, so it's "Invalid user ID format"
+        assertTrue(exception.getMessage().contains("User ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
