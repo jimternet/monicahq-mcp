@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "006-split-mcptoolregistry-into-domain-specific-registr",
+  "spec": "016-add-missing-unit-tests-for-core-service-logic",
   "state": "building",
   "subtasks": {
-    "completed": 0,
-    "total": 0,
+    "completed": 4,
+    "total": 29,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Domain Registry - System & Reference",
+    "current": "Communication & Relationship Services",
     "id": null,
-    "total": 2
+    "total": 5
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 13,
-    "started_at": "2025-12-25T21:00:38.156918"
+    "number": 6,
+    "started_at": "2025-12-26T08:59:29.767920"
   },
-  "last_update": "2025-12-25T21:45:57.057990"
+  "last_update": "2025-12-26T09:22:26.245941"
 }
