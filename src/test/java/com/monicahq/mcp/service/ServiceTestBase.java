@@ -380,6 +380,13 @@ public abstract class ServiceTestBase {
         return new RelationshipDataBuilder();
     }
 
+    /**
+     * Builder for creating mock company data.
+     */
+    protected CompanyDataBuilder companyBuilder() {
+        return new CompanyDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -917,6 +924,52 @@ public abstract class ServiceTestBase {
         }
 
         public RelationshipDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock company data.
+     */
+    public static class CompanyDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public CompanyDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("name", "Test Company");
+            data.put("website", "https://example.com");
+            data.put("number_of_employees", 50);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public CompanyDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public CompanyDataBuilder name(String name) {
+            data.put("name", name);
+            return this;
+        }
+
+        public CompanyDataBuilder website(String website) {
+            data.put("website", website);
+            return this;
+        }
+
+        public CompanyDataBuilder numberOfEmployees(Integer count) {
+            data.put("number_of_employees", count);
+            return this;
+        }
+
+        public CompanyDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
