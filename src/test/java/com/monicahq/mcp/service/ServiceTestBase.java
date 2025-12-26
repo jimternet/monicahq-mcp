@@ -457,6 +457,13 @@ public abstract class ServiceTestBase {
         return new GroupDataBuilder();
     }
 
+    /**
+     * Builder for creating mock user data.
+     */
+    protected UserDataBuilder userBuilder() {
+        return new UserDataBuilder();
+    }
+
     // ========================================================================================
     // ARGUMENT MATCHER HELPERS
     // ========================================================================================
@@ -1665,6 +1672,63 @@ public abstract class ServiceTestBase {
         }
 
         public GroupDataBuilder custom(String key, Object value) {
+            data.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return new HashMap<>(data);
+        }
+    }
+
+    /**
+     * Builder for creating mock user data.
+     */
+    public static class UserDataBuilder {
+        private final Map<String, Object> data = new HashMap<>();
+
+        public UserDataBuilder() {
+            // Set defaults
+            data.put("id", 1L);
+            data.put("first_name", "John");
+            data.put("last_name", "Doe");
+            data.put("email", "john.doe@example.com");
+            data.put("is_administrator", false);
+            data.put("created_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+            data.put("updated_at", LocalDateTime.now().format(DATETIME_FORMATTER));
+        }
+
+        public UserDataBuilder id(Long id) {
+            data.put("id", id);
+            return this;
+        }
+
+        public UserDataBuilder firstName(String firstName) {
+            data.put("first_name", firstName);
+            return this;
+        }
+
+        public UserDataBuilder lastName(String lastName) {
+            data.put("last_name", lastName);
+            return this;
+        }
+
+        public UserDataBuilder email(String email) {
+            data.put("email", email);
+            return this;
+        }
+
+        public UserDataBuilder isAdministrator(boolean isAdministrator) {
+            data.put("is_administrator", isAdministrator);
+            return this;
+        }
+
+        public UserDataBuilder profilePictureUrl(String profilePictureUrl) {
+            data.put("profile_picture_url", profilePictureUrl);
+            return this;
+        }
+
+        public UserDataBuilder custom(String key, Object value) {
             data.put(key, value);
             return this;
         }
