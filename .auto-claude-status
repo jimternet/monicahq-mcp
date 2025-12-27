@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "016-add-missing-unit-tests-for-core-service-logic",
+  "spec": "015-extract-duplicated-service-layer-crud-patterns-int",
   "state": "building",
   "subtasks": {
-    "completed": 27,
-    "total": 29,
+    "completed": 5,
+    "total": 24,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Test Validation & Documentation",
+    "current": "Migrate Simple Services",
     "id": null,
-    "total": 2
+    "total": 6
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 29,
-    "started_at": "2025-12-26T08:59:29.767920"
+    "number": 7,
+    "started_at": "2025-12-26T17:54:37.671568"
   },
-  "last_update": "2025-12-26T14:25:02.517774"
+  "last_update": "2025-12-26T18:21:21.098218"
 }
