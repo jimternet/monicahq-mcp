@@ -29,9 +29,11 @@ import java.util.*;
  * </p>
  *
  * @param <T> The entity type this service manages (used for type safety in subclasses)
+ * @see CrudOperations
+ * @see FieldMappingConfig
  */
 @Slf4j
-public abstract class AbstractCrudService<T> {
+public abstract class AbstractCrudService<T> implements CrudOperations {
 
     protected final MonicaHqClient monicaClient;
     protected final ContentFormatter contentFormatter;
@@ -72,6 +74,7 @@ public abstract class AbstractCrudService<T> {
      * @param arguments the creation arguments containing entity data
      * @return a Mono containing the formatted response with the created entity
      */
+    @Override
     public Mono<Map<String, Object>> create(Map<String, Object> arguments) {
         FieldMappingConfig config = getFieldMappingConfig();
         String entityName = config.getEntityName();
@@ -106,6 +109,7 @@ public abstract class AbstractCrudService<T> {
      * @param arguments the arguments containing the entity ID
      * @return a Mono containing the formatted response with the entity
      */
+    @Override
     public Mono<Map<String, Object>> get(Map<String, Object> arguments) {
         FieldMappingConfig config = getFieldMappingConfig();
         String entityName = config.getEntityName();
@@ -136,6 +140,7 @@ public abstract class AbstractCrudService<T> {
      * @param arguments the arguments containing entity ID and update data
      * @return a Mono containing the formatted response with the updated entity
      */
+    @Override
     public Mono<Map<String, Object>> update(Map<String, Object> arguments) {
         FieldMappingConfig config = getFieldMappingConfig();
         String entityName = config.getEntityName();
@@ -179,6 +184,7 @@ public abstract class AbstractCrudService<T> {
      * @param arguments the arguments containing the entity ID
      * @return a Mono containing the formatted delete confirmation response
      */
+    @Override
     public Mono<Map<String, Object>> delete(Map<String, Object> arguments) {
         FieldMappingConfig config = getFieldMappingConfig();
         String entityName = config.getEntityName();
@@ -210,6 +216,7 @@ public abstract class AbstractCrudService<T> {
      * @param arguments the arguments containing optional filters and pagination params
      * @return a Mono containing the formatted list response with entities and metadata
      */
+    @Override
     public Mono<Map<String, Object>> list(Map<String, Object> arguments) {
         FieldMappingConfig config = getFieldMappingConfig();
         String entityName = config.getEntityName();
