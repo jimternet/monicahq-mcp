@@ -3,6 +3,7 @@ package com.monicahq.mcp.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monicahq.mcp.client.AuthInterceptor;
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ConversationMessageFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -80,8 +81,11 @@ class ConversationMessageServiceTest {
         ObjectMapper objectMapper = new ObjectMapper();
         contentFormatter = new ContentFormatter(objectMapper);
 
+        // Create ConversationMessageFieldMappingConfig
+        ConversationMessageFieldMappingConfig fieldMappingConfig = new ConversationMessageFieldMappingConfig();
+
         // Create ConversationMessageService with real dependencies
-        conversationMessageService = new ConversationMessageService(monicaClient, contentFormatter);
+        conversationMessageService = new ConversationMessageService(monicaClient, contentFormatter, fieldMappingConfig);
     }
 
     @AfterEach

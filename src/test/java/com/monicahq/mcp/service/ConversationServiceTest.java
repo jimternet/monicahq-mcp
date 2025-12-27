@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ConversationFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class ConversationServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private ConversationService conversationService;
 
     private Map<String, Object> mockConversationData;
@@ -39,6 +38,10 @@ class ConversationServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        // Create service with real FieldMappingConfig
+        ConversationFieldMappingConfig fieldMappingConfig = new ConversationFieldMappingConfig();
+        conversationService = new ConversationService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockConversationData = conversationBuilder()
             .id(1L)
             .contactId(10L)
@@ -149,7 +152,7 @@ class ConversationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             conversationService.createConversation(arguments).block();
         });
-        assertEquals("Conversation creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Conversation arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -159,7 +162,7 @@ class ConversationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             conversationService.createConversation(null).block();
         });
-        assertEquals("Conversation creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Conversation arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 

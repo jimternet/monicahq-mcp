@@ -130,7 +130,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.createAddress(arguments).block();
         });
-        assertEquals("contactId is required", exception.getMessage());
+        assertEquals("Address arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
