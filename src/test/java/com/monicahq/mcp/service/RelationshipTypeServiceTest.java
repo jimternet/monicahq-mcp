@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.RelationshipTypeFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class RelationshipTypeServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private RelationshipTypeService relationshipTypeService;
 
     private Map<String, Object> mockRelationshipTypeData;
@@ -39,6 +38,9 @@ class RelationshipTypeServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        RelationshipTypeFieldMappingConfig fieldMappingConfig = new RelationshipTypeFieldMappingConfig();
+        relationshipTypeService = new RelationshipTypeService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockRelationshipTypeData = relationshipTypeBuilder()
             .id(1L)
             .name("Partner")
@@ -136,7 +138,7 @@ class RelationshipTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipTypeService.getRelationshipType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Relationship Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -150,7 +152,7 @@ class RelationshipTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipTypeService.getRelationshipType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Relationship Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -164,7 +166,7 @@ class RelationshipTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipTypeService.getRelationshipType(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertEquals("Invalid relationship type ID format: not-a-number", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -234,7 +236,7 @@ class RelationshipTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipTypeService.getRelationshipType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Relationship Type ID is required", exception.getMessage());
     }
 
     @Test

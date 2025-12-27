@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.RelationshipFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -30,7 +30,6 @@ class RelationshipServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private RelationshipService relationshipService;
 
     private Map<String, Object> mockRelationshipData;
@@ -38,6 +37,9 @@ class RelationshipServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        RelationshipFieldMappingConfig fieldMappingConfig = new RelationshipFieldMappingConfig();
+        relationshipService = new RelationshipService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockRelationshipData = relationshipBuilder()
             .id(1L)
             .contactIs(10L)
@@ -375,7 +377,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipService.getRelationship(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Relationship ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -389,7 +391,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipService.getRelationship(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Relationship ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -402,7 +404,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipService.getRelationship(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertEquals("Invalid relationship ID format: not-a-number", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -509,7 +511,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipService.updateRelationship(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Relationship ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -593,7 +595,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipService.updateRelationship(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertEquals("Invalid relationship ID format: invalid", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -636,6 +638,8 @@ class RelationshipServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/relationships/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(eq("Delete"), eq("Relationship"), eq(1L), eq(true), anyString()))
+            .thenReturn("Relationship 1 deleted successfully");
 
         // When
         Map<String, Object> result = relationshipService.deleteRelationship(arguments).block();
@@ -643,18 +647,12 @@ class RelationshipServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
         assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/relationships/1"));
     }
@@ -666,6 +664,8 @@ class RelationshipServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/relationships/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(eq("Delete"), eq("Relationship"), eq(99L), eq(true), anyString()))
+            .thenReturn("Relationship 99 deleted successfully");
 
         // When
         Map<String, Object> result = relationshipService.deleteRelationship(arguments).block();
@@ -682,6 +682,8 @@ class RelationshipServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/relationships/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(eq("Delete"), eq("Relationship"), eq(55L), eq(true), anyString()))
+            .thenReturn("Relationship 55 deleted successfully");
 
         // When
         Map<String, Object> result = relationshipService.deleteRelationship(arguments).block();
@@ -700,7 +702,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipService.deleteRelationship(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Relationship ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -714,7 +716,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipService.deleteRelationship(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Relationship ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -727,7 +729,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             relationshipService.deleteRelationship(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertEquals("Invalid relationship ID format: invalid", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
