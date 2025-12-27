@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ActivityTypeFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -30,7 +30,6 @@ class ActivityTypeServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private ActivityTypeService activityTypeService;
 
     private Map<String, Object> mockActivityTypeData;
@@ -38,6 +37,9 @@ class ActivityTypeServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        ActivityTypeFieldMappingConfig fieldMappingConfig = new ActivityTypeFieldMappingConfig();
+        activityTypeService = new ActivityTypeService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockActivityTypeData = activityTypeBuilder()
             .id(1L)
             .name("Coffee Meeting")
@@ -298,7 +300,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.getActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -312,7 +314,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.getActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -325,7 +327,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.getActivityType(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().startsWith("Invalid activity type ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -428,7 +430,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.updateActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -475,7 +477,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.updateActivityType(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().startsWith("Invalid activity type ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -580,7 +582,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.deleteActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -594,7 +596,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.deleteActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -607,7 +609,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.deleteActivityType(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().startsWith("Invalid activity type ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
