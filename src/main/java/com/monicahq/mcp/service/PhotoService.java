@@ -1,272 +1,147 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.PhotoFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * Service for managing Photo entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Uses {@link PhotoFieldMappingConfig} for Photo-specific field mappings and validation.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createPhoto - Create a new photo for a contact</li>
+ *   <li>getPhoto - Retrieve a photo by ID</li>
+ *   <li>updatePhoto - Update an existing photo</li>
+ *   <li>deletePhoto - Delete a photo by ID</li>
+ *   <li>listPhotos - List photos with optional pagination</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class PhotoService {
+public class PhotoService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final PhotoFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs a PhotoService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for Photos
+     */
+    public PhotoService(MonicaHqClient monicaClient,
+                        ContentFormatter contentFormatter,
+                        PhotoFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new photo for a contact.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact to associate the photo with</li>
+     *   <li>filename - The filename of the photo (cannot be empty)</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>originalFilename - The original filename before upload</li>
+     *   <li>mimeType - The MIME type of the photo (e.g., image/jpeg)</li>
+     *   <li>filesize - The size of the file in bytes</li>
+     *   <li>width - The width of the image in pixels</li>
+     *   <li>height - The height of the image in pixels</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created photo data
+     */
     public Mono<Map<String, Object>> createPhoto(Map<String, Object> arguments) {
-        log.info("Creating photo with arguments: {}", arguments);
-        
-        try {
-            Map<String, Object> mutableArguments = new HashMap<>(arguments);
-            validatePhotoCreateArguments(mutableArguments);
-            Map<String, Object> apiRequest = mapToApiFormat(mutableArguments);
-            
-            return monicaClient.post("/photos", apiRequest)
-                .map(this::formatPhotoResponse)
-                .doOnSuccess(result -> log.info("Photo created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create photo: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for photo creation: {}", e.getMessage());
-            return Mono.error(e);
+        // Additional validation: filename must be a non-empty string
+        if (arguments != null && !arguments.isEmpty()) {
+            validateRequiredString(arguments, "filename");
         }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves a photo by its ID.
+     *
+     * @param arguments map containing "id" - the photo ID to retrieve
+     * @return a Mono containing the photo data
+     */
     public Mono<Map<String, Object>> getPhoto(Map<String, Object> arguments) {
-        log.info("Getting photo with arguments: {}", arguments);
-        
-        try {
-            Long photoId = extractPhotoId(arguments);
-            
-            return monicaClient.get("/photos/" + photoId, null)
-                .map(this::formatPhotoResponse)
-                .doOnSuccess(result -> log.info("Photo retrieved successfully: {}", photoId))
-                .doOnError(error -> log.error("Failed to get photo {}: {}", photoId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for photo retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing photo.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the photo to update</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>contactId - New contact association</li>
+     *   <li>filename - New filename</li>
+     *   <li>originalFilename - New original filename</li>
+     *   <li>mimeType - New MIME type</li>
+     *   <li>filesize - New file size</li>
+     *   <li>width - New width</li>
+     *   <li>height - New height</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the photo ID
+     * @return a Mono containing the updated photo data
+     */
     public Mono<Map<String, Object>> updatePhoto(Map<String, Object> arguments) {
-        log.info("Updating photo with arguments: {}", arguments);
-        
-        try {
-            Map<String, Object> mutableArguments = new HashMap<>(arguments);
-            Long photoId = extractPhotoId(mutableArguments);
-            validatePhotoUpdateArguments(mutableArguments);
-            Map<String, Object> apiRequest = mapToApiFormat(mutableArguments);
-            
-            return monicaClient.put("/photos/" + photoId, apiRequest)
-                .map(this::formatPhotoResponse)
-                .doOnSuccess(result -> log.info("Photo updated successfully: {}", photoId))
-                .doOnError(error -> log.error("Failed to update photo {}: {}", photoId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for photo update: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return update(arguments);
     }
 
+    /**
+     * Deletes a photo by its ID.
+     *
+     * @param arguments map containing "id" - the photo ID to delete
+     * @return a Mono containing the delete confirmation
+     */
     public Mono<Map<String, Object>> deletePhoto(Map<String, Object> arguments) {
-        log.info("Deleting photo with arguments: {}", arguments);
-        
-        try {
-            Long photoId = extractPhotoId(arguments);
-            
-            return monicaClient.delete("/photos/" + photoId)
-                .map(response -> {
-                    String deletionMessage = String.format("Photo %d deleted successfully", photoId);
-                    return Map.of(
-                        "content", List.of(Map.of(
-                            "type", "text",
-                            "text", deletionMessage
-                        )),
-                        "data", Map.of("deleted", true, "id", photoId)
-                    );
-                })
-                .doOnSuccess(result -> log.info("Photo deleted successfully: {}", photoId))
-                .doOnError(error -> log.error("Failed to delete photo {}: {}", photoId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for photo deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return delete(arguments);
     }
 
+    /**
+     * Lists photos with optional pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional pagination
+     * @return a Mono containing the list of photos and pagination metadata
+     */
     public Mono<Map<String, Object>> listPhotos(Map<String, Object> arguments) {
-        log.info("Listing photos with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/photos", queryParams)
-                .map(this::formatPhotosListResponse)
-                .doOnSuccess(result -> log.info("Photos listed successfully"))
-                .doOnError(error -> log.error("Failed to list photos: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error listing photos: {}", e.getMessage());
-            return Mono.error(e);
-        }
-    }
-
-    private void validatePhotoCreateArguments(Map<String, Object> arguments) {
-        if (!arguments.containsKey("contactId") || arguments.get("contactId") == null) {
-            throw new IllegalArgumentException("contactId is required");
-        }
-        if (!arguments.containsKey("filename") || arguments.get("filename") == null || 
-            arguments.get("filename").toString().trim().isEmpty()) {
-            throw new IllegalArgumentException("filename is required");
-        }
-    }
-
-    private void validatePhotoUpdateArguments(Map<String, Object> arguments) {
-        // For updates, fields are optional
-    }
-
-    private Long extractPhotoId(Map<String, Object> arguments) {
-        Object idObj = arguments.get("id");
-        if (idObj == null) {
-            throw new IllegalArgumentException("id is required");
-        }
-        
-        if (idObj instanceof Number) {
-            return ((Number) idObj).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idObj.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("id must be a valid number");
-        }
-    }
-
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
-        Map<String, Object> apiRequest = new HashMap<>();
-        
-        if (arguments.containsKey("contactId")) {
-            apiRequest.put("contact_id", arguments.get("contactId"));
-        }
-        if (arguments.containsKey("filename")) {
-            apiRequest.put("filename", arguments.get("filename"));
-        }
-        if (arguments.containsKey("originalFilename")) {
-            apiRequest.put("original_filename", arguments.get("originalFilename"));
-        }
-        if (arguments.containsKey("width")) {
-            apiRequest.put("width", arguments.get("width"));
-        }
-        if (arguments.containsKey("height")) {
-            apiRequest.put("height", arguments.get("height"));
-        }
-        if (arguments.containsKey("filesize")) {
-            apiRequest.put("filesize", arguments.get("filesize"));
-        }
-        if (arguments.containsKey("mimeType")) {
-            apiRequest.put("mime_type", arguments.get("mimeType"));
-        }
-        
-        return apiRequest;
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("limit")) {
-            queryParams.put("limit", arguments.get("limit").toString());
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatPhotoResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> rawApiData;
-        Map<String, Object> photoData;
-        
-        if (apiResponse.containsKey("data")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            rawApiData = rawData;
-            photoData = mapFromApiFormat(rawData);
-        } else {
-            rawApiData = apiResponse;
-            photoData = mapFromApiFormat(apiResponse);
-        }
-        
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", photoData);
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatPhotosListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> photos = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedPhotos = photos.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedPhotos);
-        
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "contact_id" -> result.put("contactId", value);
-                case "original_filename" -> result.put("originalFilename", value);
-                case "mime_type" -> result.put("mimeType", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                default -> result.put(key, value);
-            }
-        });
-        
-        return result;
+        return list(arguments);
     }
 }

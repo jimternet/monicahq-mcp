@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.DocumentFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,7 @@ class DocumentServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
+    private DocumentFieldMappingConfig fieldMappingConfig;
     private DocumentService documentService;
 
     private Map<String, Object> mockDocumentData;
@@ -39,6 +39,9 @@ class DocumentServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        fieldMappingConfig = new DocumentFieldMappingConfig();
+        documentService = new DocumentService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockDocumentData = documentBuilder()
             .id(1L)
             .contactId(100L)
@@ -357,7 +360,7 @@ class DocumentServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             documentService.getDocument(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Document ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -371,7 +374,7 @@ class DocumentServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             documentService.getDocument(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Document ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -384,7 +387,7 @@ class DocumentServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             documentService.getDocument(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid document ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -507,7 +510,7 @@ class DocumentServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             documentService.updateDocument(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Document ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -539,7 +542,7 @@ class DocumentServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             documentService.updateDocument(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid document ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -644,6 +647,7 @@ class DocumentServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/documents/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Document deleted successfully");
 
         // When
         Map<String, Object> result = documentService.deleteDocument(arguments).block();
@@ -651,18 +655,12 @@ class DocumentServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
         assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/documents/1"));
     }
@@ -674,6 +672,7 @@ class DocumentServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/documents/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Document deleted successfully");
 
         // When
         Map<String, Object> result = documentService.deleteDocument(arguments).block();
@@ -690,6 +689,7 @@ class DocumentServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/documents/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Document deleted successfully");
 
         // When
         Map<String, Object> result = documentService.deleteDocument(arguments).block();
@@ -708,7 +708,7 @@ class DocumentServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             documentService.deleteDocument(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Document ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -722,7 +722,7 @@ class DocumentServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             documentService.deleteDocument(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Document ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -735,7 +735,7 @@ class DocumentServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             documentService.deleteDocument(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid document ID format:"));
         verifyNoInteractions(monicaClient);
     }
 

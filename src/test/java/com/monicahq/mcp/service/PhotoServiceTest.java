@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.PhotoFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,7 @@ class PhotoServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
+    private PhotoFieldMappingConfig fieldMappingConfig;
     private PhotoService photoService;
 
     private Map<String, Object> mockPhotoData;
@@ -39,6 +39,9 @@ class PhotoServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        fieldMappingConfig = new PhotoFieldMappingConfig();
+        photoService = new PhotoService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockPhotoData = photoBuilder()
             .id(1L)
             .contactId(100L)
@@ -361,7 +364,7 @@ class PhotoServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             photoService.getPhoto(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Photo ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -375,7 +378,7 @@ class PhotoServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             photoService.getPhoto(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Photo ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -388,7 +391,7 @@ class PhotoServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             photoService.getPhoto(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid photo ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -513,7 +516,7 @@ class PhotoServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             photoService.updatePhoto(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Photo ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -545,7 +548,7 @@ class PhotoServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             photoService.updatePhoto(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid photo ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -652,6 +655,7 @@ class PhotoServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/photos/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Photo deleted successfully");
 
         // When
         Map<String, Object> result = photoService.deletePhoto(arguments).block();
@@ -659,18 +663,12 @@ class PhotoServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
         assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/photos/1"));
     }
@@ -682,6 +680,7 @@ class PhotoServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/photos/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Photo deleted successfully");
 
         // When
         Map<String, Object> result = photoService.deletePhoto(arguments).block();
@@ -698,6 +697,7 @@ class PhotoServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/photos/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Photo deleted successfully");
 
         // When
         Map<String, Object> result = photoService.deletePhoto(arguments).block();
@@ -716,7 +716,7 @@ class PhotoServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             photoService.deletePhoto(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Photo ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -730,7 +730,7 @@ class PhotoServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             photoService.deletePhoto(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Photo ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -743,7 +743,7 @@ class PhotoServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             photoService.deletePhoto(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid photo ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
