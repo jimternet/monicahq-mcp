@@ -655,7 +655,9 @@ class PhotoServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/photos/1"))).thenReturn(Mono.just(deleteResponse));
-        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Photo deleted successfully");
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Photo"), eq(1L), eq(true), anyString()
+        )).thenReturn("Photo deleted successfully");
 
         // When
         Map<String, Object> result = photoService.deletePhoto(arguments).block();
@@ -680,7 +682,9 @@ class PhotoServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/photos/99"))).thenReturn(Mono.just(deleteResponse));
-        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Photo deleted successfully");
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Photo"), eq(99L), eq(true), anyString()
+        )).thenReturn("Photo deleted successfully");
 
         // When
         Map<String, Object> result = photoService.deletePhoto(arguments).block();
@@ -697,7 +701,9 @@ class PhotoServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/photos/55"))).thenReturn(Mono.just(deleteResponse));
-        when(contentFormatter.formatOperationResult(any(), any())).thenReturn("Photo deleted successfully");
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Photo"), eq(55L), eq(true), anyString()
+        )).thenReturn("Photo deleted successfully");
 
         // When
         Map<String, Object> result = photoService.deletePhoto(arguments).block();
