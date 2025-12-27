@@ -76,12 +76,9 @@ public class GiftService extends AbstractCrudService<Object> {
      * @return a Mono containing the created gift data
      */
     public Mono<Map<String, Object>> createGift(Map<String, Object> arguments) {
-        // Validate 'name' is a non-empty string (stricter than standard required field check)
-        try {
+        // Additional validation: name must be a non-empty string
+        if (arguments != null && !arguments.isEmpty()) {
             validateRequiredString(arguments, "name");
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for Gift creation: {}", e.getMessage());
-            return Mono.error(e);
         }
         return create(arguments);
     }

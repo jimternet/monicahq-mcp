@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.JournalEntryFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,14 +31,17 @@ class JournalEntryServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private JournalEntryService journalEntryService;
+    private JournalEntryFieldMappingConfig fieldMappingConfig;
 
     private Map<String, Object> mockJournalEntryData;
     private Map<String, Object> mockApiResponse;
 
     @BeforeEach
     void setUp() {
+        fieldMappingConfig = new JournalEntryFieldMappingConfig();
+        journalEntryService = new JournalEntryService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockJournalEntryData = journalEntryBuilder()
             .id(1L)
             .title("My Journal Entry")
@@ -180,7 +183,7 @@ class JournalEntryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             journalEntryService.createJournalEntry(arguments).block();
         });
-        assertEquals("Journal entry creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Journal Entry arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -190,7 +193,7 @@ class JournalEntryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             journalEntryService.createJournalEntry(null).block();
         });
-        assertEquals("Journal entry creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Journal Entry arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -334,7 +337,7 @@ class JournalEntryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             journalEntryService.getJournalEntry(arguments).block();
         });
-        assertEquals("Journal entry ID is required", exception.getMessage());
+        assertEquals("Journal Entry ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -344,7 +347,7 @@ class JournalEntryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             journalEntryService.getJournalEntry(null).block();
         });
-        assertEquals("Journal entry ID is required", exception.getMessage());
+        assertEquals("Journal Entry ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -475,7 +478,7 @@ class JournalEntryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             journalEntryService.updateJournalEntry(arguments).block();
         });
-        assertEquals("Journal entry ID is required", exception.getMessage());
+        assertEquals("Journal Entry ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -554,7 +557,7 @@ class JournalEntryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             journalEntryService.updateJournalEntry(null).block();
         });
-        assertEquals("Journal entry ID is required", exception.getMessage());
+        assertEquals("Journal Entry ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -681,7 +684,7 @@ class JournalEntryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             journalEntryService.deleteJournalEntry(arguments).block();
         });
-        assertEquals("Journal entry ID is required", exception.getMessage());
+        assertEquals("Journal Entry ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -691,7 +694,7 @@ class JournalEntryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             journalEntryService.deleteJournalEntry(null).block();
         });
-        assertEquals("Journal entry ID is required", exception.getMessage());
+        assertEquals("Journal Entry ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 

@@ -375,7 +375,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.createGift(arguments).block();
         });
-        assertEquals("name is required", exception.getMessage());
+        assertEquals("Gift arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -388,7 +388,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.createGift(arguments).block();
         });
-        assertEquals("name is required", exception.getMessage());
+        assertEquals("Gift arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
