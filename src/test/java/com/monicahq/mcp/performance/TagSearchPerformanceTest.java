@@ -2,6 +2,7 @@ package com.monicahq.mcp.performance;
 
 import com.monicahq.mcp.client.MonicaHqClient;
 import com.monicahq.mcp.service.TagService;
+import com.monicahq.mcp.service.config.TagFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,13 +30,16 @@ class TagSearchPerformanceTest {
     @Mock
     private ContentFormatter contentFormatter;
 
+    private TagFieldMappingConfig tagFieldMappingConfig;
+
     private TagService tagService;
 
     private Map<String, Object> mockContactsByTagResponse;
 
     @BeforeEach
     void setUp() {
-        tagService = new TagService(monicaClient, contentFormatter);
+        tagFieldMappingConfig = new TagFieldMappingConfig();
+        tagService = new TagService(monicaClient, contentFormatter, tagFieldMappingConfig);
         
         // Mock contacts by tag response
         mockContactsByTagResponse = Map.of(
