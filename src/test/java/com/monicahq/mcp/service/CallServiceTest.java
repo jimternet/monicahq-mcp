@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.CallFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class CallServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private CallService callService;
 
     private Map<String, Object> mockCallData;
@@ -39,6 +38,9 @@ class CallServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        CallFieldMappingConfig fieldMappingConfig = new CallFieldMappingConfig();
+        callService = new CallService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockCallData = callBuilder()
             .id(1L)
             .content("Discussed project updates and timeline")
@@ -168,7 +170,7 @@ class CallServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             callService.createCall(arguments).block();
         });
-        assertEquals("Call creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Call arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -178,7 +180,7 @@ class CallServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             callService.createCall(null).block();
         });
-        assertEquals("Call creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Call arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 

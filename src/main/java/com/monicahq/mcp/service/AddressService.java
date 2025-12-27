@@ -1,273 +1,147 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.AddressFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * Service for managing Address entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Uses {@link AddressFieldMappingConfig} for Address-specific field mappings and validation.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createAddress - Create a new address</li>
+ *   <li>getAddress - Retrieve an address by ID</li>
+ *   <li>updateAddress - Update an existing address</li>
+ *   <li>deleteAddress - Delete an address by ID</li>
+ *   <li>listAddresses - List addresses with optional pagination</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class AddressService {
+public class AddressService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final AddressFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs an AddressService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for Addresses
+     */
+    public AddressService(MonicaHqClient monicaClient,
+                          ContentFormatter contentFormatter,
+                          AddressFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new address.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact associated with the address</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>name - Label for the address (e.g., "Home", "Work")</li>
+     *   <li>street - Street address</li>
+     *   <li>city - City name</li>
+     *   <li>province - State/province</li>
+     *   <li>postalCode - Postal/ZIP code</li>
+     *   <li>country - Country code or name</li>
+     *   <li>latitude - GPS latitude</li>
+     *   <li>longitude - GPS longitude</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created address data
+     */
     public Mono<Map<String, Object>> createAddress(Map<String, Object> arguments) {
-        log.info("Creating address with arguments: {}", arguments);
-        
-        try {
-            Map<String, Object> mutableArguments = new HashMap<>(arguments);
-            validateAddressCreateArguments(mutableArguments);
-            Map<String, Object> apiRequest = mapToApiFormat(mutableArguments);
-            
-            return monicaClient.post("/addresses", apiRequest)
-                .map(this::formatAddressResponse)
-                .doOnSuccess(result -> log.info("Address created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create address: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for address creation: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves an address by its ID.
+     *
+     * @param arguments map containing "id" - the address ID to retrieve
+     * @return a Mono containing the address data
+     */
     public Mono<Map<String, Object>> getAddress(Map<String, Object> arguments) {
-        log.info("Getting address with arguments: {}", arguments);
-        
-        try {
-            Long addressId = extractAddressId(arguments);
-            
-            return monicaClient.get("/addresses/" + addressId, null)
-                .map(this::formatAddressResponse)
-                .doOnSuccess(result -> log.info("Address retrieved successfully: {}", addressId))
-                .doOnError(error -> log.error("Failed to get address {}: {}", addressId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for address retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing address.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the address to update</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>contactId - New contact ID</li>
+     *   <li>name - New label for the address</li>
+     *   <li>street - New street address</li>
+     *   <li>city - New city name</li>
+     *   <li>province - New state/province</li>
+     *   <li>postalCode - New postal/ZIP code</li>
+     *   <li>country - New country code or name</li>
+     *   <li>latitude - New GPS latitude</li>
+     *   <li>longitude - New GPS longitude</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the address ID
+     * @return a Mono containing the updated address data
+     */
     public Mono<Map<String, Object>> updateAddress(Map<String, Object> arguments) {
-        log.info("Updating address with arguments: {}", arguments);
-        
-        try {
-            Map<String, Object> mutableArguments = new HashMap<>(arguments);
-            Long addressId = extractAddressId(mutableArguments);
-            validateAddressUpdateArguments(mutableArguments);
-            Map<String, Object> apiRequest = mapToApiFormat(mutableArguments);
-            
-            return monicaClient.put("/addresses/" + addressId, apiRequest)
-                .map(this::formatAddressResponse)
-                .doOnSuccess(result -> log.info("Address updated successfully: {}", addressId))
-                .doOnError(error -> log.error("Failed to update address {}: {}", addressId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for address update: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return update(arguments);
     }
 
+    /**
+     * Deletes an address by its ID.
+     *
+     * @param arguments map containing "id" - the address ID to delete
+     * @return a Mono containing the delete confirmation
+     */
     public Mono<Map<String, Object>> deleteAddress(Map<String, Object> arguments) {
-        log.info("Deleting address with arguments: {}", arguments);
-        
-        try {
-            Long addressId = extractAddressId(arguments);
-            
-            return monicaClient.delete("/addresses/" + addressId)
-                .map(response -> {
-                    String deletionMessage = String.format("Address %d deleted successfully", addressId);
-                    return Map.of(
-                        "content", List.of(Map.of(
-                            "type", "text",
-                            "text", deletionMessage
-                        )),
-                        "data", Map.of("deleted", true, "id", addressId)
-                    );
-                })
-                .doOnSuccess(result -> log.info("Address deleted successfully: {}", addressId))
-                .doOnError(error -> log.error("Failed to delete address {}: {}", addressId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for address deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return delete(arguments);
     }
 
+    /**
+     * Lists addresses with optional pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional pagination
+     * @return a Mono containing the list of addresses and pagination metadata
+     */
     public Mono<Map<String, Object>> listAddresses(Map<String, Object> arguments) {
-        log.info("Listing addresses with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/addresses", queryParams)
-                .map(this::formatAddressesListResponse)
-                .doOnSuccess(result -> log.info("Addresses listed successfully"))
-                .doOnError(error -> log.error("Failed to list addresses: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error listing addresses: {}", e.getMessage());
-            return Mono.error(e);
-        }
-    }
-
-    private void validateAddressCreateArguments(Map<String, Object> arguments) {
-        if (!arguments.containsKey("contactId") || arguments.get("contactId") == null) {
-            throw new IllegalArgumentException("contactId is required");
-        }
-    }
-
-    private void validateAddressUpdateArguments(Map<String, Object> arguments) {
-        // For updates, we just need the ID, other fields are optional
-    }
-
-    private Long extractAddressId(Map<String, Object> arguments) {
-        Object idObj = arguments.get("id");
-        if (idObj == null) {
-            throw new IllegalArgumentException("id is required");
-        }
-        
-        if (idObj instanceof Number) {
-            return ((Number) idObj).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idObj.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("id must be a valid number");
-        }
-    }
-
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
-        Map<String, Object> apiRequest = new HashMap<>();
-        
-        if (arguments.containsKey("contactId")) {
-            apiRequest.put("contact_id", arguments.get("contactId"));
-        }
-        if (arguments.containsKey("name")) {
-            apiRequest.put("name", arguments.get("name"));
-        }
-        if (arguments.containsKey("street")) {
-            apiRequest.put("street", arguments.get("street"));
-        }
-        if (arguments.containsKey("city")) {
-            apiRequest.put("city", arguments.get("city"));
-        }
-        if (arguments.containsKey("province")) {
-            apiRequest.put("province", arguments.get("province"));
-        }
-        if (arguments.containsKey("postalCode")) {
-            apiRequest.put("postal_code", arguments.get("postalCode"));
-        }
-        if (arguments.containsKey("country")) {
-            apiRequest.put("country", arguments.get("country"));
-        }
-        if (arguments.containsKey("latitude")) {
-            apiRequest.put("latitude", arguments.get("latitude"));
-        }
-        if (arguments.containsKey("longitude")) {
-            apiRequest.put("longitude", arguments.get("longitude"));
-        }
-        
-        return apiRequest;
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("limit")) {
-            queryParams.put("limit", arguments.get("limit").toString());
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatAddressResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> rawApiData;
-        Map<String, Object> addressData;
-        
-        if (apiResponse.containsKey("data")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            rawApiData = rawData;
-            addressData = mapFromApiFormat(rawData);
-        } else {
-            rawApiData = apiResponse;
-            addressData = mapFromApiFormat(apiResponse);
-        }
-        
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", addressData);
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatAddressesListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> addresses = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedAddresses = addresses.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedAddresses);
-        
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "contact_id" -> result.put("contactId", value);
-                case "postal_code" -> result.put("postalCode", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                default -> result.put(key, value);
-            }
-        });
-        
-        return result;
+        return list(arguments);
     }
 }
