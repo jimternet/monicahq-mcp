@@ -1,284 +1,157 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.OccupationFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * Service for managing Occupation entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Uses {@link OccupationFieldMappingConfig} for Occupation-specific field mappings and validation.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createOccupation - Create a new occupation</li>
+ *   <li>getOccupation - Retrieve an occupation by ID</li>
+ *   <li>updateOccupation - Update an existing occupation</li>
+ *   <li>deleteOccupation - Delete an occupation by ID</li>
+ *   <li>listOccupations - List occupations with optional pagination</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class OccupationService {
+public class OccupationService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final OccupationFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs an OccupationService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for Occupations
+     */
+    public OccupationService(MonicaHqClient monicaClient,
+                             ContentFormatter contentFormatter,
+                             OccupationFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new occupation.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact this occupation belongs to</li>
+     *   <li>title - The job title (must be non-empty)</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>companyId - The ID of the company</li>
+     *   <li>description - Description of the occupation</li>
+     *   <li>salary - Salary amount</li>
+     *   <li>salaryUnit - Unit for salary (e.g., "year", "month")</li>
+     *   <li>currentlyWorksHere - Whether the contact currently works here</li>
+     *   <li>startDate - Start date of the occupation</li>
+     *   <li>endDate - End date of the occupation</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created occupation data
+     */
     public Mono<Map<String, Object>> createOccupation(Map<String, Object> arguments) {
-        log.info("Creating occupation with arguments: {}", arguments);
-        
-        try {
-            Map<String, Object> mutableArguments = new HashMap<>(arguments);
-            validateOccupationCreateArguments(mutableArguments);
-            Map<String, Object> apiRequest = mapToApiFormat(mutableArguments);
-            
-            return monicaClient.post("/occupations", apiRequest)
-                .map(this::formatOccupationResponse)
-                .doOnSuccess(result -> log.info("Occupation created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create occupation: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for occupation creation: {}", e.getMessage());
-            return Mono.error(e);
+        // Validate title is non-empty string before delegating to base class
+        if (arguments != null && !arguments.isEmpty()) {
+            validateRequiredString(arguments, "title");
         }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves an occupation by its ID.
+     *
+     * @param arguments map containing "id" - the occupation ID to retrieve
+     * @return a Mono containing the occupation data
+     */
     public Mono<Map<String, Object>> getOccupation(Map<String, Object> arguments) {
-        log.info("Getting occupation with arguments: {}", arguments);
-        
-        try {
-            Long occupationId = extractOccupationId(arguments);
-            
-            return monicaClient.get("/occupations/" + occupationId, null)
-                .map(this::formatOccupationResponse)
-                .doOnSuccess(result -> log.info("Occupation retrieved successfully: {}", occupationId))
-                .doOnError(error -> log.error("Failed to get occupation {}: {}", occupationId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for occupation retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing occupation.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the occupation to update</li>
+     * </ul>
+     * Optional arguments (if title is provided, it must be non-empty):
+     * <ul>
+     *   <li>title - The job title</li>
+     *   <li>companyId - The ID of the company</li>
+     *   <li>description - Description of the occupation</li>
+     *   <li>salary - Salary amount</li>
+     *   <li>salaryUnit - Unit for salary</li>
+     *   <li>currentlyWorksHere - Whether the contact currently works here</li>
+     *   <li>startDate - Start date of the occupation</li>
+     *   <li>endDate - End date of the occupation</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the occupation ID
+     * @return a Mono containing the updated occupation data
+     */
     public Mono<Map<String, Object>> updateOccupation(Map<String, Object> arguments) {
-        log.info("Updating occupation with arguments: {}", arguments);
-        
-        try {
-            Map<String, Object> mutableArguments = new HashMap<>(arguments);
-            Long occupationId = extractOccupationId(mutableArguments);
-            validateOccupationUpdateArguments(mutableArguments);
-            Map<String, Object> apiRequest = mapToApiFormat(mutableArguments);
-            
-            return monicaClient.put("/occupations/" + occupationId, apiRequest)
-                .map(this::formatOccupationResponse)
-                .doOnSuccess(result -> log.info("Occupation updated successfully: {}", occupationId))
-                .doOnError(error -> log.error("Failed to update occupation {}: {}", occupationId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for occupation update: {}", e.getMessage());
-            return Mono.error(e);
-        }
-    }
-
-    public Mono<Map<String, Object>> deleteOccupation(Map<String, Object> arguments) {
-        log.info("Deleting occupation with arguments: {}", arguments);
-        
-        try {
-            Long occupationId = extractOccupationId(arguments);
-            
-            return monicaClient.delete("/occupations/" + occupationId)
-                .map(response -> {
-                    String deletionMessage = String.format("Occupation %d deleted successfully", occupationId);
-                    return Map.of(
-                        "content", List.of(Map.of(
-                            "type", "text",
-                            "text", deletionMessage
-                        )),
-                        "data", Map.of("deleted", true, "id", occupationId)
-                    );
-                })
-                .doOnSuccess(result -> log.info("Occupation deleted successfully: {}", occupationId))
-                .doOnError(error -> log.error("Failed to delete occupation {}: {}", occupationId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for occupation deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
-    }
-
-    public Mono<Map<String, Object>> listOccupations(Map<String, Object> arguments) {
-        log.info("Listing occupations with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/occupations", queryParams)
-                .map(this::formatOccupationsListResponse)
-                .doOnSuccess(result -> log.info("Occupations listed successfully"))
-                .doOnError(error -> log.error("Failed to list occupations: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error listing occupations: {}", e.getMessage());
-            return Mono.error(e);
-        }
-    }
-
-    private void validateOccupationCreateArguments(Map<String, Object> arguments) {
-        if (!arguments.containsKey("contactId") || arguments.get("contactId") == null) {
-            throw new IllegalArgumentException("contactId is required");
-        }
-        if (!arguments.containsKey("title") || arguments.get("title") == null || 
-            arguments.get("title").toString().trim().isEmpty()) {
-            throw new IllegalArgumentException("title is required");
-        }
-    }
-
-    private void validateOccupationUpdateArguments(Map<String, Object> arguments) {
-        if (arguments.containsKey("title") && (arguments.get("title") == null || 
-            arguments.get("title").toString().trim().isEmpty())) {
-            throw new IllegalArgumentException("title cannot be empty");
-        }
-    }
-
-    private Long extractOccupationId(Map<String, Object> arguments) {
-        Object idObj = arguments.get("id");
-        if (idObj == null) {
-            throw new IllegalArgumentException("id is required");
-        }
-        
-        if (idObj instanceof Number) {
-            return ((Number) idObj).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idObj.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("id must be a valid number");
-        }
-    }
-
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
-        Map<String, Object> apiRequest = new HashMap<>();
-        
-        if (arguments.containsKey("contactId")) {
-            apiRequest.put("contact_id", arguments.get("contactId"));
-        }
-        if (arguments.containsKey("companyId")) {
-            apiRequest.put("company_id", arguments.get("companyId"));
-        }
-        if (arguments.containsKey("title")) {
-            apiRequest.put("title", arguments.get("title"));
-        }
-        if (arguments.containsKey("description")) {
-            apiRequest.put("description", arguments.get("description"));
-        }
-        if (arguments.containsKey("salary")) {
-            apiRequest.put("salary", arguments.get("salary"));
-        }
-        if (arguments.containsKey("salaryUnit")) {
-            apiRequest.put("salary_unit", arguments.get("salaryUnit"));
-        }
-        if (arguments.containsKey("currentlyWorksHere")) {
-            apiRequest.put("currently_works_here", arguments.get("currentlyWorksHere"));
-        }
-        if (arguments.containsKey("startDate")) {
-            apiRequest.put("start_date", arguments.get("startDate"));
-        }
-        if (arguments.containsKey("endDate")) {
-            apiRequest.put("end_date", arguments.get("endDate"));
-        }
-        
-        return apiRequest;
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("limit")) {
-            queryParams.put("limit", arguments.get("limit").toString());
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatOccupationResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> rawApiData;
-        Map<String, Object> occupationData;
-        
-        if (apiResponse.containsKey("data")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            rawApiData = rawData;
-            occupationData = mapFromApiFormat(rawData);
-        } else {
-            rawApiData = apiResponse;
-            occupationData = mapFromApiFormat(apiResponse);
-        }
-        
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", occupationData);
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatOccupationsListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> occupations = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedOccupations = occupations.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedOccupations);
-        
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "contact_id" -> result.put("contactId", value);
-                case "company_id" -> result.put("companyId", value);
-                case "salary_unit" -> result.put("salaryUnit", value);
-                case "currently_works_here" -> result.put("currentlyWorksHere", value);
-                case "start_date" -> result.put("startDate", value);
-                case "end_date" -> result.put("endDate", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                default -> result.put(key, value);
+        // Validate title is non-empty if provided
+        if (arguments != null && !arguments.isEmpty() && arguments.containsKey("title")) {
+            Object titleValue = arguments.get("title");
+            if (titleValue == null || titleValue.toString().trim().isEmpty()) {
+                return Mono.error(new IllegalArgumentException("title cannot be empty"));
             }
-        });
-        
-        return result;
+        }
+        return update(arguments);
+    }
+
+    /**
+     * Deletes an occupation by its ID.
+     *
+     * @param arguments map containing "id" - the occupation ID to delete
+     * @return a Mono containing the delete confirmation
+     */
+    public Mono<Map<String, Object>> deleteOccupation(Map<String, Object> arguments) {
+        return delete(arguments);
+    }
+
+    /**
+     * Lists occupations with optional pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional pagination
+     * @return a Mono containing the list of occupations and pagination metadata
+     */
+    public Mono<Map<String, Object>> listOccupations(Map<String, Object> arguments) {
+        return list(arguments);
     }
 }

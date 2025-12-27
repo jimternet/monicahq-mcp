@@ -1,301 +1,192 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.ContactFieldFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
 import java.util.*;
 
+/**
+ * Service for managing ContactField entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Uses {@link ContactFieldFieldMappingConfig} for ContactField-specific field mappings and validation.
+ * </p>
+ * <p>
+ * Note: The list operation uses a nested resource endpoint (/contacts/{contactId}/contactfields)
+ * which requires the contactId. This is handled by overriding the listContactFields method.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createContactField - Create a new contact field</li>
+ *   <li>getContactField - Retrieve a contact field by ID</li>
+ *   <li>updateContactField - Update an existing contact field</li>
+ *   <li>deleteContactField - Delete a contact field by ID</li>
+ *   <li>listContactFields - List contact fields for a specific contact</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class ContactFieldService {
+public class ContactFieldService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final ContactFieldFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs a ContactFieldService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for ContactFields
+     */
+    public ContactFieldService(MonicaHqClient monicaClient,
+                               ContentFormatter contentFormatter,
+                               ContactFieldFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new contact field.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact this field belongs to</li>
+     *   <li>contactFieldTypeId - The type of contact field</li>
+     *   <li>data - The field value (must be non-empty)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created contact field data
+     */
     public Mono<Map<String, Object>> createContactField(Map<String, Object> arguments) {
-        log.info("Creating contact field with arguments: {}", arguments);
-        
-        try {
-            validateContactFieldCreateArguments(arguments);
-            Long contactId = extractContactId(arguments);
-            Map<String, Object> apiRequest = mapToApiFormat(arguments);
-            
-            return monicaClient.post("/contactfields", apiRequest)
-                .map(this::formatContactFieldResponse)
-                .doOnSuccess(result -> log.info("Contact field created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create contact field: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for contact field creation: {}", e.getMessage());
-            return Mono.error(e);
+        // Validate data is non-empty string before delegating to base class
+        if (arguments != null && !arguments.isEmpty()) {
+            validateRequiredString(arguments, "data");
         }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves a contact field by its ID.
+     *
+     * @param arguments map containing "id" - the contact field ID to retrieve
+     * @return a Mono containing the contact field data
+     */
     public Mono<Map<String, Object>> getContactField(Map<String, Object> arguments) {
-        log.info("Getting contact field with arguments: {}", arguments);
-        
-        try {
-            Long fieldId = extractFieldId(arguments);
-            
-            return monicaClient.get("/contactfields/" + fieldId, null)
-                .map(this::formatContactFieldResponse)
-                .doOnSuccess(result -> log.info("Contact field retrieved successfully: {}", fieldId))
-                .doOnError(error -> log.error("Failed to get contact field {}: {}", fieldId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for contact field retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing contact field.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the contact field to update</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact</li>
+     *   <li>contactFieldTypeId - The type of contact field</li>
+     *   <li>data - The field value</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the contact field ID
+     * @return a Mono containing the updated contact field data
+     */
     public Mono<Map<String, Object>> updateContactField(Map<String, Object> arguments) {
-        log.info("Updating contact field with arguments: {}", arguments);
-        
-        try {
-            Long fieldId = extractFieldId(arguments);
-            
-            Map<String, Object> updateData = new HashMap<>(arguments);
-            updateData.remove("id");
-            // Keep contactId for API request
-            
-            Map<String, Object> apiRequest = mapToApiFormat(updateData);
-            
-            return monicaClient.put("/contactfields/" + fieldId, apiRequest)
-                .map(this::formatContactFieldResponse)
-                .doOnSuccess(result -> log.info("Contact field updated successfully: {}", fieldId))
-                .doOnError(error -> log.error("Failed to update contact field {}: {}", fieldId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for contact field update: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return update(arguments);
     }
 
+    /**
+     * Deletes a contact field by its ID.
+     *
+     * @param arguments map containing "id" - the contact field ID to delete
+     * @return a Mono containing the delete confirmation
+     */
     public Mono<Map<String, Object>> deleteContactField(Map<String, Object> arguments) {
-        log.info("Deleting contact field with arguments: {}", arguments);
-        
-        try {
-            Long fieldId = extractFieldId(arguments);
-            
-            return monicaClient.delete("/contactfields/" + fieldId)
-                .map(response -> {
-                    String formattedContent = contentFormatter.formatOperationResult(
-                        "Delete", "Contact Field", fieldId, true, 
-                        "Field has been permanently removed from contact"
-                    );
-                    
-                    Map<String, Object> result = new HashMap<>();
-                    List<Map<String, Object>> content = List.of(
-                        Map.of(
-                            "type", "text",
-                            "text", formattedContent
-                        )
-                    );
-                    result.put("content", content);
-                    return result;
-                })
-                .doOnSuccess(result -> log.info("Contact field deleted successfully: {}", fieldId))
-                .doOnError(error -> log.error("Failed to delete contact field {}: {}", fieldId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for contact field deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return delete(arguments);
     }
 
+    /**
+     * Lists contact fields for a specific contact.
+     * <p>
+     * This method uses a nested resource endpoint: /contacts/{contactId}/contactfields
+     * </p>
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact to list fields for</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including required contactId and optional pagination
+     * @return a Mono containing the list of contact fields and pagination metadata
+     */
     public Mono<Map<String, Object>> listContactFields(Map<String, Object> arguments) {
         log.info("Listing contact fields with arguments: {}", arguments);
-        
+
         try {
             Long contactId = extractContactId(arguments);
             Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/contacts/" + contactId + "/contactfields", queryParams)
-                .map(this::formatContactFieldListResponse)
-                .doOnSuccess(result -> log.info("Contact fields listed successfully"))
+
+            // Use nested resource endpoint for listing contact fields
+            String endpoint = "/contacts/" + contactId + "/contactfields";
+
+            return monicaClient.get(endpoint, queryParams)
+                .map(this::formatListResponse)
+                .doOnSuccess(result -> log.info("Contact fields listed successfully for contact: {}", contactId))
                 .doOnError(error -> log.error("Failed to list contact fields: {}", error.getMessage()));
-                
+
         } catch (Exception e) {
-            log.error("Error building query parameters: {}", e.getMessage());
+            log.error("Error listing contact fields: {}", e.getMessage());
             return Mono.error(e);
         }
     }
 
-    private void validateContactFieldCreateArguments(Map<String, Object> arguments) {
-        if (arguments == null || arguments.isEmpty()) {
-            throw new IllegalArgumentException("Contact field creation arguments cannot be empty");
-        }
-        
-        if (!arguments.containsKey("contactId") || arguments.get("contactId") == null) {
-            throw new IllegalArgumentException("contactId is required");
-        }
-        
-        if (!arguments.containsKey("contactFieldTypeId") || arguments.get("contactFieldTypeId") == null) {
-            throw new IllegalArgumentException("contactFieldTypeId is required");
-        }
-        
-        if (!arguments.containsKey("data") || 
-            arguments.get("data") == null || 
-            arguments.get("data").toString().trim().isEmpty()) {
-            throw new IllegalArgumentException("data is required");
-        }
-    }
-
+    /**
+     * Extracts the contact ID from the arguments.
+     *
+     * @param arguments the arguments containing contactId
+     * @return the extracted contact ID
+     * @throws IllegalArgumentException if contactId is missing or invalid
+     */
     private Long extractContactId(Map<String, Object> arguments) {
         if (arguments == null || !arguments.containsKey("contactId")) {
             throw new IllegalArgumentException("contactId is required - please provide the ID of an existing contact to list its fields");
         }
-        
+
         Object idValue = arguments.get("contactId");
+        if (idValue == null) {
+            throw new IllegalArgumentException("contactId is required");
+        }
+
         if (idValue instanceof Number) {
             return ((Number) idValue).longValue();
         }
-        
+
         try {
-            return Long.parseLong(idValue.toString());
+            return Long.parseLong(idValue.toString().trim());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid contact ID format: " + idValue);
         }
     }
-
-    private Long extractFieldId(Map<String, Object> arguments) {
-        if (arguments == null || !arguments.containsKey("id")) {
-            throw new IllegalArgumentException("Contact field ID is required");
-        }
-        
-        Object idValue = arguments.get("id");
-        if (idValue instanceof Number) {
-            return ((Number) idValue).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idValue.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid contact field ID format: " + idValue);
-        }
-    }
-
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
-        Map<String, Object> apiRequest = new HashMap<>();
-        
-        arguments.forEach((key, value) -> {
-            switch (key) {
-                case "contactFieldTypeId" -> apiRequest.put("contact_field_type_id", value);
-                case "contactId" -> apiRequest.put("contact_id", value);
-                default -> apiRequest.put(key, value);
-            }
-        });
-        
-        return apiRequest;
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        if (arguments.containsKey("limit")) {
-            int limit = Math.min(100, Math.max(1, Integer.parseInt(arguments.get("limit").toString())));
-            queryParams.put("limit", String.valueOf(limit));
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatContactFieldResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> fieldData;
-        // Check if "data" is a Map (wrapper) or a String (the contact field's data value)
-        // ContactField entities have a "data" field containing the actual value (email, phone, etc.)
-        if (apiResponse.containsKey("data") && apiResponse.get("data") instanceof Map) {
-            // Single field response wrapped in "data"
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            fieldData = mapFromApiFormat(rawData);
-        } else {
-            // Direct response (no wrapper) - the "data" key is the field's actual value
-            fieldData = mapFromApiFormat(apiResponse);
-        }
-
-        // Use raw API data for complete field coverage as per Constitutional Principle VI
-        @SuppressWarnings("unchecked")
-        Map<String, Object> rawApiData = (apiResponse.containsKey("data") && apiResponse.get("data") instanceof Map) ?
-            (Map<String, Object>) apiResponse.get("data") : apiResponse;
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        // Return both data and content fields for protocol compliance
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", fieldData);
-        
-        // Format content for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatContactFieldListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> fields = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        // Convert each field to consistent format
-        List<Map<String, Object>> formattedFields = fields.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        // Format content for Claude Desktop visibility
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        // Extract meta for result structure
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        
-        // Return both data and content fields for protocol compliance
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedFields);
-        
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "contact_field_type_id" -> result.put("contactFieldTypeId", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                default -> result.put(key, value);
-            }
-        });
-        
-        return result;
-    }
-    
 }
