@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ReminderFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,14 +31,17 @@ class ReminderServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private ReminderService reminderService;
+    private ReminderFieldMappingConfig fieldMappingConfig;
 
     private Map<String, Object> mockReminderData;
     private Map<String, Object> mockApiResponse;
 
     @BeforeEach
     void setUp() {
+        fieldMappingConfig = new ReminderFieldMappingConfig();
+        reminderService = new ReminderService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockReminderData = reminderBuilder()
             .id(1L)
             .title("Call mom on birthday")
@@ -204,7 +207,7 @@ class ReminderServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             reminderService.createReminder(arguments).block();
         });
-        assertEquals("Reminder creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Reminder arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -214,7 +217,7 @@ class ReminderServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             reminderService.createReminder(null).block();
         });
-        assertEquals("Reminder creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Reminder arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 

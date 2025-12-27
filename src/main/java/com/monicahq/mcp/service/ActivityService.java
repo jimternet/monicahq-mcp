@@ -1,153 +1,191 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
-import com.monicahq.mcp.dto.Activity;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.ActivityFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
 
+/**
+ * Service for managing Activity entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Overrides field mapping methods to handle complex attendees array transformation.
+ * </p>
+ * <p>
+ * Attendees can be specified in two formats:
+ * <ul>
+ *   <li>Object format: {"contactId": 123} - references an existing contact</li>
+ *   <li>String format: "John Doe" - creates an ad-hoc attendee by name</li>
+ * </ul>
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createActivity - Create a new activity with attendees</li>
+ *   <li>getActivity - Retrieve an activity by ID</li>
+ *   <li>updateActivity - Update an existing activity</li>
+ *   <li>deleteActivity - Delete an activity by ID</li>
+ *   <li>listActivities - List activities with optional filtering and pagination</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class ActivityService {
+public class ActivityService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final ActivityFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs an ActivityService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for Activities
+     */
+    public ActivityService(MonicaHqClient monicaClient,
+                           ContentFormatter contentFormatter,
+                           ActivityFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new activity with attendees.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>summary - The summary/title of the activity (non-empty string)</li>
+     *   <li>attendees - Array of attendees (object with contactId or string name)</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>description - Detailed description of the activity</li>
+     *   <li>happenedAt - Date when the activity occurred</li>
+     *   <li>activityTypeId - ID of the activity type</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created activity data
+     */
     public Mono<Map<String, Object>> createActivity(Map<String, Object> arguments) {
-        log.info("Creating activity with arguments: {}", arguments);
-        
-        try {
+        // Validate arguments before delegating to base class
+        // This handles the complex attendees validation that base class doesn't support
+        if (arguments != null && !arguments.isEmpty()) {
             validateActivityCreateArguments(arguments);
-            Map<String, Object> apiRequest = mapToApiFormat(arguments);
-            
-            return monicaClient.post("/activities", apiRequest)
-                .map(this::formatActivityResponse)
-                .doOnSuccess(result -> log.info("Activity created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create activity: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for activity creation: {}", e.getMessage());
-            return Mono.error(e);
         }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves an activity by its ID.
+     *
+     * @param arguments map containing "id" - the activity ID to retrieve
+     * @return a Mono containing the activity data
+     */
     public Mono<Map<String, Object>> getActivity(Map<String, Object> arguments) {
-        log.info("Getting activity with arguments: {}", arguments);
-        
-        try {
-            Long activityId = extractActivityId(arguments);
-            
-            return monicaClient.get("/activities/" + activityId, null)
-                .map(this::formatActivityResponse)
-                .doOnSuccess(result -> log.info("Activity retrieved successfully: {}", activityId))
-                .doOnError(error -> log.error("Failed to get activity {}: {}", activityId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for activity retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing activity.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the activity to update</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>summary - New summary for the activity</li>
+     *   <li>description - New description</li>
+     *   <li>happenedAt - New date</li>
+     *   <li>attendees - Updated list of attendees</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the activity ID
+     * @return a Mono containing the updated activity data
+     */
     public Mono<Map<String, Object>> updateActivity(Map<String, Object> arguments) {
-        log.info("Updating activity with arguments: {}", arguments);
-        
-        try {
-            Long activityId = extractActivityId(arguments);
-            
-            Map<String, Object> updateData = new HashMap<>(arguments);
-            updateData.remove("id");
-            
-            Map<String, Object> apiRequest = mapToApiFormat(updateData);
-            
-            return monicaClient.put("/activities/" + activityId, apiRequest)
-                .map(this::formatActivityResponse)
-                .doOnSuccess(result -> log.info("Activity updated successfully: {}", activityId))
-                .doOnError(error -> log.error("Failed to update activity {}: {}", activityId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for activity update: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return update(arguments);
     }
 
+    /**
+     * Deletes an activity by its ID.
+     *
+     * @param arguments map containing "id" - the activity ID to delete
+     * @return a Mono containing the delete confirmation
+     */
     public Mono<Map<String, Object>> deleteActivity(Map<String, Object> arguments) {
-        log.info("Deleting activity with arguments: {}", arguments);
-        
-        try {
-            Long activityId = extractActivityId(arguments);
-            
-            return monicaClient.delete("/activities/" + activityId)
-                .map(response -> {
-                    String formattedContent = contentFormatter.formatOperationResult(
-                        "Delete", "Activity", activityId, true, 
-                        "Activity with ID " + activityId + " has been deleted successfully"
-                    );
-                    
-                    Map<String, Object> result = new HashMap<>();
-                    List<Map<String, Object>> content = List.of(
-                        Map.of(
-                            "type", "text",
-                            "text", formattedContent
-                        )
-                    );
-                    result.put("content", content);
-                    return result;
-                })
-                .doOnSuccess(result -> log.info("Activity deleted successfully: {}", activityId))
-                .doOnError(error -> log.error("Failed to delete activity {}: {}", activityId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for activity deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return delete(arguments);
     }
 
+    /**
+     * Lists activities with optional filtering and pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     *   <li>contactId - Filter by contact ID (activities involving this contact)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional filters and pagination
+     * @return a Mono containing the list of activities and pagination metadata
+     */
     public Mono<Map<String, Object>> listActivities(Map<String, Object> arguments) {
-        log.info("Listing activities with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/activities", queryParams)
-                .map(this::formatActivityListResponse)
-                .doOnSuccess(result -> log.info("Activities listed successfully"))
-                .doOnError(error -> log.error("Failed to list activities: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error building query parameters: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return list(arguments);
     }
 
+    // ========================================================================================
+    // CUSTOM VALIDATION
+    // ========================================================================================
+
+    /**
+     * Validates activity creation arguments with special attendees handling.
+     * <p>
+     * The base class validates required fields presence, but activities need
+     * additional validation:
+     * <ul>
+     *   <li>summary must be a non-empty string</li>
+     *   <li>attendees must be an array</li>
+     *   <li>attendees array cannot be empty</li>
+     *   <li>each attendee must be a string or object with contactId</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the arguments to validate
+     * @throws IllegalArgumentException if validation fails
+     */
     private void validateActivityCreateArguments(Map<String, Object> arguments) {
-        if (arguments == null || arguments.isEmpty()) {
-            throw new IllegalArgumentException("Activity creation arguments cannot be empty");
-        }
-        
-        if (!arguments.containsKey("summary") || 
-            arguments.get("summary") == null || 
-            arguments.get("summary").toString().trim().isEmpty()) {
-            throw new IllegalArgumentException("summary is required");
-        }
-        
-        if (!arguments.containsKey("attendees") || arguments.get("attendees") == null) {
+        // Validate summary is a non-empty string
+        validateRequiredString(arguments, "summary");
+
+        // Validate attendees format (beyond just presence check)
+        Object attendees = arguments.get("attendees");
+        if (attendees == null) {
             throw new IllegalArgumentException("attendees is required");
         }
-        
-        // Validate attendees format
-        Object attendees = arguments.get("attendees");
+
         if (attendees instanceof List) {
             @SuppressWarnings("unchecked")
             List<?> attendeeList = (List<?>) attendees;
             if (attendeeList.isEmpty()) {
                 throw new IllegalArgumentException("attendees cannot be empty");
             }
-            
+
             // Validate each attendee format
             for (Object attendee : attendeeList) {
                 if (attendee instanceof Map) {
@@ -175,245 +213,151 @@ public class ActivityService {
         }
     }
 
-    private Long extractActivityId(Map<String, Object> arguments) {
-        if (arguments == null || !arguments.containsKey("id")) {
-            throw new IllegalArgumentException("Activity ID is required");
-        }
-        
-        Object idValue = arguments.get("id");
-        if (idValue instanceof Number) {
-            return ((Number) idValue).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idValue.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid activity ID format: " + idValue);
-        }
-    }
+    // ========================================================================================
+    // CUSTOM FIELD MAPPING (for attendees array)
+    // ========================================================================================
 
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
+    /**
+     * Maps field names from camelCase to snake_case with special attendees handling.
+     * <p>
+     * Overrides the base implementation to handle attendees array transformation:
+     * each attendee object's contactId field is mapped to contact_id.
+     * </p>
+     *
+     * @param arguments the input data with camelCase field names
+     * @return a new map with snake_case field names for API consumption
+     */
+    @Override
+    protected Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
         Map<String, Object> apiRequest = new HashMap<>();
-        
+
         arguments.forEach((key, value) -> {
-            switch (key) {
-                case "happenedAt" -> apiRequest.put("happened_at", value);
-                case "attendees" -> {
-                    if (value instanceof List) {
-                        @SuppressWarnings("unchecked")
-                        List<?> attendeeList = (List<?>) value;
-                        List<Map<String, Object>> formattedAttendees = attendeeList.stream()
-                            .map(attendee -> {
-                                Map<String, Object> formatted = new HashMap<>();
-                                
-                                // Handle object format: {"contactId": 123}
-                                if (attendee instanceof Map) {
-                                    @SuppressWarnings("unchecked")
-                                    Map<String, Object> attendeeMap = (Map<String, Object>) attendee;
-                                    if (attendeeMap.containsKey("contactId")) {
-                                        formatted.put("contact_id", attendeeMap.get("contactId"));
-                                    }
-                                    // Copy other properties as-is
-                                    attendeeMap.forEach((k, v) -> {
-                                        if (!"contactId".equals(k)) {
-                                            formatted.put(k, v);
-                                        }
-                                    });
-                                }
-                                // Handle string format: "John Doe" 
-                                else if (attendee instanceof String) {
-                                    formatted.put("name", attendee);
-                                }
-                                // Handle other types by converting to string
-                                else {
-                                    formatted.put("name", attendee.toString());
-                                }
-                                
-                                return formatted;
-                            })
-                            .toList();
-                        apiRequest.put("attendees", formattedAttendees);
-                    } else {
-                        apiRequest.put("attendees", value);
-                    }
-                }
-                default -> apiRequest.put(key, value);
+            if ("attendees".equals(key)) {
+                apiRequest.put("attendees", transformAttendeesToApi(value));
+            } else {
+                // Use parent's mapping for other fields
+                String apiKey = getFieldMappingConfig().getToApiMappings().getOrDefault(key, key);
+                apiRequest.put(apiKey, value);
             }
         });
-        
+
         return apiRequest;
     }
 
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        if (arguments.containsKey("limit")) {
-            int limit = Math.min(100, Math.max(1, Integer.parseInt(arguments.get("limit").toString())));
-            queryParams.put("limit", String.valueOf(limit));
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        if (arguments.containsKey("contactId") && arguments.get("contactId") != null) {
-            queryParams.put("contacts", arguments.get("contactId").toString());
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatActivityResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> activityData;
-        if (apiResponse.containsKey("data")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            activityData = mapFromApiFormat(rawData);
-        } else {
-            activityData = mapFromApiFormat(apiResponse);
-        }
-        
-        // Use raw API data for complete field coverage as per Constitutional Principle VI
-        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
-            (Map<String, Object>) apiResponse.get("data") : apiResponse;
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        // Return both data and content fields for protocol compliance
+    /**
+     * Maps field names from snake_case to camelCase with special attendees handling.
+     * <p>
+     * Overrides the base implementation to handle attendees array transformation:
+     * each attendee object's contact_id field is mapped to contactId.
+     * </p>
+     *
+     * @param apiData the API response data with snake_case field names
+     * @return a new map with camelCase field names for client consumption
+     */
+    @Override
+    protected Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
         Map<String, Object> result = new HashMap<>();
-        result.put("data", activityData);
-        
-        // Format content for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
 
-    private Map<String, Object> formatActivityListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> activities = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedActivities = activities.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        // Format content as escaped JSON for Claude Desktop accessibility as per Constitutional Principle VI
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedActivities);
-        
-        // Extract and preserve meta from API response
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        // Add content field for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
         apiData.forEach((key, value) -> {
-            switch (key) {
-                case "contact_id" -> result.put("contactId", value);
-                case "activity_type_id" -> result.put("activityTypeId", value);
-                case "happened_at" -> result.put("happenedAt", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                case "attendees" -> {
-                    if (value instanceof List) {
-                        @SuppressWarnings("unchecked")
-                        List<Map<String, Object>> attendeeList = (List<Map<String, Object>>) value;
-                        List<Map<String, Object>> formattedAttendees = attendeeList.stream()
-                            .map(attendee -> {
-                                Map<String, Object> formatted = new HashMap<>();
-                                attendee.forEach((k, v) -> {
-                                    if ("contact_id".equals(k)) {
-                                        formatted.put("contactId", v);
-                                    } else {
-                                        formatted.put(k, v);
-                                    }
-                                });
-                                return formatted;
-                            })
-                            .toList();
-                        result.put("attendees", formattedAttendees);
-                    } else {
-                        result.put("attendees", value);
-                    }
+            if ("attendees".equals(key)) {
+                result.put("attendees", transformAttendeesFromApi(value));
+            } else {
+                // Use parent's mapping for other fields
+                String clientKey = getFieldMappingConfig().getFromApiMappings().getOrDefault(key, key);
+
+                // Always map common timestamp fields even if not explicitly configured
+                if ("created_at".equals(key) && !getFieldMappingConfig().getFromApiMappings().containsKey(key)) {
+                    clientKey = "createdAt";
+                } else if ("updated_at".equals(key) && !getFieldMappingConfig().getFromApiMappings().containsKey(key)) {
+                    clientKey = "updatedAt";
                 }
-                default -> result.put(key, value);
+
+                result.put(clientKey, value);
             }
         });
-        
+
         return result;
     }
-    
-    private Activity convertToActivityDto(Map<String, Object> activityData) {
-        return Activity.builder()
-            .id(getLongValue(activityData, "id"))
-            .contactId(getLongValue(activityData, "contactId"))
-            .type((String) activityData.get("type"))
-            .summary((String) activityData.get("summary"))
-            .description((String) activityData.get("description"))
-            .date(getLocalDateTimeValue(activityData, "date"))
-            .duration(getIntegerValue(activityData, "duration"))
-            .createdAt(getLocalDateTimeValue(activityData, "createdAt"))
-            .updatedAt(getLocalDateTimeValue(activityData, "updatedAt"))
-            .build();
-    }
-    
-    private Long getLongValue(Map<String, Object> data, String key) {
-        Object value = data.get(key);
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
+
+    /**
+     * Transforms attendees array for API format.
+     * <p>
+     * Handles three attendee formats:
+     * <ul>
+     *   <li>Object with contactId: maps contactId to contact_id</li>
+     *   <li>String: wraps in object with name field</li>
+     *   <li>Number/Boolean: converts to string and wraps with name field</li>
+     * </ul>
+     * </p>
+     *
+     * @param value the attendees value (expected to be a List)
+     * @return transformed attendees list for API
+     */
+    private Object transformAttendeesToApi(Object value) {
+        if (value instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<?> attendeeList = (List<?>) value;
+            return attendeeList.stream()
+                .map(attendee -> {
+                    Map<String, Object> formatted = new HashMap<>();
+
+                    // Handle object format: {"contactId": 123}
+                    if (attendee instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> attendeeMap = (Map<String, Object>) attendee;
+                        if (attendeeMap.containsKey("contactId")) {
+                            formatted.put("contact_id", attendeeMap.get("contactId"));
+                        }
+                        // Copy other properties as-is
+                        attendeeMap.forEach((k, v) -> {
+                            if (!"contactId".equals(k)) {
+                                formatted.put(k, v);
+                            }
+                        });
+                    }
+                    // Handle string format: "John Doe"
+                    else if (attendee instanceof String) {
+                        formatted.put("name", attendee);
+                    }
+                    // Handle other types by converting to string
+                    else {
+                        formatted.put("name", attendee.toString());
+                    }
+
+                    return formatted;
+                })
+                .toList();
         }
-        return null;
+        return value;
     }
-    
-    private Integer getIntegerValue(Map<String, Object> data, String key) {
-        Object value = data.get(key);
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
+
+    /**
+     * Transforms attendees array from API format.
+     * <p>
+     * Maps contact_id field to contactId for each attendee object.
+     * </p>
+     *
+     * @param value the attendees value from API (expected to be a List)
+     * @return transformed attendees list for client
+     */
+    private Object transformAttendeesFromApi(Object value) {
+        if (value instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> attendeeList = (List<Map<String, Object>>) value;
+            return attendeeList.stream()
+                .map(attendee -> {
+                    Map<String, Object> formatted = new HashMap<>();
+                    attendee.forEach((k, v) -> {
+                        if ("contact_id".equals(k)) {
+                            formatted.put("contactId", v);
+                        } else {
+                            formatted.put(k, v);
+                        }
+                    });
+                    return formatted;
+                })
+                .toList();
         }
-        return null;
-    }
-    
-    private java.time.LocalDateTime getLocalDateTimeValue(Map<String, Object> data, String key) {
-        Object value = data.get(key);
-        if (value instanceof String) {
-            try {
-                String dateTimeStr = (String) value;
-                // Handle ISO format with Z
-                if (dateTimeStr.endsWith("Z")) {
-                    return java.time.LocalDateTime.parse(dateTimeStr.substring(0, dateTimeStr.length() - 1));
-                }
-                return java.time.LocalDateTime.parse(dateTimeStr);
-            } catch (Exception e) {
-                return null;
-            }
-        }
-        return null;
+        return value;
     }
 }

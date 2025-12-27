@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ActivityTypeFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -30,7 +30,6 @@ class ActivityTypeServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private ActivityTypeService activityTypeService;
 
     private Map<String, Object> mockActivityTypeData;
@@ -38,6 +37,9 @@ class ActivityTypeServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        ActivityTypeFieldMappingConfig fieldMappingConfig = new ActivityTypeFieldMappingConfig();
+        activityTypeService = new ActivityTypeService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockActivityTypeData = activityTypeBuilder()
             .id(1L)
             .name("Coffee Meeting")
@@ -298,7 +300,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.getActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -312,7 +314,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.getActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -325,7 +327,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.getActivityType(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().startsWith("Invalid activity type ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -428,7 +430,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.updateActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -475,7 +477,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.updateActivityType(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().startsWith("Invalid activity type ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -516,6 +518,9 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/activitytypes/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type"), eq(1L), eq(true), anyString()
+        )).thenReturn("Activity Type deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeService.deleteActivityType(arguments).block();
@@ -523,18 +528,12 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
-        assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
+        assertEquals("Activity Type deleted successfully", content.get(0).get("text"));
 
         verify(monicaClient).delete(eq("/activitytypes/1"));
     }
@@ -546,6 +545,9 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/activitytypes/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type"), eq(99L), eq(true), anyString()
+        )).thenReturn("Activity Type deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeService.deleteActivityType(arguments).block();
@@ -562,6 +564,9 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/activitytypes/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type"), eq(55L), eq(true), anyString()
+        )).thenReturn("Activity Type deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeService.deleteActivityType(arguments).block();
@@ -580,7 +585,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.deleteActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -594,7 +599,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.deleteActivityType(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Activity Type ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -607,7 +612,7 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityTypeService.deleteActivityType(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().startsWith("Invalid activity type ID format:"));
         verifyNoInteractions(monicaClient);
     }
 

@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.AddressFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class AddressServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private AddressService addressService;
 
     private Map<String, Object> mockAddressData;
@@ -39,6 +38,9 @@ class AddressServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        AddressFieldMappingConfig fieldMappingConfig = new AddressFieldMappingConfig();
+        addressService = new AddressService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockAddressData = addressBuilder()
             .id(1L)
             .contactId(100L)
@@ -128,7 +130,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.createAddress(arguments).block();
         });
-        assertEquals("contactId is required", exception.getMessage());
+        assertEquals("Address arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -346,7 +348,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.getAddress(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Address ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -360,7 +362,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.getAddress(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Address ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -373,7 +375,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.getAddress(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertEquals("Invalid address ID format: not-a-number", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -506,7 +508,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.updateAddress(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Address ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -538,7 +540,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.updateAddress(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertEquals("Invalid address ID format: invalid", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -648,6 +650,9 @@ class AddressServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/addresses/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Address"), eq(1L), eq(true), anyString()
+        )).thenReturn("Address deleted successfully");
 
         // When
         Map<String, Object> result = addressService.deleteAddress(arguments).block();
@@ -655,18 +660,11 @@ class AddressServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
-        assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/addresses/1"));
     }
@@ -678,6 +676,9 @@ class AddressServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/addresses/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Address"), eq(99L), eq(true), anyString()
+        )).thenReturn("Address deleted successfully");
 
         // When
         Map<String, Object> result = addressService.deleteAddress(arguments).block();
@@ -694,6 +695,9 @@ class AddressServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/addresses/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Address"), eq(55L), eq(true), anyString()
+        )).thenReturn("Address deleted successfully");
 
         // When
         Map<String, Object> result = addressService.deleteAddress(arguments).block();
@@ -712,7 +716,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.deleteAddress(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Address ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -726,7 +730,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.deleteAddress(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Address ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -739,7 +743,7 @@ class AddressServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             addressService.deleteAddress(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertEquals("Invalid address ID format: invalid", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 

@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ActivityFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,7 @@ class ActivityServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
+    private ActivityFieldMappingConfig fieldMappingConfig;
     private ActivityService activityService;
 
     private Map<String, Object> mockActivityData;
@@ -39,6 +39,8 @@ class ActivityServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        fieldMappingConfig = new ActivityFieldMappingConfig();
+        activityService = new ActivityService(monicaClient, contentFormatter, fieldMappingConfig);
         mockActivityData = activityBuilder()
             .id(1L)
             .summary("Team meeting")
@@ -254,7 +256,7 @@ class ActivityServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityService.createActivity(arguments).block();
         });
-        assertEquals("Activity creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Activity arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -264,7 +266,7 @@ class ActivityServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityService.createActivity(null).block();
         });
-        assertEquals("Activity creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Activity arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 

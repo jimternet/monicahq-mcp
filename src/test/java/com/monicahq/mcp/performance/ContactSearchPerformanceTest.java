@@ -2,6 +2,7 @@ package com.monicahq.mcp.performance;
 
 import com.monicahq.mcp.client.MonicaHqClient;
 import com.monicahq.mcp.service.ContactService;
+import com.monicahq.mcp.service.config.ContactFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,8 @@ class ContactSearchPerformanceTest {
 
     @BeforeEach
     void setUp() {
-        contactService = new ContactService(monicaClient, contentFormatter);
+        ContactFieldMappingConfig config = new ContactFieldMappingConfig();
+        contactService = new ContactService(monicaClient, contentFormatter, config);
         
         // Mock contact search response with realistic data size
         mockContactSearchResponse = Map.of(

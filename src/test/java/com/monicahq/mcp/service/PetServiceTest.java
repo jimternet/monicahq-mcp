@@ -3,6 +3,7 @@ package com.monicahq.mcp.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monicahq.mcp.client.AuthInterceptor;
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.PetFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -49,6 +50,7 @@ class PetServiceTest {
     private PetService petService;
     private ContentFormatter contentFormatter;
     private AuthInterceptor authInterceptor;
+    private PetFieldMappingConfig fieldMappingConfig;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -76,8 +78,11 @@ class PetServiceTest {
         ObjectMapper objectMapper = new ObjectMapper();
         contentFormatter = new ContentFormatter(objectMapper);
 
+        // Create field mapping config
+        fieldMappingConfig = new PetFieldMappingConfig();
+
         // Create PetService with real dependencies
-        petService = new PetService(monicaClient, contentFormatter);
+        petService = new PetService(monicaClient, contentFormatter, fieldMappingConfig);
     }
 
     @AfterEach
@@ -316,7 +321,7 @@ class PetServiceTest {
             StepVerifier.create(petService.getPet(arguments))
                 .expectErrorMatches(throwable ->
                     throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().contains("id is required"))
+                    throwable.getMessage().contains("Pet ID is required"))
                 .verify();
         }
 
@@ -331,7 +336,7 @@ class PetServiceTest {
             StepVerifier.create(petService.getPet(arguments))
                 .expectErrorMatches(throwable ->
                     throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().contains("id must be a valid number"))
+                    throwable.getMessage().contains("Invalid pet ID format:"))
                 .verify();
         }
 
@@ -425,7 +430,7 @@ class PetServiceTest {
             StepVerifier.create(petService.updatePet(arguments))
                 .expectErrorMatches(throwable ->
                     throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().contains("petCategoryId is required for update"))
+                    throwable.getMessage().contains("petCategoryId is required"))
                 .verify();
         }
 
@@ -441,7 +446,7 @@ class PetServiceTest {
             StepVerifier.create(petService.updatePet(arguments))
                 .expectErrorMatches(throwable ->
                     throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().contains("id is required"))
+                    throwable.getMessage().contains("Pet ID is required"))
                 .verify();
         }
     }
@@ -467,12 +472,6 @@ class PetServiceTest {
                 .assertNext(response -> {
                     assertNotNull(response);
                     assertTrue(response.containsKey("content"));
-                    assertTrue(response.containsKey("data"));
-
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> data = (Map<String, Object>) response.get("data");
-                    assertEquals(true, data.get("deleted"));
-                    assertEquals(123L, data.get("id"));
 
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> content = (List<Map<String, Object>>) response.get("content");
@@ -496,7 +495,7 @@ class PetServiceTest {
             StepVerifier.create(petService.deletePet(arguments))
                 .expectErrorMatches(throwable ->
                     throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().contains("id is required"))
+                    throwable.getMessage().contains("Pet ID is required"))
                 .verify();
         }
     }

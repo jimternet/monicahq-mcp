@@ -1,286 +1,148 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.ReminderFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * Service for managing Reminder entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Uses {@link ReminderFieldMappingConfig} for Reminder-specific field mappings and validation.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createReminder - Create a new reminder for a contact</li>
+ *   <li>getReminder - Retrieve a reminder by ID</li>
+ *   <li>updateReminder - Update an existing reminder</li>
+ *   <li>deleteReminder - Delete a reminder by ID</li>
+ *   <li>listReminders - List reminders with optional filtering and pagination</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class ReminderService {
+public class ReminderService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final ReminderFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs a ReminderService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for Reminders
+     */
+    public ReminderService(MonicaHqClient monicaClient,
+                           ContentFormatter contentFormatter,
+                           ReminderFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new reminder for a contact.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact to associate the reminder with</li>
+     *   <li>title - The title of the reminder (cannot be empty)</li>
+     *   <li>initialDate - The date for the reminder in YYYY-MM-DD format</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>frequency_type - How often the reminder repeats (once, yearly, monthly, etc.)</li>
+     *   <li>nextExpectedDate - The next expected date for the reminder</li>
+     *   <li>lastTriggered - The last time the reminder was triggered</li>
+     *   <li>description - Additional details about the reminder</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created reminder data
+     */
     public Mono<Map<String, Object>> createReminder(Map<String, Object> arguments) {
-        log.info("Creating reminder with arguments: {}", arguments);
-        
-        try {
-            validateReminderCreateArguments(arguments);
-            Map<String, Object> apiRequest = mapToApiFormat(arguments);
-            
-            return monicaClient.post("/reminders", apiRequest)
-                .map(this::formatReminderResponse)
-                .doOnSuccess(result -> log.info("Reminder created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create reminder: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for reminder creation: {}", e.getMessage());
-            return Mono.error(e);
+        // Additional validation: title must be a non-empty string
+        if (arguments != null && !arguments.isEmpty()) {
+            validateRequiredString(arguments, "title");
         }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves a reminder by its ID.
+     *
+     * @param arguments map containing "id" - the reminder ID to retrieve
+     * @return a Mono containing the reminder data
+     */
     public Mono<Map<String, Object>> getReminder(Map<String, Object> arguments) {
-        log.info("Getting reminder with arguments: {}", arguments);
-        
-        try {
-            Long reminderId = extractReminderId(arguments);
-            
-            return monicaClient.get("/reminders/" + reminderId, null)
-                .map(this::formatReminderResponse)
-                .doOnSuccess(result -> log.info("Reminder retrieved successfully: {}", reminderId))
-                .doOnError(error -> log.error("Failed to get reminder {}: {}", reminderId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for reminder retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing reminder.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the reminder to update</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>title - New title for the reminder</li>
+     *   <li>contactId - New contact association</li>
+     *   <li>initialDate - New initial date</li>
+     *   <li>nextExpectedDate - New next expected date</li>
+     *   <li>lastTriggered - New last triggered date</li>
+     *   <li>frequency_type - New frequency type</li>
+     *   <li>description - New description</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the reminder ID
+     * @return a Mono containing the updated reminder data
+     */
     public Mono<Map<String, Object>> updateReminder(Map<String, Object> arguments) {
-        log.info("Updating reminder with arguments: {}", arguments);
-        
-        try {
-            Long reminderId = extractReminderId(arguments);
-            
-            Map<String, Object> updateData = new HashMap<>(arguments);
-            updateData.remove("id");
-            
-            Map<String, Object> apiRequest = mapToApiFormat(updateData);
-            
-            return monicaClient.put("/reminders/" + reminderId, apiRequest)
-                .map(this::formatReminderResponse)
-                .doOnSuccess(result -> log.info("Reminder updated successfully: {}", reminderId))
-                .doOnError(error -> log.error("Failed to update reminder {}: {}", reminderId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for reminder update: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return update(arguments);
     }
 
+    /**
+     * Deletes a reminder by its ID.
+     *
+     * @param arguments map containing "id" - the reminder ID to delete
+     * @return a Mono containing the delete confirmation
+     */
     public Mono<Map<String, Object>> deleteReminder(Map<String, Object> arguments) {
-        log.info("Deleting reminder with arguments: {}", arguments);
-        
-        try {
-            Long reminderId = extractReminderId(arguments);
-            
-            return monicaClient.delete("/reminders/" + reminderId)
-                .map(response -> {
-                    String formattedContent = contentFormatter.formatOperationResult(
-                        "Delete", "Reminder", reminderId, true, 
-                        "Reminder with ID " + reminderId + " has been deleted successfully"
-                    );
-                    
-                    Map<String, Object> result = new HashMap<>();
-                    List<Map<String, Object>> content = List.of(
-                        Map.of(
-                            "type", "text",
-                            "text", formattedContent
-                        )
-                    );
-                    result.put("content", content);
-                    return result;
-                })
-                .doOnSuccess(result -> log.info("Reminder deleted successfully: {}", reminderId))
-                .doOnError(error -> log.error("Failed to delete reminder {}: {}", reminderId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for reminder deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return delete(arguments);
     }
 
+    /**
+     * Lists reminders with optional filtering and pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     *   <li>contactId - Filter by contact ID</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional filters and pagination
+     * @return a Mono containing the list of reminders and pagination metadata
+     */
     public Mono<Map<String, Object>> listReminders(Map<String, Object> arguments) {
-        log.info("Listing reminders with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/reminders", queryParams)
-                .map(this::formatReminderListResponse)
-                .doOnSuccess(result -> log.info("Reminders listed successfully"))
-                .doOnError(error -> log.error("Failed to list reminders: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error building query parameters: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return list(arguments);
     }
-
-    private void validateReminderCreateArguments(Map<String, Object> arguments) {
-        if (arguments == null || arguments.isEmpty()) {
-            throw new IllegalArgumentException("Reminder creation arguments cannot be empty");
-        }
-        
-        if (!arguments.containsKey("contactId") || arguments.get("contactId") == null) {
-            throw new IllegalArgumentException("contactId is required");
-        }
-        
-        if (!arguments.containsKey("title") || 
-            arguments.get("title") == null || 
-            arguments.get("title").toString().trim().isEmpty()) {
-            throw new IllegalArgumentException("title is required");
-        }
-        
-        // Check for initialDate as defined in the schema
-        if (!arguments.containsKey("initialDate") || arguments.get("initialDate") == null) {
-            throw new IllegalArgumentException("initialDate is required - the date for the reminder in YYYY-MM-DD format");
-        }
-    }
-
-    private Long extractReminderId(Map<String, Object> arguments) {
-        if (arguments == null || !arguments.containsKey("id")) {
-            throw new IllegalArgumentException("Reminder ID is required");
-        }
-        
-        Object idValue = arguments.get("id");
-        if (idValue instanceof Number) {
-            return ((Number) idValue).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idValue.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid reminder ID format: " + idValue);
-        }
-    }
-
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
-        Map<String, Object> apiRequest = new HashMap<>();
-        
-        arguments.forEach((key, value) -> {
-            switch (key) {
-                case "contactId" -> apiRequest.put("contact_id", value);
-                case "initialDate" -> apiRequest.put("initial_date", value);
-                case "nextExpectedDate" -> apiRequest.put("next_expected_date", value);
-                case "lastTriggered" -> apiRequest.put("last_triggered", value);
-                default -> apiRequest.put(key, value);
-            }
-        });
-        
-        return apiRequest;
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        if (arguments.containsKey("limit")) {
-            int limit = Math.min(100, Math.max(1, Integer.parseInt(arguments.get("limit").toString())));
-            queryParams.put("limit", String.valueOf(limit));
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        if (arguments.containsKey("contactId") && arguments.get("contactId") != null) {
-            queryParams.put("contact_id", arguments.get("contactId").toString());
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatReminderResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> reminderData;
-        if (apiResponse.containsKey("data")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            reminderData = mapFromApiFormat(rawData);
-        } else {
-            reminderData = mapFromApiFormat(apiResponse);
-        }
-        
-        // Use raw API data for complete field coverage as per Constitutional Principle VI
-        @SuppressWarnings("unchecked")
-        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
-            (Map<String, Object>) apiResponse.get("data") : apiResponse;
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        // Return both data and content fields for protocol compliance
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", reminderData);
-        
-        // Format content for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatReminderListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> reminders = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedReminders = reminders.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        // Format content for Claude Desktop visibility
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        // Extract meta for result structure
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedReminders);
-        
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        // Add content field for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "contact_id" -> result.put("contactId", value);
-                case "next_expected_date" -> result.put("nextExpectedDate", value);
-                case "last_triggered" -> result.put("lastTriggered", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                default -> result.put(key, value);
-            }
-        });
-        
-        return result;
-    }
-    
 }

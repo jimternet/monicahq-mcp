@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.GiftFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class GiftServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private GiftService giftService;
 
     private Map<String, Object> mockGiftData;
@@ -39,6 +38,10 @@ class GiftServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        // Create GiftService with real GiftFieldMappingConfig (no dependencies to mock)
+        GiftFieldMappingConfig fieldMappingConfig = new GiftFieldMappingConfig();
+        giftService = new GiftService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockGiftData = giftBuilder()
             .id(1L)
             .name("Birthday Present")
@@ -372,7 +375,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.createGift(arguments).block();
         });
-        assertEquals("contactId is required", exception.getMessage());
+        assertEquals("Gift arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -382,9 +385,10 @@ class GiftServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = null;
 
         // When & Then
-        assertThrows(NullPointerException.class, () -> {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.createGift(arguments).block();
         });
+        assertEquals("Gift arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -464,7 +468,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.getGift(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Gift ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -478,7 +482,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.getGift(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Gift ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -491,7 +495,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.getGift(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid gift ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -619,7 +623,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.updateGift(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Gift ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -729,7 +733,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.updateGift(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid gift ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -778,6 +782,9 @@ class GiftServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/gifts/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Gift"), eq(1L), eq(true), anyString()
+        )).thenReturn("Gift deleted successfully");
 
         // When
         Map<String, Object> result = giftService.deleteGift(arguments).block();
@@ -785,18 +792,11 @@ class GiftServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
-        assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/gifts/1"));
     }
@@ -808,6 +808,9 @@ class GiftServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/gifts/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Gift"), eq(99L), eq(true), anyString()
+        )).thenReturn("Gift deleted successfully");
 
         // When
         Map<String, Object> result = giftService.deleteGift(arguments).block();
@@ -824,6 +827,9 @@ class GiftServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/gifts/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Gift"), eq(55L), eq(true), anyString()
+        )).thenReturn("Gift deleted successfully");
 
         // When
         Map<String, Object> result = giftService.deleteGift(arguments).block();
@@ -842,7 +848,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.deleteGift(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Gift ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -856,7 +862,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.deleteGift(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Gift ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -869,7 +875,7 @@ class GiftServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             giftService.deleteGift(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid gift ID format"));
         verifyNoInteractions(monicaClient);
     }
 

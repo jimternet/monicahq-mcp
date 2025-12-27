@@ -1,270 +1,145 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.DocumentFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * Service for managing Document entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Uses {@link DocumentFieldMappingConfig} for Document-specific field mappings and validation.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createDocument - Create a new document for a contact</li>
+ *   <li>getDocument - Retrieve a document by ID</li>
+ *   <li>updateDocument - Update an existing document</li>
+ *   <li>deleteDocument - Delete a document by ID</li>
+ *   <li>listDocuments - List documents with optional pagination</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class DocumentService {
+public class DocumentService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final DocumentFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs a DocumentService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for Documents
+     */
+    public DocumentService(MonicaHqClient monicaClient,
+                           ContentFormatter contentFormatter,
+                           DocumentFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new document for a contact.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact to associate the document with</li>
+     *   <li>filename - The filename of the document (cannot be empty)</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>originalFilename - The original filename before upload</li>
+     *   <li>mimeType - The MIME type of the document (e.g., application/pdf)</li>
+     *   <li>size - The size of the file in bytes</li>
+     *   <li>description - A description of the document</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created document data
+     */
     public Mono<Map<String, Object>> createDocument(Map<String, Object> arguments) {
-        log.info("Creating document with arguments: {}", arguments);
-        
-        try {
-            Map<String, Object> mutableArguments = new HashMap<>(arguments);
-            validateDocumentCreateArguments(mutableArguments);
-            Map<String, Object> apiRequest = mapToApiFormat(mutableArguments);
-            
-            return monicaClient.post("/documents", apiRequest)
-                .map(this::formatDocumentResponse)
-                .doOnSuccess(result -> log.info("Document created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create document: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for document creation: {}", e.getMessage());
-            return Mono.error(e);
+        // Additional validation: filename must be a non-empty string
+        if (arguments != null && !arguments.isEmpty()) {
+            validateRequiredString(arguments, "filename");
         }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves a document by its ID.
+     *
+     * @param arguments map containing "id" - the document ID to retrieve
+     * @return a Mono containing the document data
+     */
     public Mono<Map<String, Object>> getDocument(Map<String, Object> arguments) {
-        log.info("Getting document with arguments: {}", arguments);
-        
-        try {
-            Long documentId = extractDocumentId(arguments);
-            
-            return monicaClient.get("/documents/" + documentId, null)
-                .map(this::formatDocumentResponse)
-                .doOnSuccess(result -> log.info("Document retrieved successfully: {}", documentId))
-                .doOnError(error -> log.error("Failed to get document {}: {}", documentId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for document retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing document.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the document to update</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>contactId - New contact association</li>
+     *   <li>filename - New filename</li>
+     *   <li>originalFilename - New original filename</li>
+     *   <li>mimeType - New MIME type</li>
+     *   <li>size - New file size</li>
+     *   <li>description - New description</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the document ID
+     * @return a Mono containing the updated document data
+     */
     public Mono<Map<String, Object>> updateDocument(Map<String, Object> arguments) {
-        log.info("Updating document with arguments: {}", arguments);
-        
-        try {
-            Map<String, Object> mutableArguments = new HashMap<>(arguments);
-            Long documentId = extractDocumentId(mutableArguments);
-            validateDocumentUpdateArguments(mutableArguments);
-            Map<String, Object> apiRequest = mapToApiFormat(mutableArguments);
-            
-            return monicaClient.put("/documents/" + documentId, apiRequest)
-                .map(this::formatDocumentResponse)
-                .doOnSuccess(result -> log.info("Document updated successfully: {}", documentId))
-                .doOnError(error -> log.error("Failed to update document {}: {}", documentId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for document update: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return update(arguments);
     }
 
+    /**
+     * Deletes a document by its ID.
+     *
+     * @param arguments map containing "id" - the document ID to delete
+     * @return a Mono containing the delete confirmation
+     */
     public Mono<Map<String, Object>> deleteDocument(Map<String, Object> arguments) {
-        log.info("Deleting document with arguments: {}", arguments);
-        
-        try {
-            Long documentId = extractDocumentId(arguments);
-            
-            return monicaClient.delete("/documents/" + documentId)
-                .map(response -> {
-                    String deletionMessage = String.format("Document %d deleted successfully", documentId);
-                    return Map.of(
-                        "content", List.of(Map.of(
-                            "type", "text",
-                            "text", deletionMessage
-                        )),
-                        "data", Map.of("deleted", true, "id", documentId)
-                    );
-                })
-                .doOnSuccess(result -> log.info("Document deleted successfully: {}", documentId))
-                .doOnError(error -> log.error("Failed to delete document {}: {}", documentId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for document deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return delete(arguments);
     }
 
+    /**
+     * Lists documents with optional pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional pagination
+     * @return a Mono containing the list of documents and pagination metadata
+     */
     public Mono<Map<String, Object>> listDocuments(Map<String, Object> arguments) {
-        log.info("Listing documents with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/documents", queryParams)
-                .map(this::formatDocumentsListResponse)
-                .doOnSuccess(result -> log.info("Documents listed successfully"))
-                .doOnError(error -> log.error("Failed to list documents: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error listing documents: {}", e.getMessage());
-            return Mono.error(e);
-        }
-    }
-
-    private void validateDocumentCreateArguments(Map<String, Object> arguments) {
-        if (!arguments.containsKey("contactId") || arguments.get("contactId") == null) {
-            throw new IllegalArgumentException("contactId is required");
-        }
-        if (!arguments.containsKey("filename") || arguments.get("filename") == null || 
-            arguments.get("filename").toString().trim().isEmpty()) {
-            throw new IllegalArgumentException("filename is required");
-        }
-    }
-
-    private void validateDocumentUpdateArguments(Map<String, Object> arguments) {
-        // For updates, fields are optional
-    }
-
-    private Long extractDocumentId(Map<String, Object> arguments) {
-        Object idObj = arguments.get("id");
-        if (idObj == null) {
-            throw new IllegalArgumentException("id is required");
-        }
-        
-        if (idObj instanceof Number) {
-            return ((Number) idObj).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idObj.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("id must be a valid number");
-        }
-    }
-
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
-        Map<String, Object> apiRequest = new HashMap<>();
-        
-        if (arguments.containsKey("contactId")) {
-            apiRequest.put("contact_id", arguments.get("contactId"));
-        }
-        if (arguments.containsKey("filename")) {
-            apiRequest.put("filename", arguments.get("filename"));
-        }
-        if (arguments.containsKey("originalFilename")) {
-            apiRequest.put("original_filename", arguments.get("originalFilename"));
-        }
-        if (arguments.containsKey("mimeType")) {
-            apiRequest.put("mime_type", arguments.get("mimeType"));
-        }
-        if (arguments.containsKey("size")) {
-            apiRequest.put("size", arguments.get("size"));
-        }
-        if (arguments.containsKey("description")) {
-            apiRequest.put("description", arguments.get("description"));
-        }
-        
-        return apiRequest;
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("limit")) {
-            queryParams.put("limit", arguments.get("limit").toString());
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatDocumentResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> rawApiData;
-        Map<String, Object> documentData;
-        
-        if (apiResponse.containsKey("data")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            rawApiData = rawData;
-            documentData = mapFromApiFormat(rawData);
-        } else {
-            rawApiData = apiResponse;
-            documentData = mapFromApiFormat(apiResponse);
-        }
-        
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", documentData);
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatDocumentsListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> documents = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedDocuments = documents.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedDocuments);
-        
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "contact_id" -> result.put("contactId", value);
-                case "original_filename" -> result.put("originalFilename", value);
-                case "mime_type" -> result.put("mimeType", value);
-                case "download_url" -> result.put("downloadUrl", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                default -> result.put(key, value);
-            }
-        });
-        
-        return result;
+        return list(arguments);
     }
 }

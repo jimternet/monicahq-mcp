@@ -1,13 +1,13 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ContactFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -34,11 +34,14 @@ class ContactServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
+    private ContactFieldMappingConfig fieldMappingConfig;
+
     private ContactService contactService;
 
     @BeforeEach
     void setUp() {
+        fieldMappingConfig = new ContactFieldMappingConfig();
+        contactService = new ContactService(monicaClient, contentFormatter, fieldMappingConfig);
         mockContentFormatter(contentFormatter);
     }
 

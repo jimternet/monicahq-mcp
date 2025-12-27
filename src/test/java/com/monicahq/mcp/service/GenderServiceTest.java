@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.GenderFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,13 +31,15 @@ class GenderServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private GenderService genderService;
 
     private Map<String, Object> mockApiResponse;
 
     @BeforeEach
     void setUp() {
+        GenderFieldMappingConfig fieldMappingConfig = new GenderFieldMappingConfig();
+        genderService = new GenderService(monicaClient, contentFormatter, fieldMappingConfig);
+
         List<Map<String, Object>> genders = List.of(
             genderBuilder().id(1L).name("Male").build(),
             genderBuilder().id(2L).name("Female").build(),
@@ -72,7 +74,7 @@ class GenderServiceTest extends ServiceTestBase {
         assertEquals("text", content.get(0).get("type"));
         assertEquals("Formatted genders JSON", content.get(0).get("text"));
 
-        verify(monicaClient).get(eq("/genders"), isNull());
+        verify(monicaClient).get(eq("/genders"), any());
     }
 
     @Test
@@ -87,7 +89,7 @@ class GenderServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("data"));
-        verify(monicaClient).get(eq("/genders"), isNull());
+        verify(monicaClient).get(eq("/genders"), any());
     }
 
     @Test
@@ -274,7 +276,7 @@ class GenderServiceTest extends ServiceTestBase {
         genderService.listGenders(arguments).block();
 
         // Then
-        verify(monicaClient).get(eq("/genders"), isNull());
+        verify(monicaClient).get(eq("/genders"), any());
         verifyNoMoreInteractions(monicaClient);
     }
 
@@ -308,7 +310,7 @@ class GenderServiceTest extends ServiceTestBase {
 
         // Then
         assertNotNull(result);
-        verify(monicaClient).get(eq("/genders"), isNull());
+        verify(monicaClient).get(eq("/genders"), any());
     }
 
     // ========================================================================================

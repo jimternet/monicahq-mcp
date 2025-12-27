@@ -1,279 +1,137 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.NoteFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * Service for managing Note entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Uses {@link NoteFieldMappingConfig} for Note-specific field mappings and validation.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createNote - Create a new note for a contact</li>
+ *   <li>getNote - Retrieve a note by ID</li>
+ *   <li>updateNote - Update an existing note</li>
+ *   <li>deleteNote - Delete a note by ID</li>
+ *   <li>listNotes - List notes with optional filtering and pagination</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class NoteService {
+public class NoteService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final NoteFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs a NoteService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for Notes
+     */
+    public NoteService(MonicaHqClient monicaClient,
+                       ContentFormatter contentFormatter,
+                       NoteFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new note for a contact.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact to associate the note with</li>
+     *   <li>body - The content of the note</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>isFavorited - Whether to mark the note as a favorite (default: false)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created note data
+     */
     public Mono<Map<String, Object>> createNote(Map<String, Object> arguments) {
-        log.info("Creating note with arguments: {}", arguments);
-        
-        try {
-            validateNoteCreateArguments(arguments);
-            Map<String, Object> apiRequest = mapToApiFormat(arguments);
-            
-            return monicaClient.post("/notes", apiRequest)
-                .map(this::formatNoteResponse)
-                .doOnSuccess(result -> log.info("Note created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create note: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for note creation: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves a note by its ID.
+     *
+     * @param arguments map containing "id" - the note ID to retrieve
+     * @return a Mono containing the note data
+     */
     public Mono<Map<String, Object>> getNote(Map<String, Object> arguments) {
-        log.info("Getting note with arguments: {}", arguments);
-        
-        try {
-            Long noteId = extractNoteId(arguments);
-            
-            return monicaClient.get("/notes/" + noteId, null)
-                .map(this::formatNoteResponse)
-                .doOnSuccess(result -> log.info("Note retrieved successfully: {}", noteId))
-                .doOnError(error -> log.error("Failed to get note {}: {}", noteId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for note retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing note.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the note to update</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>body - New content for the note</li>
+     *   <li>contactId - New contact association</li>
+     *   <li>isFavorited - Update favorite status</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the note ID
+     * @return a Mono containing the updated note data
+     */
     public Mono<Map<String, Object>> updateNote(Map<String, Object> arguments) {
-        log.info("Updating note with arguments: {}", arguments);
-        
-        try {
-            Long noteId = extractNoteId(arguments);
-            
-            Map<String, Object> updateData = new HashMap<>(arguments);
-            updateData.remove("id");
-            
-            Map<String, Object> apiRequest = mapToApiFormat(updateData);
-            
-            return monicaClient.put("/notes/" + noteId, apiRequest)
-                .map(this::formatNoteResponse)
-                .doOnSuccess(result -> log.info("Note updated successfully: {}", noteId))
-                .doOnError(error -> log.error("Failed to update note {}: {}", noteId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for note update: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return update(arguments);
     }
 
+    /**
+     * Deletes a note by its ID.
+     *
+     * @param arguments map containing "id" - the note ID to delete
+     * @return a Mono containing the delete confirmation
+     */
     public Mono<Map<String, Object>> deleteNote(Map<String, Object> arguments) {
-        log.info("Deleting note with arguments: {}", arguments);
-        
-        try {
-            Long noteId = extractNoteId(arguments);
-            
-            return monicaClient.delete("/notes/" + noteId)
-                .map(response -> {
-                    String formattedContent = contentFormatter.formatOperationResult(
-                        "Delete", "Note", noteId, true, 
-                        "Note with ID " + noteId + " has been deleted successfully"
-                    );
-                    
-                    Map<String, Object> result = new HashMap<>();
-                    List<Map<String, Object>> content = List.of(
-                        Map.of(
-                            "type", "text",
-                            "text", formattedContent
-                        )
-                    );
-                    result.put("content", content);
-                    return result;
-                })
-                .doOnSuccess(result -> log.info("Note deleted successfully: {}", noteId))
-                .doOnError(error -> log.error("Failed to delete note {}: {}", noteId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for note deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return delete(arguments);
     }
 
+    /**
+     * Lists notes with optional filtering and pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     *   <li>contactId - Filter by contact ID</li>
+     *   <li>favorited - Filter by favorite status</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional filters and pagination
+     * @return a Mono containing the list of notes and pagination metadata
+     */
     public Mono<Map<String, Object>> listNotes(Map<String, Object> arguments) {
-        log.info("Listing notes with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/notes", queryParams)
-                .map(this::formatNoteListResponse)
-                .doOnSuccess(result -> log.info("Notes listed successfully"))
-                .doOnError(error -> log.error("Failed to list notes: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error building query parameters: {}", e.getMessage());
-            return Mono.error(e);
-        }
-    }
-
-    private void validateNoteCreateArguments(Map<String, Object> arguments) {
-        if (arguments == null || arguments.isEmpty()) {
-            throw new IllegalArgumentException("Note creation arguments cannot be empty");
-        }
-        
-        if (!arguments.containsKey("contactId") || arguments.get("contactId") == null) {
-            throw new IllegalArgumentException("contactId is required");
-        }
-        
-        if (!arguments.containsKey("body") || arguments.get("body") == null) {
-            throw new IllegalArgumentException("body is required");
-        }
-        
-        // Allow empty body string - some notes might be empty
-    }
-
-    private Long extractNoteId(Map<String, Object> arguments) {
-        if (arguments == null || !arguments.containsKey("id")) {
-            throw new IllegalArgumentException("Note ID is required");
-        }
-        
-        Object idValue = arguments.get("id");
-        if (idValue instanceof Number) {
-            return ((Number) idValue).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idValue.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid note ID format: " + idValue);
-        }
-    }
-
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
-        Map<String, Object> apiRequest = new HashMap<>();
-        
-        arguments.forEach((key, value) -> {
-            switch (key) {
-                case "contactId" -> apiRequest.put("contact_id", value);
-                case "isFavorited" -> apiRequest.put("is_favorited", value);
-                default -> apiRequest.put(key, value);
-            }
-        });
-        
-        return apiRequest;
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        if (arguments.containsKey("limit")) {
-            int limit = Math.min(100, Math.max(1, Integer.parseInt(arguments.get("limit").toString())));
-            queryParams.put("limit", String.valueOf(limit));
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        if (arguments.containsKey("contactId") && arguments.get("contactId") != null) {
-            queryParams.put("contact_id", arguments.get("contactId").toString());
-        }
-        
-        if (arguments.containsKey("favorited") && arguments.get("favorited") != null) {
-            queryParams.put("is_favorited", arguments.get("favorited").toString());
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatNoteResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> noteData;
-        if (apiResponse.containsKey("data")) {
-            // Single note response
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            noteData = mapFromApiFormat(rawData);
-        } else {
-            noteData = mapFromApiFormat(apiResponse);
-        }
-        
-        // Use raw API data for complete field coverage as per Constitutional Principle VI
-        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
-            (Map<String, Object>) apiResponse.get("data") : apiResponse;
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        // Return both data and content fields for protocol compliance
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", noteData);
-        
-        // Format content for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatNoteListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> notes = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedNotes = notes.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        // Format content for Claude Desktop visibility using raw API response
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedNotes);
-        
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        // Add content field for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "contact_id" -> result.put("contactId", value);
-                case "is_favorited" -> result.put("isFavorited", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                default -> result.put(key, value);
-            }
-        });
-        
-        return result;
+        return list(arguments);
     }
 }

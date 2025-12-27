@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.CurrencyFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class CurrencyServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private CurrencyService currencyService;
 
     private Map<String, Object> mockCurrencyData;
@@ -39,6 +38,9 @@ class CurrencyServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        CurrencyFieldMappingConfig fieldMappingConfig = new CurrencyFieldMappingConfig();
+        currencyService = new CurrencyService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockCurrencyData = currencyBuilder()
             .id(1L)
             .code("USD")
@@ -139,7 +141,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             currencyService.getCurrency(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Currency ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -153,7 +155,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             currencyService.getCurrency(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Currency ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -167,7 +169,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             currencyService.getCurrency(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().startsWith("Invalid currency ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -242,7 +244,7 @@ class CurrencyServiceTest extends ServiceTestBase {
             currencyBuilder().id(1L).code("USD").name("US Dollar").build(),
             currencyBuilder().id(2L).code("EUR").name("Euro").build()
         );
-        Map<String, Object> apiResponse = createListResponse(currencies, 1, 50, 2);
+        Map<String, Object> apiResponse = createListResponse(currencies, 1, 10, 2);
 
         when(monicaClient.get(eq("/currencies"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted currencies JSON");
@@ -253,7 +255,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/currencies"), argThat(params ->
-            "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 
@@ -313,7 +315,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
 
         List<Map<String, Object>> currencies = List.of();
-        Map<String, Object> apiResponse = createListResponse(currencies, 1, 50, 0);
+        Map<String, Object> apiResponse = createListResponse(currencies, 1, 10, 0);
 
         when(monicaClient.get(eq("/currencies"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("[]");
@@ -337,7 +339,7 @@ class CurrencyServiceTest extends ServiceTestBase {
             currencyBuilder().id(1L).code("USD").build(),
             currencyBuilder().id(2L).code("EUR").build()
         );
-        Map<String, Object> apiResponse = createListResponse(currencies, 1, 50, 100);
+        Map<String, Object> apiResponse = createListResponse(currencies, 1, 10, 100);
 
         when(monicaClient.get(eq("/currencies"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted currencies JSON");
@@ -351,7 +353,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         @SuppressWarnings("unchecked")
         Map<String, Object> meta = (Map<String, Object>) result.get("meta");
         assertEquals(1, meta.get("current_page"));
-        assertEquals(50, meta.get("per_page"));
+        assertEquals(10, meta.get("per_page"));
         assertEquals(100, meta.get("total"));
     }
 
@@ -373,7 +375,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         currency2.put("exchange_rate", 0.85);
 
         List<Map<String, Object>> currencies = List.of(currency1, currency2);
-        Map<String, Object> apiResponse = createListResponse(currencies, 1, 50, 2);
+        Map<String, Object> apiResponse = createListResponse(currencies, 1, 10, 2);
 
         when(monicaClient.get(eq("/currencies"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted currencies JSON");
@@ -400,7 +402,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         List<Map<String, Object>> currencies = List.of(
             currencyBuilder().id(1L).code("USD").build()
         );
-        Map<String, Object> apiResponse = createListResponse(currencies, 1, 50, 1);
+        Map<String, Object> apiResponse = createListResponse(currencies, 1, 10, 1);
 
         when(monicaClient.get(eq("/currencies"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list content");
@@ -432,7 +434,7 @@ class CurrencyServiceTest extends ServiceTestBase {
             currencyBuilder().id(1L).code("USD").name("US Dollar").build(),
             currencyBuilder().id(3L).code("AUD").name("Australian Dollar").build()
         );
-        Map<String, Object> apiResponse = createListResponse(currencies, 1, 50, 2);
+        Map<String, Object> apiResponse = createListResponse(currencies, 1, 10, 2);
 
         when(monicaClient.get(eq("/currencies"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted currencies JSON");
@@ -443,7 +445,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/currencies"), argThat(params ->
-            "dollar".equals(params.get("search")) && "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            "dollar".equals(params.get("search")) && "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 
@@ -481,7 +483,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         List<Map<String, Object>> currencies = List.of(
             currencyBuilder().id(1L).code("USD").build()
         );
-        Map<String, Object> apiResponse = createListResponse(currencies, 1, 50, 1);
+        Map<String, Object> apiResponse = createListResponse(currencies, 1, 10, 1);
 
         when(monicaClient.get(eq("/currencies"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted currencies JSON");
@@ -492,7 +494,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/currencies"), argThat(params ->
-            !params.containsKey("search") && "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            !params.containsKey("search") && "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 
@@ -503,7 +505,7 @@ class CurrencyServiceTest extends ServiceTestBase {
         arguments.put("search", "nonexistent");
 
         List<Map<String, Object>> currencies = List.of();
-        Map<String, Object> apiResponse = createListResponse(currencies, 1, 50, 0);
+        Map<String, Object> apiResponse = createListResponse(currencies, 1, 10, 0);
 
         when(monicaClient.get(eq("/currencies"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("[]");

@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.UserFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class UserServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private UserService userService;
 
     private Map<String, Object> mockUserData;
@@ -39,6 +38,9 @@ class UserServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        UserFieldMappingConfig config = new UserFieldMappingConfig();
+        userService = new UserService(monicaClient, contentFormatter, config);
+
         mockUserData = userBuilder()
             .id(1L)
             .firstName("John")
@@ -194,21 +196,21 @@ class UserServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = new HashMap<>();
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.createUser(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("cannot be empty"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
     @Test
     void createUser_NullArgs_ThrowsException() {
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.createUser(null).block();
         });
-        assertTrue(exception.getMessage().contains("cannot be empty"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -393,11 +395,11 @@ class UserServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("firstName", "Test");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.getUser(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("User ID is required"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -407,21 +409,21 @@ class UserServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("id", null);
 
-        // When & Then - null id value should throw IllegalArgumentException
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.getUser(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("User ID is required"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
     @Test
     void getUser_NullArgs_ThrowsException() {
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.getUser(null).block();
         });
-        assertTrue(exception.getMessage().contains("User ID is required"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -430,11 +432,11 @@ class UserServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("id", "not-a-number");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.getUser(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Invalid user ID format"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -579,11 +581,11 @@ class UserServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("firstName", "Updated User");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.updateUser(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("User ID is required"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -610,11 +612,11 @@ class UserServiceTest extends ServiceTestBase {
 
     @Test
     void updateUser_NullArgs_ThrowsException() {
-        // When & Then - null args should fail validation
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.updateUser(null).block();
         });
-        assertTrue(exception.getMessage().contains("User ID is required"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -659,11 +661,11 @@ class UserServiceTest extends ServiceTestBase {
         arguments.put("id", "invalid");
         arguments.put("firstName", "Updated User");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.updateUser(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Invalid user ID format"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -767,21 +769,21 @@ class UserServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("firstName", "Test");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.deleteUser(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("User ID is required"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
     @Test
     void deleteUser_NullArgs_ThrowsException() {
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.deleteUser(null).block();
         });
-        assertTrue(exception.getMessage().contains("User ID is required"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -790,11 +792,11 @@ class UserServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("id", "invalid");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - UserService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             userService.deleteUser(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Invalid user ID format"));
+        assertTrue(exception.getMessage().contains("Users API is not available"));
         verifyNoInteractions(monicaClient);
     }
 

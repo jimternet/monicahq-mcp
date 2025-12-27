@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.CountryFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class CountryServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private CountryService countryService;
 
     private Map<String, Object> mockCountryData;
@@ -39,6 +38,9 @@ class CountryServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        CountryFieldMappingConfig fieldMappingConfig = new CountryFieldMappingConfig();
+        countryService = new CountryService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockCountryData = countryBuilder()
             .id(1L)
             .name("United States")
@@ -135,7 +137,7 @@ class CountryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             countryService.getCountry(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Country ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -149,7 +151,7 @@ class CountryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             countryService.getCountry(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Country ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -163,7 +165,7 @@ class CountryServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             countryService.getCountry(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().startsWith("Invalid country ID format:"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -235,7 +237,7 @@ class CountryServiceTest extends ServiceTestBase {
             countryBuilder().id(1L).name("United States").countryCode("US").build(),
             countryBuilder().id(2L).name("Canada").countryCode("CA").build()
         );
-        Map<String, Object> apiResponse = createListResponse(countries, 1, 50, 2);
+        Map<String, Object> apiResponse = createListResponse(countries, 1, 10, 2);
 
         when(monicaClient.get(eq("/countries"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted countries JSON");
@@ -246,7 +248,7 @@ class CountryServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/countries"), argThat(params ->
-            "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 
@@ -423,7 +425,7 @@ class CountryServiceTest extends ServiceTestBase {
             countryBuilder().id(1L).name("United States").countryCode("US").build(),
             countryBuilder().id(2L).name("United Kingdom").countryCode("GB").build()
         );
-        Map<String, Object> apiResponse = createListResponse(countries, 1, 50, 2);
+        Map<String, Object> apiResponse = createListResponse(countries, 1, 10, 2);
 
         when(monicaClient.get(eq("/countries"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted countries JSON");
@@ -434,7 +436,7 @@ class CountryServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/countries"), argThat(params ->
-            "united".equals(params.get("search")) && "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            "united".equals(params.get("search")) && "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 
@@ -472,7 +474,7 @@ class CountryServiceTest extends ServiceTestBase {
         List<Map<String, Object>> countries = List.of(
             countryBuilder().id(1L).name("United States").build()
         );
-        Map<String, Object> apiResponse = createListResponse(countries, 1, 50, 1);
+        Map<String, Object> apiResponse = createListResponse(countries, 1, 10, 1);
 
         when(monicaClient.get(eq("/countries"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted countries JSON");
@@ -483,7 +485,7 @@ class CountryServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/countries"), argThat(params ->
-            !params.containsKey("search") && "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            !params.containsKey("search") && "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 

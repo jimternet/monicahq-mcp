@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.GroupFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class GroupServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private GroupService groupService;
 
     private Map<String, Object> mockGroupData;
@@ -39,6 +38,9 @@ class GroupServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        GroupFieldMappingConfig config = new GroupFieldMappingConfig();
+        groupService = new GroupService(monicaClient, contentFormatter, config);
+
         mockGroupData = groupBuilder()
             .id(1L)
             .name("Family")
@@ -170,7 +172,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.createGroup(arguments).block();
         });
-        assertEquals("name is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("cannot be empty"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -286,7 +288,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.getGroup(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Group ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -300,7 +302,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.getGroup(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Group ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -313,7 +315,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.getGroup(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid group ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -455,7 +457,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.updateGroup(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Group ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -540,7 +542,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.updateGroup(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid group ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -621,6 +623,9 @@ class GroupServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/groups/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Group"), eq(1L), eq(true), anyString()
+        )).thenReturn("Group with ID 1 has been deleted successfully");
 
         // When
         Map<String, Object> result = groupService.deleteGroup(arguments).block();
@@ -628,18 +633,12 @@ class GroupServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
         assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/groups/1"));
     }
@@ -651,6 +650,9 @@ class GroupServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/groups/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Group"), eq(99L), eq(true), anyString()
+        )).thenReturn("Group with ID 99 has been deleted successfully");
 
         // When
         Map<String, Object> result = groupService.deleteGroup(arguments).block();
@@ -667,6 +669,9 @@ class GroupServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/groups/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Group"), eq(55L), eq(true), anyString()
+        )).thenReturn("Group with ID 55 has been deleted successfully");
 
         // When
         Map<String, Object> result = groupService.deleteGroup(arguments).block();
@@ -685,7 +690,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.deleteGroup(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Group ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -699,7 +704,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.deleteGroup(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Group ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -712,7 +717,7 @@ class GroupServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             groupService.deleteGroup(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid group ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -723,6 +728,9 @@ class GroupServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(42L);
 
         when(monicaClient.delete(eq("/groups/42"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Group"), eq(42L), eq(true), anyString()
+        )).thenReturn("Group with ID 42 has been deleted successfully");
 
         // When
         Map<String, Object> result = groupService.deleteGroup(arguments).block();

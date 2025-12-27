@@ -1,214 +1,123 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.AuditLogFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * Service for managing AuditLog entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard operation implementations.
+ * Uses {@link AuditLogFieldMappingConfig} for AuditLog-specific field mappings.
+ * </p>
+ * <p>
+ * AuditLog entities are read-only records that track system changes.
+ * Only get, list, and search operations are supported.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>getAuditLog - Retrieve an audit log entry by ID</li>
+ *   <li>listAuditLogs - List audit log entries with pagination</li>
+ *   <li>searchAuditLogs - Search audit logs by action, auditableType, or userId</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class AuditLogService {
+public class AuditLogService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final AuditLogFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs an AuditLogService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for AuditLogs
+     */
+    public AuditLogService(MonicaHqClient monicaClient,
+                           ContentFormatter contentFormatter,
+                           AuditLogFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Retrieves an audit log entry by its ID.
+     *
+     * @param arguments map containing "id" - the audit log ID to retrieve
+     * @return a Mono containing the audit log data
+     */
     public Mono<Map<String, Object>> getAuditLog(Map<String, Object> arguments) {
-        log.info("Getting audit log with arguments: {}", arguments);
-        
-        try {
-            Long auditLogId = extractAuditLogId(arguments);
-            
-            return monicaClient.get("/auditlogs/" + auditLogId, null)
-                .map(this::formatAuditLogResponse)
-                .doOnSuccess(result -> log.info("Audit log retrieved successfully: {}", auditLogId))
-                .doOnError(error -> log.error("Failed to get audit log {}: {}", auditLogId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for audit log retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Lists audit log entries with optional pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional pagination
+     * @return a Mono containing the list of audit logs and pagination metadata
+     */
     public Mono<Map<String, Object>> listAuditLogs(Map<String, Object> arguments) {
-        log.info("Listing audit logs with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/auditlogs", queryParams)
-                .map(this::formatAuditLogsListResponse)
-                .doOnSuccess(result -> log.info("Audit logs listed successfully"))
-                .doOnError(error -> log.error("Failed to list audit logs: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error listing audit logs: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return list(arguments != null ? arguments : Map.of());
     }
 
+    /**
+     * Searches audit log entries with optional filters.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>action - Filter by action type</li>
+     *   <li>auditableType - Filter by auditable entity type</li>
+     *   <li>userId - Filter by user ID</li>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page (default: 10)</li>
+     * </ul>
+     * </p>
+     * <p>
+     * This method uses the same list endpoint but with search filters applied.
+     * The filter fields are defined in {@link AuditLogFieldMappingConfig}.
+     * </p>
+     *
+     * @param arguments the search arguments including optional filters and pagination
+     * @return a Mono containing the filtered list of audit logs and pagination metadata
+     */
     public Mono<Map<String, Object>> searchAuditLogs(Map<String, Object> arguments) {
         log.info("Searching audit logs with arguments: {}", arguments);
-        
+
         try {
-            Map<String, String> queryParams = buildSearchQueryParams(arguments);
-            
-            return monicaClient.get("/auditlogs", queryParams)
-                .map(this::formatAuditLogsListResponse)
+            // Use the inherited buildListQueryParams which handles the filter fields
+            // defined in AuditLogFieldMappingConfig (action, auditableType, userId)
+            Map<String, String> queryParams = buildListQueryParams(arguments != null ? arguments : Map.of());
+
+            return monicaClient.get(getEndpointPath(), queryParams)
+                .map(this::formatListResponse)
                 .doOnSuccess(result -> log.info("Audit logs searched successfully"))
                 .doOnError(error -> log.error("Failed to search audit logs: {}", error.getMessage()));
-                
+
         } catch (Exception e) {
             log.error("Error searching audit logs: {}", e.getMessage());
             return Mono.error(e);
         }
-    }
-
-    private Long extractAuditLogId(Map<String, Object> arguments) {
-        Object idObj = arguments.get("id");
-        if (idObj == null) {
-            throw new IllegalArgumentException("id is required");
-        }
-        
-        if (idObj instanceof Number) {
-            return ((Number) idObj).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idObj.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("id must be a valid number");
-        }
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-
-        // Handle null arguments by using defaults
-        if (arguments == null) {
-            queryParams.put("limit", "25");
-            queryParams.put("page", "1");
-            return queryParams;
-        }
-
-        if (arguments.containsKey("limit")) {
-            queryParams.put("limit", arguments.get("limit").toString());
-        } else {
-            queryParams.put("limit", "25");
-        }
-
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-
-        return queryParams;
-    }
-
-    private Map<String, String> buildSearchQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = buildListQueryParams(arguments);
-
-        // Handle null arguments - return only defaults from buildListQueryParams
-        if (arguments == null) {
-            return queryParams;
-        }
-
-        if (arguments.containsKey("action")) {
-            queryParams.put("action", arguments.get("action").toString());
-        }
-        if (arguments.containsKey("auditableType")) {
-            queryParams.put("auditable_type", arguments.get("auditableType").toString());
-        }
-        if (arguments.containsKey("userId")) {
-            queryParams.put("user_id", arguments.get("userId").toString());
-        }
-
-        return queryParams;
-    }
-
-    private Map<String, Object> formatAuditLogResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> rawApiData;
-        Map<String, Object> auditLogData;
-        
-        if (apiResponse.containsKey("data")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            rawApiData = rawData;
-            auditLogData = mapFromApiFormat(rawData);
-        } else {
-            rawApiData = apiResponse;
-            auditLogData = mapFromApiFormat(apiResponse);
-        }
-        
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", auditLogData);
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatAuditLogsListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> auditLogs = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedAuditLogs = auditLogs.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedAuditLogs);
-        
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "auditable_type" -> result.put("auditableType", value);
-                case "auditable_id" -> result.put("auditableId", value);
-                case "user_id" -> result.put("userId", value);
-                case "user_name" -> result.put("userName", value);
-                case "ip_address" -> result.put("ipAddress", value);
-                case "user_agent" -> result.put("userAgent", value);
-                case "old_values" -> result.put("oldValues", value);
-                case "new_values" -> result.put("newValues", value);
-                case "created_at" -> result.put("createdAt", value);
-                default -> result.put(key, value);
-            }
-        });
-        
-        return result;
     }
 }

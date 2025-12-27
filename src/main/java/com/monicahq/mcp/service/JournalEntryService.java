@@ -1,272 +1,141 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.base.AbstractCrudService;
+import com.monicahq.mcp.service.base.FieldMappingConfig;
+import com.monicahq.mcp.service.config.JournalEntryFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * Service for managing Journal Entry entities via the Monica API.
+ * <p>
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
+ * Uses {@link JournalEntryFieldMappingConfig} for Journal Entry-specific field mappings and validation.
+ * </p>
+ * <p>
+ * Supported operations:
+ * <ul>
+ *   <li>createJournalEntry - Create a new journal entry</li>
+ *   <li>getJournalEntry - Retrieve a journal entry by ID</li>
+ *   <li>updateJournalEntry - Update an existing journal entry</li>
+ *   <li>deleteJournalEntry - Delete a journal entry by ID</li>
+ *   <li>listJournalEntries - List journal entries with optional pagination</li>
+ * </ul>
+ * </p>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class JournalEntryService {
+public class JournalEntryService extends AbstractCrudService<Object> {
 
-    private final MonicaHqClient monicaClient;
-    private final ContentFormatter contentFormatter;
+    private final JournalEntryFieldMappingConfig fieldMappingConfig;
 
+    /**
+     * Constructs a JournalEntryService with required dependencies.
+     *
+     * @param monicaClient the HTTP client for Monica API calls
+     * @param contentFormatter the formatter for response content
+     * @param fieldMappingConfig the field mapping configuration for Journal Entries
+     */
+    public JournalEntryService(MonicaHqClient monicaClient,
+                               ContentFormatter contentFormatter,
+                               JournalEntryFieldMappingConfig fieldMappingConfig) {
+        super(monicaClient, contentFormatter);
+        this.fieldMappingConfig = fieldMappingConfig;
+    }
+
+    @Override
+    protected FieldMappingConfig getFieldMappingConfig() {
+        return fieldMappingConfig;
+    }
+
+    /**
+     * Creates a new journal entry.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>title - The title of the journal entry (cannot be empty)</li>
+     *   <li>date - The date for the journal entry in YYYY-MM-DD format</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>post - The main content of the journal entry</li>
+     *   <li>journalEntry - Additional notes or reflections</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the creation arguments
+     * @return a Mono containing the created journal entry data
+     */
     public Mono<Map<String, Object>> createJournalEntry(Map<String, Object> arguments) {
-        log.info("Creating journal entry with arguments: {}", arguments);
-        
-        try {
-            validateJournalEntryCreateArguments(arguments);
-            Map<String, Object> apiRequest = mapToApiFormat(arguments);
-            
-            return monicaClient.post("/entries", apiRequest)
-                .map(this::formatJournalEntryResponse)
-                .doOnSuccess(result -> log.info("Journal entry created successfully: {}", result))
-                .doOnError(error -> log.error("Failed to create journal entry: {}", error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for journal entry creation: {}", e.getMessage());
-            return Mono.error(e);
+        // Additional validation: title must be a non-empty string
+        if (arguments != null && !arguments.isEmpty()) {
+            validateRequiredString(arguments, "title");
         }
+        return create(arguments);
     }
 
+    /**
+     * Retrieves a journal entry by its ID.
+     *
+     * @param arguments map containing "id" - the journal entry ID to retrieve
+     * @return a Mono containing the journal entry data
+     */
     public Mono<Map<String, Object>> getJournalEntry(Map<String, Object> arguments) {
-        log.info("Getting journal entry with arguments: {}", arguments);
-        
-        try {
-            Long entryId = extractJournalEntryId(arguments);
-            
-            return monicaClient.get("/entries/" + entryId, null)
-                .map(this::formatJournalEntryResponse)
-                .doOnSuccess(result -> log.info("Journal entry retrieved successfully: {}", entryId))
-                .doOnError(error -> log.error("Failed to get journal entry {}: {}", entryId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for journal entry retrieval: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return get(arguments);
     }
 
+    /**
+     * Updates an existing journal entry.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>id - The ID of the journal entry to update</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>title - New title for the journal entry</li>
+     *   <li>date - New date for the journal entry</li>
+     *   <li>post - New content for the journal entry</li>
+     *   <li>journalEntry - New notes or reflections</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the update arguments including the journal entry ID
+     * @return a Mono containing the updated journal entry data
+     */
     public Mono<Map<String, Object>> updateJournalEntry(Map<String, Object> arguments) {
-        log.info("Updating journal entry with arguments: {}", arguments);
-        
-        try {
-            Long entryId = extractJournalEntryId(arguments);
-            
-            Map<String, Object> updateData = new HashMap<>(arguments);
-            updateData.remove("id");
-            
-            Map<String, Object> apiRequest = mapToApiFormat(updateData);
-            
-            return monicaClient.put("/entries/" + entryId, apiRequest)
-                .map(this::formatJournalEntryResponse)
-                .doOnSuccess(result -> log.info("Journal entry updated successfully: {}", entryId))
-                .doOnError(error -> log.error("Failed to update journal entry {}: {}", entryId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for journal entry update: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return update(arguments);
     }
 
+    /**
+     * Deletes a journal entry by its ID.
+     *
+     * @param arguments map containing "id" - the journal entry ID to delete
+     * @return a Mono containing the delete confirmation
+     */
     public Mono<Map<String, Object>> deleteJournalEntry(Map<String, Object> arguments) {
-        log.info("Deleting journal entry with arguments: {}", arguments);
-        
-        try {
-            Long entryId = extractJournalEntryId(arguments);
-            
-            return monicaClient.delete("/entries/" + entryId)
-                .map(response -> {
-                    String formattedContent = contentFormatter.formatOperationResult(
-                        "Delete", "Journal Entry", entryId, true, 
-                        "Journal entry with ID " + entryId + " has been deleted successfully"
-                    );
-                    
-                    Map<String, Object> result = new HashMap<>();
-                    List<Map<String, Object>> content = List.of(
-                        Map.of(
-                            "type", "text",
-                            "text", formattedContent
-                        )
-                    );
-                    result.put("content", content);
-                    return result;
-                })
-                .doOnSuccess(result -> log.info("Journal entry deleted successfully: {}", entryId))
-                .doOnError(error -> log.error("Failed to delete journal entry {}: {}", entryId, error.getMessage()));
-                
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid arguments for journal entry deletion: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return delete(arguments);
     }
 
+    /**
+     * Lists journal entries with optional pagination.
+     * <p>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including optional pagination
+     * @return a Mono containing the list of journal entries and pagination metadata
+     */
     public Mono<Map<String, Object>> listJournalEntries(Map<String, Object> arguments) {
-        log.info("Listing journal entries with arguments: {}", arguments);
-        
-        try {
-            Map<String, String> queryParams = buildListQueryParams(arguments);
-            
-            return monicaClient.get("/entries", queryParams)
-                .map(this::formatJournalEntryListResponse)
-                .doOnSuccess(result -> log.info("Journal entries listed successfully"))
-                .doOnError(error -> log.error("Failed to list journal entries: {}", error.getMessage()));
-                
-        } catch (Exception e) {
-            log.error("Error building query parameters: {}", e.getMessage());
-            return Mono.error(e);
-        }
+        return list(arguments);
     }
-
-    private void validateJournalEntryCreateArguments(Map<String, Object> arguments) {
-        if (arguments == null || arguments.isEmpty()) {
-            throw new IllegalArgumentException("Journal entry creation arguments cannot be empty");
-        }
-        
-        if (!arguments.containsKey("title") || 
-            arguments.get("title") == null || 
-            arguments.get("title").toString().trim().isEmpty()) {
-            throw new IllegalArgumentException("title is required");
-        }
-        
-        if (!arguments.containsKey("date") || arguments.get("date") == null) {
-            throw new IllegalArgumentException("date is required");
-        }
-    }
-
-    private Long extractJournalEntryId(Map<String, Object> arguments) {
-        if (arguments == null || !arguments.containsKey("id")) {
-            throw new IllegalArgumentException("Journal entry ID is required");
-        }
-        
-        Object idValue = arguments.get("id");
-        if (idValue instanceof Number) {
-            return ((Number) idValue).longValue();
-        }
-        
-        try {
-            return Long.parseLong(idValue.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid journal entry ID format: " + idValue);
-        }
-    }
-
-    private Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
-        Map<String, Object> apiRequest = new HashMap<>();
-        
-        arguments.forEach((key, value) -> {
-            switch (key) {
-                case "journalEntry" -> apiRequest.put("journal_entry", value);
-                default -> apiRequest.put(key, value);
-            }
-        });
-        
-        return apiRequest;
-    }
-
-    private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
-        Map<String, String> queryParams = new HashMap<>();
-        
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
-        } else {
-            queryParams.put("page", "1");
-        }
-        
-        if (arguments.containsKey("limit")) {
-            int limit = Math.min(100, Math.max(1, Integer.parseInt(arguments.get("limit").toString())));
-            queryParams.put("limit", String.valueOf(limit));
-        } else {
-            queryParams.put("limit", "10");
-        }
-        
-        return queryParams;
-    }
-
-    private Map<String, Object> formatJournalEntryResponse(Map<String, Object> apiResponse) {
-        Map<String, Object> entryData;
-        if (apiResponse.containsKey("data")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
-            entryData = mapFromApiFormat(rawData);
-        } else {
-            entryData = mapFromApiFormat(apiResponse);
-        }
-        
-        // Use raw API data for complete field coverage as per Constitutional Principle VI
-        @SuppressWarnings("unchecked")
-        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
-            (Map<String, Object>) apiResponse.get("data") : apiResponse;
-        String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
-        
-        // Return both data and content fields for protocol compliance
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", entryData);
-        
-        // Format content for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> formatJournalEntryListResponse(Map<String, Object> apiResponse) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> entries = (List<Map<String, Object>>) apiResponse.get("data");
-        
-        List<Map<String, Object>> formattedEntries = entries.stream()
-            .map(this::mapFromApiFormat)
-            .toList();
-        
-        // Format content for Claude Desktop visibility
-        String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
-        
-        // Extract meta for result structure
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", formattedEntries);
-        
-        if (meta != null) {
-            result.put("meta", meta);
-        }
-        
-        // Add content field for Claude Desktop visibility
-        List<Map<String, Object>> content = List.of(
-            Map.of(
-                "type", "text",
-                "text", formattedContent
-            )
-        );
-        result.put("content", content);
-        
-        return result;
-    }
-
-    private Map<String, Object> mapFromApiFormat(Map<String, Object> apiData) {
-        Map<String, Object> result = new HashMap<>();
-        
-        apiData.forEach((key, value) -> {
-            switch (key) {
-                case "journal_entry" -> result.put("journalEntry", value);
-                case "created_at" -> result.put("createdAt", value);
-                case "updated_at" -> result.put("updatedAt", value);
-                default -> result.put(key, value);
-            }
-        });
-        
-        return result;
-    }
-    
 }

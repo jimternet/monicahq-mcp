@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.TagFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,8 @@ class TagServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
+    private TagFieldMappingConfig tagFieldMappingConfig;
+
     private TagService tagService;
 
     private Map<String, Object> mockTagData;
@@ -39,6 +40,9 @@ class TagServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        tagFieldMappingConfig = new TagFieldMappingConfig();
+        tagService = new TagService(monicaClient, contentFormatter, tagFieldMappingConfig);
+
         mockTagData = tagBuilder()
             .id(1L)
             .name("Family")
@@ -145,7 +149,7 @@ class TagServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             tagService.createTag(arguments).block();
         });
-        assertEquals("Tag creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Tag arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -155,7 +159,7 @@ class TagServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             tagService.createTag(null).block();
         });
-        assertEquals("Tag creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Tag arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
