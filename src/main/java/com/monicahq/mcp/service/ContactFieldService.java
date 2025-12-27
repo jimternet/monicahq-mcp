@@ -214,18 +214,21 @@ public class ContactFieldService {
 
     private Map<String, Object> formatContactFieldResponse(Map<String, Object> apiResponse) {
         Map<String, Object> fieldData;
-        if (apiResponse.containsKey("data")) {
-            // Single field response
+        // Check if "data" is a Map (wrapper) or a String (the contact field's data value)
+        // ContactField entities have a "data" field containing the actual value (email, phone, etc.)
+        if (apiResponse.containsKey("data") && apiResponse.get("data") instanceof Map) {
+            // Single field response wrapped in "data"
             @SuppressWarnings("unchecked")
             Map<String, Object> rawData = (Map<String, Object>) apiResponse.get("data");
             fieldData = mapFromApiFormat(rawData);
         } else {
+            // Direct response (no wrapper) - the "data" key is the field's actual value
             fieldData = mapFromApiFormat(apiResponse);
         }
-        
+
         // Use raw API data for complete field coverage as per Constitutional Principle VI
         @SuppressWarnings("unchecked")
-        Map<String, Object> rawApiData = apiResponse.containsKey("data") ? 
+        Map<String, Object> rawApiData = (apiResponse.containsKey("data") && apiResponse.get("data") instanceof Map) ?
             (Map<String, Object>) apiResponse.get("data") : apiResponse;
         String formattedContent = contentFormatter.formatAsEscapedJson(rawApiData);
         

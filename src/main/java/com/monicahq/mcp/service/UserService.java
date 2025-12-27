@@ -183,12 +183,16 @@ public class UserService {
         if (arguments == null || !arguments.containsKey("id")) {
             throw new IllegalArgumentException("User ID is required");
         }
-        
+
         Object idValue = arguments.get("id");
+        if (idValue == null) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+
         if (idValue instanceof Number) {
             return ((Number) idValue).longValue();
         }
-        
+
         try {
             return Long.parseLong(idValue.toString());
         } catch (NumberFormatException e) {

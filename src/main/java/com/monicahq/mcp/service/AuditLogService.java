@@ -87,25 +87,37 @@ public class AuditLogService {
 
     private Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
         Map<String, String> queryParams = new HashMap<>();
-        
+
+        // Handle null arguments by using defaults
+        if (arguments == null) {
+            queryParams.put("limit", "25");
+            queryParams.put("page", "1");
+            return queryParams;
+        }
+
         if (arguments.containsKey("limit")) {
             queryParams.put("limit", arguments.get("limit").toString());
         } else {
             queryParams.put("limit", "25");
         }
-        
+
         if (arguments.containsKey("page")) {
             queryParams.put("page", arguments.get("page").toString());
         } else {
             queryParams.put("page", "1");
         }
-        
+
         return queryParams;
     }
 
     private Map<String, String> buildSearchQueryParams(Map<String, Object> arguments) {
         Map<String, String> queryParams = buildListQueryParams(arguments);
-        
+
+        // Handle null arguments - return only defaults from buildListQueryParams
+        if (arguments == null) {
+            return queryParams;
+        }
+
         if (arguments.containsKey("action")) {
             queryParams.put("action", arguments.get("action").toString());
         }
@@ -115,7 +127,7 @@ public class AuditLogService {
         if (arguments.containsKey("userId")) {
             queryParams.put("user_id", arguments.get("userId").toString());
         }
-        
+
         return queryParams;
     }
 
