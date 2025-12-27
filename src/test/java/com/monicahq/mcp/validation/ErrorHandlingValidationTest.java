@@ -3,6 +3,8 @@ package com.monicahq.mcp.validation;
 import com.monicahq.mcp.client.MonicaHqClient;
 import com.monicahq.mcp.service.UserService;
 import com.monicahq.mcp.service.ComplianceService;
+import com.monicahq.mcp.service.config.UserFieldMappingConfig;
+import com.monicahq.mcp.service.config.ComplianceFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,8 +36,10 @@ class ErrorHandlingValidationTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(monicaClient, contentFormatter);
-        complianceService = new ComplianceService(monicaClient, contentFormatter);
+        UserFieldMappingConfig userConfig = new UserFieldMappingConfig();
+        ComplianceFieldMappingConfig complianceConfig = new ComplianceFieldMappingConfig();
+        userService = new UserService(monicaClient, contentFormatter, userConfig);
+        complianceService = new ComplianceService(monicaClient, contentFormatter, complianceConfig);
     }
 
     @Test

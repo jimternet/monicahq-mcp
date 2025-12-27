@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ComplianceFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class ComplianceServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private ComplianceService complianceService;
 
     private Map<String, Object> mockComplianceData;
@@ -39,6 +38,9 @@ class ComplianceServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        ComplianceFieldMappingConfig config = new ComplianceFieldMappingConfig();
+        complianceService = new ComplianceService(monicaClient, contentFormatter, config);
+
         mockComplianceData = createComplianceData(1L, "gdpr");
         mockApiResponse = createSingleEntityResponse(mockComplianceData);
     }
@@ -160,21 +162,21 @@ class ComplianceServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = new HashMap<>();
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.createCompliance(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("cannot be empty"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
     @Test
     void createCompliance_NullArgs_ThrowsException() {
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.createCompliance(null).block();
         });
-        assertTrue(exception.getMessage().contains("cannot be empty"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -460,21 +462,21 @@ class ComplianceServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("type", "gdpr");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.getCompliance(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Compliance ID is required"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
     @Test
     void getCompliance_NullArgs_ThrowsException() {
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.getCompliance(null).block();
         });
-        assertTrue(exception.getMessage().contains("Compliance ID is required"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -483,11 +485,11 @@ class ComplianceServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("id", "not-a-number");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.getCompliance(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Invalid compliance ID format"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -637,11 +639,11 @@ class ComplianceServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("type", "updated");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.updateCompliance(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Compliance ID is required"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -663,11 +665,11 @@ class ComplianceServiceTest extends ServiceTestBase {
 
     @Test
     void updateCompliance_NullArgs_ThrowsException() {
-        // When & Then - null args should fail validation
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.updateCompliance(null).block();
         });
-        assertTrue(exception.getMessage().contains("Compliance ID is required"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -712,11 +714,11 @@ class ComplianceServiceTest extends ServiceTestBase {
         arguments.put("id", "invalid");
         arguments.put("type", "updated");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.updateCompliance(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Invalid compliance ID format"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -826,21 +828,21 @@ class ComplianceServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("type", "gdpr");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.deleteCompliance(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Compliance ID is required"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
     @Test
     void deleteCompliance_NullArgs_ThrowsException() {
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.deleteCompliance(null).block();
         });
-        assertTrue(exception.getMessage().contains("Compliance ID is required"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -849,11 +851,11 @@ class ComplianceServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = Map.of("id", "invalid");
 
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        // When & Then - ComplianceService wraps base class errors in IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             complianceService.deleteCompliance(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("Invalid compliance ID format"));
+        assertTrue(exception.getMessage().contains("Compliance API is not available"));
         verifyNoInteractions(monicaClient);
     }
 

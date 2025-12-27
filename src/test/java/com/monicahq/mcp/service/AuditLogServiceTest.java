@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.AuditLogFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class AuditLogServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private AuditLogService auditLogService;
 
     private Map<String, Object> mockAuditLogData;
@@ -39,6 +38,9 @@ class AuditLogServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        AuditLogFieldMappingConfig config = new AuditLogFieldMappingConfig();
+        auditLogService = new AuditLogService(monicaClient, contentFormatter, config);
+
         mockAuditLogData = createAuditLogData(1L, "created", "Contact");
         mockApiResponse = createSingleEntityResponse(mockAuditLogData);
     }
@@ -138,7 +140,7 @@ class AuditLogServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             auditLogService.getAuditLog(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("id is required"));
+        assertTrue(exception.getMessage().contains("Audit Log ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -152,7 +154,7 @@ class AuditLogServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             auditLogService.getAuditLog(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("id is required"));
+        assertTrue(exception.getMessage().contains("Audit Log ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -165,7 +167,7 @@ class AuditLogServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             auditLogService.getAuditLog(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("id is required"));
+        assertTrue(exception.getMessage().contains("Audit Log ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -178,7 +180,7 @@ class AuditLogServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             auditLogService.getAuditLog(arguments).block();
         });
-        assertTrue(exception.getMessage().contains("id must be a valid number"));
+        assertTrue(exception.getMessage().contains("Invalid audit log ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -366,10 +368,10 @@ class AuditLogServiceTest extends ServiceTestBase {
         // When
         auditLogService.listAuditLogs(arguments).block();
 
-        // Then - verify default pagination values (page=1, limit=25)
+        // Then - verify default pagination values (page=1, limit=10)
         verify(monicaClient).get(eq("/auditlogs"), argThat(params ->
             "1".equals(params.get("page")) &&
-            "25".equals(params.get("limit"))
+            "10".equals(params.get("limit"))
         ));
     }
 
@@ -610,7 +612,7 @@ class AuditLogServiceTest extends ServiceTestBase {
         assertNotNull(result);
         verify(monicaClient).get(eq("/auditlogs"), argThat(params ->
             "1".equals(params.get("page")) &&
-            "25".equals(params.get("limit"))
+            "10".equals(params.get("limit"))
         ));
     }
 
@@ -765,7 +767,7 @@ class AuditLogServiceTest extends ServiceTestBase {
         verify(monicaClient).get(eq("/auditlogs"), argThat(params ->
             "deleted".equals(params.get("action")) &&
             "1".equals(params.get("page")) &&
-            "25".equals(params.get("limit"))
+            "10".equals(params.get("limit"))
         ));
     }
 
@@ -1054,7 +1056,7 @@ class AuditLogServiceTest extends ServiceTestBase {
         assertNotNull(result);
         verify(monicaClient).get(eq("/auditlogs"), argThat(params ->
             "1".equals(params.get("page")) &&
-            "25".equals(params.get("limit"))
+            "10".equals(params.get("limit"))
         ));
     }
 
@@ -1078,7 +1080,7 @@ class AuditLogServiceTest extends ServiceTestBase {
         assertNotNull(result);
         verify(monicaClient).get(eq("/auditlogs"), argThat(params ->
             "1".equals(params.get("page")) &&
-            "25".equals(params.get("limit")) &&
+            "10".equals(params.get("limit")) &&
             !params.containsKey("action") &&
             !params.containsKey("auditable_type") &&
             !params.containsKey("user_id")

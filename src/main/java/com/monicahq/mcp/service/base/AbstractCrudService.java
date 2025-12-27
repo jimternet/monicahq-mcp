@@ -293,23 +293,26 @@ public abstract class AbstractCrudService<T> implements CrudOperations {
      * Maps filter fields according to the query parameter mappings defined in the config.
      * </p>
      *
-     * @param arguments the arguments containing filter and pagination values
+     * @param arguments the arguments containing filter and pagination values (can be null)
      * @return a map of query parameter names to their string values
      */
     protected Map<String, String> buildListQueryParams(Map<String, Object> arguments) {
         FieldMappingConfig config = getFieldMappingConfig();
         Map<String, String> queryParams = new HashMap<>();
 
+        // Handle null arguments by using empty map
+        Map<String, Object> args = arguments != null ? arguments : Map.of();
+
         // Handle pagination - page
-        if (arguments.containsKey("page")) {
-            queryParams.put("page", arguments.get("page").toString());
+        if (args.containsKey("page")) {
+            queryParams.put("page", args.get("page").toString());
         } else {
             queryParams.put("page", "1");
         }
 
         // Handle pagination - limit with bounds validation
-        if (arguments.containsKey("limit")) {
-            int limit = parseLimit(arguments.get("limit"));
+        if (args.containsKey("limit")) {
+            int limit = parseLimit(args.get("limit"));
             queryParams.put("limit", String.valueOf(limit));
         } else {
             queryParams.put("limit", "10");
@@ -320,9 +323,9 @@ public abstract class AbstractCrudService<T> implements CrudOperations {
         List<String> filterFields = config.getListFilterFields();
 
         for (String filterField : filterFields) {
-            if (arguments.containsKey(filterField) && arguments.get(filterField) != null) {
+            if (args.containsKey(filterField) && args.get(filterField) != null) {
                 String apiParamName = queryParamMappings.getOrDefault(filterField, filterField);
-                queryParams.put(apiParamName, arguments.get(filterField).toString());
+                queryParams.put(apiParamName, args.get(filterField).toString());
             }
         }
 

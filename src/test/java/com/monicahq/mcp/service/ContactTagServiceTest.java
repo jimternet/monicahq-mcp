@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.ContactTagFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class ContactTagServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private ContactTagService contactTagService;
 
     private Map<String, Object> mockTagData;
@@ -39,6 +38,9 @@ class ContactTagServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        ContactTagFieldMappingConfig config = new ContactTagFieldMappingConfig();
+        contactTagService = new ContactTagService(monicaClient, contentFormatter, config);
+
         mockTagData = tagBuilder()
             .id(1L)
             .name("Family")
@@ -203,7 +205,7 @@ class ContactTagServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             contactTagService.attachTag(arguments).block();
         });
-        assertEquals("Contact tag creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Contact Tag arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -213,7 +215,7 @@ class ContactTagServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             contactTagService.attachTag(null).block();
         });
-        assertEquals("Contact tag creation arguments cannot be empty", exception.getMessage());
+        assertEquals("Contact Tag arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 

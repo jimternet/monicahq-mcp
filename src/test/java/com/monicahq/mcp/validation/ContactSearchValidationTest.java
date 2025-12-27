@@ -2,6 +2,7 @@ package com.monicahq.mcp.validation;
 
 import com.monicahq.mcp.client.MonicaHqClient;
 import com.monicahq.mcp.service.ContactService;
+import com.monicahq.mcp.service.config.ContactFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,8 @@ class ContactSearchValidationTest {
 
     @BeforeEach
     void setUp() {
-        contactService = new ContactService(monicaClient, contentFormatter);
+        ContactFieldMappingConfig config = new ContactFieldMappingConfig();
+        contactService = new ContactService(monicaClient, contentFormatter, config);
     }
 
     @Test

@@ -521,6 +521,9 @@ class ActivityTypeCategoryServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/activitytypecategories/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type Category"), eq(1L), eq(true), anyString()
+        )).thenReturn("Activity Type Category with ID 1 has been deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeCategoryService.deleteActivityTypeCategory(arguments).block();
@@ -528,18 +531,12 @@ class ActivityTypeCategoryServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
         assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/activitytypecategories/1"));
     }
@@ -551,6 +548,9 @@ class ActivityTypeCategoryServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/activitytypecategories/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type Category"), eq(99L), eq(true), anyString()
+        )).thenReturn("Activity Type Category with ID 99 has been deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeCategoryService.deleteActivityTypeCategory(arguments).block();
@@ -567,6 +567,9 @@ class ActivityTypeCategoryServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/activitytypecategories/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type Category"), eq(55L), eq(true), anyString()
+        )).thenReturn("Activity Type Category with ID 55 has been deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeCategoryService.deleteActivityTypeCategory(arguments).block();

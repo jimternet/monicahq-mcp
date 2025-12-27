@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.OccupationFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class OccupationServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private OccupationService occupationService;
 
     private Map<String, Object> mockOccupationData;
@@ -39,6 +38,9 @@ class OccupationServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        OccupationFieldMappingConfig config = new OccupationFieldMappingConfig();
+        occupationService = new OccupationService(monicaClient, contentFormatter, config);
+
         mockOccupationData = occupationBuilder()
             .id(1L)
             .contactId(42L)
@@ -398,7 +400,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.createOccupation(arguments).block();
         });
-        assertEquals("contactId is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("cannot be empty"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -478,7 +480,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.getOccupation(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Occupation ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -492,7 +494,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.getOccupation(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Occupation ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -505,7 +507,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.getOccupation(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid occupation ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -621,7 +623,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.updateOccupation(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Occupation ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -798,7 +800,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.updateOccupation(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid occupation ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -869,6 +871,9 @@ class OccupationServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/occupations/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Occupation"), eq(1L), eq(true), anyString()
+        )).thenReturn("Occupation with ID 1 has been deleted successfully");
 
         // When
         Map<String, Object> result = occupationService.deleteOccupation(arguments).block();
@@ -876,18 +881,12 @@ class OccupationServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
         assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/occupations/1"));
     }
@@ -899,6 +898,9 @@ class OccupationServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/occupations/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Occupation"), eq(99L), eq(true), anyString()
+        )).thenReturn("Occupation with ID 99 has been deleted successfully");
 
         // When
         Map<String, Object> result = occupationService.deleteOccupation(arguments).block();
@@ -915,6 +917,9 @@ class OccupationServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/occupations/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Occupation"), eq(55L), eq(true), anyString()
+        )).thenReturn("Occupation with ID 55 has been deleted successfully");
 
         // When
         Map<String, Object> result = occupationService.deleteOccupation(arguments).block();
@@ -933,7 +938,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.deleteOccupation(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Occupation ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -947,7 +952,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.deleteOccupation(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Occupation ID is required"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -960,7 +965,7 @@ class OccupationServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             occupationService.deleteOccupation(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid occupation ID format"));
         verifyNoInteractions(monicaClient);
     }
 

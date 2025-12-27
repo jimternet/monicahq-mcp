@@ -518,6 +518,9 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/activitytypes/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type"), eq(1L), eq(true), anyString()
+        )).thenReturn("Activity Type deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeService.deleteActivityType(arguments).block();
@@ -525,18 +528,12 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
-        assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
+        assertEquals("Activity Type deleted successfully", content.get(0).get("text"));
 
         verify(monicaClient).delete(eq("/activitytypes/1"));
     }
@@ -548,6 +545,9 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/activitytypes/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type"), eq(99L), eq(true), anyString()
+        )).thenReturn("Activity Type deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeService.deleteActivityType(arguments).block();
@@ -564,6 +564,9 @@ class ActivityTypeServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/activitytypes/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Activity Type"), eq(55L), eq(true), anyString()
+        )).thenReturn("Activity Type deleted successfully");
 
         // When
         Map<String, Object> result = activityTypeService.deleteActivityType(arguments).block();

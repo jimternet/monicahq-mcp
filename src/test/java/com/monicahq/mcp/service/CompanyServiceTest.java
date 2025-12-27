@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.CompanyFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class CompanyServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private CompanyService companyService;
 
     private Map<String, Object> mockCompanyData;
@@ -39,6 +38,9 @@ class CompanyServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        CompanyFieldMappingConfig config = new CompanyFieldMappingConfig();
+        companyService = new CompanyService(monicaClient, contentFormatter, config);
+
         mockCompanyData = companyBuilder()
             .id(1L)
             .name("Acme Corporation")
@@ -276,7 +278,7 @@ class CompanyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.getCompany(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Company ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -290,7 +292,7 @@ class CompanyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.getCompany(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Company ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -303,7 +305,7 @@ class CompanyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.getCompany(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid company ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -425,7 +427,7 @@ class CompanyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.updateCompany(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Company ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -493,7 +495,7 @@ class CompanyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.updateCompany(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid company ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -531,6 +533,9 @@ class CompanyServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/companies/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Company"), eq(1L), eq(true), anyString()
+        )).thenReturn("Company deleted successfully");
 
         // When
         Map<String, Object> result = companyService.deleteCompany(arguments).block();
@@ -538,18 +543,12 @@ class CompanyServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
-        assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
+        assertEquals("Company deleted successfully", content.get(0).get("text"));
 
         verify(monicaClient).delete(eq("/companies/1"));
     }
@@ -561,6 +560,9 @@ class CompanyServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/companies/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Company"), eq(99L), eq(true), anyString()
+        )).thenReturn("Company deleted successfully");
 
         // When
         Map<String, Object> result = companyService.deleteCompany(arguments).block();
@@ -577,6 +579,9 @@ class CompanyServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/companies/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Company"), eq(55L), eq(true), anyString()
+        )).thenReturn("Company deleted successfully");
 
         // When
         Map<String, Object> result = companyService.deleteCompany(arguments).block();
@@ -595,7 +600,7 @@ class CompanyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.deleteCompany(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Company ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -609,7 +614,7 @@ class CompanyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.deleteCompany(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Company ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -622,7 +627,7 @@ class CompanyServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.deleteCompany(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid company ID format"));
         verifyNoInteractions(monicaClient);
     }
 

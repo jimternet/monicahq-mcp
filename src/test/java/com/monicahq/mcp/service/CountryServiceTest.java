@@ -237,7 +237,7 @@ class CountryServiceTest extends ServiceTestBase {
             countryBuilder().id(1L).name("United States").countryCode("US").build(),
             countryBuilder().id(2L).name("Canada").countryCode("CA").build()
         );
-        Map<String, Object> apiResponse = createListResponse(countries, 1, 50, 2);
+        Map<String, Object> apiResponse = createListResponse(countries, 1, 10, 2);
 
         when(monicaClient.get(eq("/countries"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted countries JSON");
@@ -248,7 +248,7 @@ class CountryServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/countries"), argThat(params ->
-            "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 
@@ -425,7 +425,7 @@ class CountryServiceTest extends ServiceTestBase {
             countryBuilder().id(1L).name("United States").countryCode("US").build(),
             countryBuilder().id(2L).name("United Kingdom").countryCode("GB").build()
         );
-        Map<String, Object> apiResponse = createListResponse(countries, 1, 50, 2);
+        Map<String, Object> apiResponse = createListResponse(countries, 1, 10, 2);
 
         when(monicaClient.get(eq("/countries"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted countries JSON");
@@ -436,7 +436,7 @@ class CountryServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/countries"), argThat(params ->
-            "united".equals(params.get("search")) && "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            "united".equals(params.get("search")) && "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 
@@ -474,7 +474,7 @@ class CountryServiceTest extends ServiceTestBase {
         List<Map<String, Object>> countries = List.of(
             countryBuilder().id(1L).name("United States").build()
         );
-        Map<String, Object> apiResponse = createListResponse(countries, 1, 50, 1);
+        Map<String, Object> apiResponse = createListResponse(countries, 1, 10, 1);
 
         when(monicaClient.get(eq("/countries"), any())).thenReturn(Mono.just(apiResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted countries JSON");
@@ -485,7 +485,7 @@ class CountryServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         verify(monicaClient).get(eq("/countries"), argThat(params ->
-            !params.containsKey("search") && "1".equals(params.get("page")) && "50".equals(params.get("limit"))
+            !params.containsKey("search") && "1".equals(params.get("page")) && "10".equals(params.get("limit"))
         ));
     }
 
