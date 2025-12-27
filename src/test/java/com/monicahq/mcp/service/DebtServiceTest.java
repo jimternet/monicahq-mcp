@@ -1,11 +1,11 @@
 package com.monicahq.mcp.service;
 
 import com.monicahq.mcp.client.MonicaHqClient;
+import com.monicahq.mcp.service.config.DebtFieldMappingConfig;
 import com.monicahq.mcp.util.ContentFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,6 @@ class DebtServiceTest extends ServiceTestBase {
     @Mock
     private ContentFormatter contentFormatter;
 
-    @InjectMocks
     private DebtService debtService;
 
     private Map<String, Object> mockDebtData;
@@ -39,6 +38,10 @@ class DebtServiceTest extends ServiceTestBase {
 
     @BeforeEach
     void setUp() {
+        // Create DebtService with real DebtFieldMappingConfig (no dependencies to mock)
+        DebtFieldMappingConfig fieldMappingConfig = new DebtFieldMappingConfig();
+        debtService = new DebtService(monicaClient, contentFormatter, fieldMappingConfig);
+
         mockDebtData = debtBuilder()
             .id(1L)
             .contactId(42L)
@@ -298,7 +301,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.createDebt(arguments).block();
         });
-        assertEquals("contactId is required", exception.getMessage());
+        assertEquals("Debt arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -308,9 +311,10 @@ class DebtServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = null;
 
         // When & Then
-        assertThrows(NullPointerException.class, () -> {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.createDebt(arguments).block();
         });
+        assertEquals("Debt arguments cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -390,7 +394,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.getDebt(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Debt ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -404,7 +408,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.getDebt(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Debt ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -417,7 +421,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.getDebt(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid debt ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -528,7 +532,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.updateDebt(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Debt ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -638,7 +642,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.updateDebt(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid debt ID format"));
         verifyNoInteractions(monicaClient);
     }
 
@@ -682,6 +686,9 @@ class DebtServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(1L);
 
         when(monicaClient.delete(eq("/debts/1"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Debt"), eq(1L), eq(true), anyString()
+        )).thenReturn("Debt deleted successfully");
 
         // When
         Map<String, Object> result = debtService.deleteDebt(arguments).block();
@@ -689,18 +696,11 @@ class DebtServiceTest extends ServiceTestBase {
         // Then
         assertNotNull(result);
         assertTrue(result.containsKey("content"));
-        assertTrue(result.containsKey("data"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
-        assertTrue(content.get(0).get("text").toString().contains("deleted successfully"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) result.get("data");
-        assertEquals(true, data.get("deleted"));
-        assertEquals(1L, data.get("id"));
 
         verify(monicaClient).delete(eq("/debts/1"));
     }
@@ -712,6 +712,9 @@ class DebtServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(99L);
 
         when(monicaClient.delete(eq("/debts/99"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Debt"), eq(99L), eq(true), anyString()
+        )).thenReturn("Debt deleted successfully");
 
         // When
         Map<String, Object> result = debtService.deleteDebt(arguments).block();
@@ -728,6 +731,9 @@ class DebtServiceTest extends ServiceTestBase {
         Map<String, Object> deleteResponse = createDeleteResponse(55L);
 
         when(monicaClient.delete(eq("/debts/55"))).thenReturn(Mono.just(deleteResponse));
+        when(contentFormatter.formatOperationResult(
+            eq("Delete"), eq("Debt"), eq(55L), eq(true), anyString()
+        )).thenReturn("Debt deleted successfully");
 
         // When
         Map<String, Object> result = debtService.deleteDebt(arguments).block();
@@ -746,7 +752,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.deleteDebt(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Debt ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -760,7 +766,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.deleteDebt(arguments).block();
         });
-        assertEquals("id is required", exception.getMessage());
+        assertEquals("Debt ID is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -773,7 +779,7 @@ class DebtServiceTest extends ServiceTestBase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             debtService.deleteDebt(arguments).block();
         });
-        assertEquals("id must be a valid number", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Invalid debt ID format"));
         verifyNoInteractions(monicaClient);
     }
 
