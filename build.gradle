@@ -111,7 +111,7 @@ dependencies {
 
 	// OpenAPI Documentation (WebFlux variant - CRITICAL for Spring WebFlux)
 	// Note: springdoc 2.8.x is compatible with Spring Boot 3.x; version 3.0.0 requires Spring Boot 4.x
-	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.8'
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.1'
 
 	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
