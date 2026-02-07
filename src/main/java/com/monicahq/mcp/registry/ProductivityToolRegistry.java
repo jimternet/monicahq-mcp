@@ -98,6 +98,13 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
             CATEGORY
         );
 
+        registerTool(
+            "note_list_by_contact",
+            "[Note] List all notes for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve notes for"),
+            CATEGORY
+        );
+
         // Task CRUD operations (5)
         registerTool(
             "task_create",
@@ -134,6 +141,13 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
             CATEGORY
         );
 
+        registerTool(
+            "task_list_by_contact",
+            "[Task] List all tasks for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve tasks for"),
+            CATEGORY
+        );
+
         // Reminder CRUD operations (5)
         registerTool(
             "reminder_create",
@@ -167,6 +181,13 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
             "reminder_list",
             "[Reminder] List reminders with pagination",
             createListSchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "reminder_list_by_contact",
+            "[Reminder] List all reminders for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve reminders for"),
             CATEGORY
         );
 
@@ -216,6 +237,7 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
             case "note_update" -> noteService.updateNote(arguments);
             case "note_delete" -> noteService.deleteNote(arguments);
             case "note_list" -> noteService.listNotes(arguments);
+            case "note_list_by_contact" -> noteService.listNotesByContact(arguments);
 
             // Task operations
             case "task_create" -> taskService.createTask(arguments);
@@ -223,6 +245,7 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
             case "task_update" -> taskService.updateTask(arguments);
             case "task_delete" -> taskService.deleteTask(arguments);
             case "task_list" -> taskService.listTasks(arguments);
+            case "task_list_by_contact" -> taskService.listTasksByContact(arguments);
 
             // Reminder operations
             case "reminder_create" -> reminderService.createReminder(arguments);
@@ -230,6 +253,7 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
             case "reminder_update" -> reminderService.updateReminder(arguments);
             case "reminder_delete" -> reminderService.deleteReminder(arguments);
             case "reminder_list" -> reminderService.listReminders(arguments);
+            case "reminder_list_by_contact" -> reminderService.listRemindersByContact(arguments);
 
             // Tag operations
             case "tag_create" -> tagService.createTag(arguments);
@@ -409,5 +433,40 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
      */
     private Map<String, Object> createTagUpdateSchema() {
         return createUpdateSchema(createTagSchema());
+    }
+
+    // ========== Contact-Scoped List Schema ==========
+
+    /**
+     * Creates the schema for contact-scoped list operations.
+     * Includes contactId as required parameter with optional pagination.
+     *
+     * @param contactIdDescription description for the contactId parameter
+     * @return schema Map with contactId and pagination properties
+     */
+    private Map<String, Object> createContactScopedListSchema(String contactIdDescription) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("contactId", Map.of(
+            "type", "integer",
+            "description", contactIdDescription
+        ));
+        properties.put("page", Map.of(
+            "type", "integer",
+            "description", "Page number (starting from 1)",
+            "default", 1
+        ));
+        properties.put("limit", Map.of(
+            "type", "integer",
+            "description", "Number of items per page",
+            "default", 10,
+            "maximum", 100
+        ));
+
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", List.of("contactId"));
+
+        return schema;
     }
 }

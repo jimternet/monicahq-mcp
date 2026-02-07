@@ -104,6 +104,7 @@ HELP.md
 .env
 .env.local
 .env.*.local
+.env.test
 *.env
 
 # Application properties with secrets
@@ -139,6 +140,7 @@ $RECYCLE.BIN/
 coverage/
 *.lcov
 .nyc_output/
+test-results/
 
 # Documentation build
 docs/_build/

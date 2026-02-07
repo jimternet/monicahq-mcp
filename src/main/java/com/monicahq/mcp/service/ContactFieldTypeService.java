@@ -12,23 +12,25 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 /**
- * Service for discovering available contact field types from MonicaHQ API.
+ * Service for managing contact field types in MonicaHQ API.
  * <p>
- * Extends {@link AbstractCrudService} to inherit standard operation implementations.
+ * Extends {@link AbstractCrudService} to inherit standard CRUD operation implementations.
  * Uses {@link ContactFieldTypeFieldMappingConfig} for Contact Field Type-specific field mappings.
  * </p>
  * <p>
  * Implements Constitutional Principle VII: API Discovery and Completeness.
- * This discovery tool shows valid contactFieldTypeId values for contact field creation.
+ * Enables users to create and manage custom field type definitions per account.
  * </p>
  * <p>
- * This is a read-only service - only list operation is supported.
- * Contact Field Types are system-defined lookup values that define valid types
- * for contact fields (e.g., email, phone, social media handles).
+ * Gap Analysis Phase 2: Extended from read-only to full CRUD support.
  * </p>
  * <p>
  * Supported operations:
  * <ul>
+ *   <li>createContactFieldType - Create a new custom field type definition</li>
+ *   <li>getContactFieldType - Retrieve a specific field type by ID</li>
+ *   <li>updateContactFieldType - Modify an existing field type</li>
+ *   <li>deleteContactFieldType - Remove a field type definition</li>
  *   <li>listContactFieldTypes - List all available contact field types</li>
  * </ul>
  * </p>
@@ -59,11 +61,66 @@ public class ContactFieldTypeService extends AbstractCrudService<Object> {
     }
 
     /**
+     * Creates a new custom contact field type.
+     * <p>
+     * Enables creation of custom field type definitions for flexible contact field management.
+     * </p>
+     *
+     * @param arguments must contain 'name' and 'type'; may contain 'protocol', 'fontawesome_icon', 'delible'
+     * @return a Mono containing the created contact field type with full Monica API data
+     */
+    public Mono<Map<String, Object>> createContactFieldType(Map<String, Object> arguments) {
+        return create(arguments);
+    }
+
+    /**
+     * Retrieves a specific contact field type by ID.
+     * <p>
+     * Provides detailed information about a field type including metadata and configuration.
+     * </p>
+     *
+     * @param arguments must contain 'id' (the contact field type ID)
+     * @return a Mono containing the contact field type details with full Monica API data
+     */
+    public Mono<Map<String, Object>> getContactFieldType(Map<String, Object> arguments) {
+        return get(arguments);
+    }
+
+    /**
+     * Updates an existing contact field type.
+     * <p>
+     * Allows modification of field type definitions and properties.
+     * </p>
+     *
+     * @param arguments must contain 'id' (the contact field type ID) and fields to update
+     * @return a Mono containing the updated contact field type with full Monica API data
+     */
+    public Mono<Map<String, Object>> updateContactFieldType(Map<String, Object> arguments) {
+        return update(arguments);
+    }
+
+    /**
+     * Deletes a contact field type.
+     * <p>
+     * Removes a custom field type definition from the account.
+     * Note: May fail if the field type is in use by existing contact fields.
+     * </p>
+     *
+     * @param arguments must contain 'id' (the contact field type ID to delete)
+     * @return a Mono containing the deletion confirmation
+     */
+    public Mono<Map<String, Object>> deleteContactFieldType(Map<String, Object> arguments) {
+        return delete(arguments);
+    }
+
+    /**
      * Lists all available contact field types from MonicaHQ API.
-     * This discovery tool shows valid contactFieldTypeId values for contact field creation.
+     * <p>
+     * Includes both system-defined and custom field types.
+     * </p>
      *
      * @param arguments optional pagination arguments (page, limit)
-     * @return a Mono containing the list of contact field types
+     * @return a Mono containing the list of contact field types with full Monica API data
      */
     public Mono<Map<String, Object>> listContactFieldTypes(Map<String, Object> arguments) {
         return list(arguments);

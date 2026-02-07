@@ -76,6 +76,13 @@ public class ContactFieldToolRegistry extends AbstractDomainToolRegistry {
             CATEGORY
         );
 
+        registerTool(
+            "contactfield_list_by_contact",
+            "[Contact Field] List all contact fields for a specific contact with pagination",
+            createContactFieldListByContactSchema(),
+            CATEGORY
+        );
+
         // Contact Tag operations (2)
         registerTool(
             "contacttag_add",
@@ -100,6 +107,7 @@ public class ContactFieldToolRegistry extends AbstractDomainToolRegistry {
             case "contact_field_update" -> contactFieldService.updateContactField(arguments);
             case "contact_field_delete" -> contactFieldService.deleteContactField(arguments);
             case "contact_field_list" -> contactFieldService.listContactFields(arguments);
+            case "contactfield_list_by_contact" -> contactFieldService.listContactFieldsByContact(arguments);
             case "contacttag_add" -> contactTagService.attachTag(arguments);
             case "contacttag_remove" -> contactTagService.detachTag(arguments);
             default -> Mono.error(new UnsupportedOperationException(
@@ -162,6 +170,34 @@ public class ContactFieldToolRegistry extends AbstractDomainToolRegistry {
                 "limit", Map.of(
                     "type", "integer",
                     "description", "Items per page",
+                    "default", 10
+                )
+            ),
+            "required", List.of("contactId")
+        );
+    }
+
+    /**
+     * Creates the schema for listing contact fields by contact (consistent naming).
+     * Identical to createContactFieldListSchema() but provides consistent naming
+     * with other contact-scoped list operations.
+     */
+    private Map<String, Object> createContactFieldListByContactSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID to list fields for"
+                ),
+                "page", Map.of(
+                    "type", "integer",
+                    "description", "Page number (default: 1)",
+                    "default", 1
+                ),
+                "limit", Map.of(
+                    "type", "integer",
+                    "description", "Items per page (default: 10)",
                     "default", 10
                 )
             ),

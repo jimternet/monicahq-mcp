@@ -75,14 +75,14 @@ public class DomainToolRegistryTest {
     }
 
     @Test
-    @DisplayName("Total tools across all registries should equal 141")
+    @DisplayName("Total tools across all registries should equal 171")
     void shouldHaveCorrectTotalToolCount() {
         int totalTools = domainRegistries.stream()
             .mapToInt(registry -> registry.getTools().size())
             .sum();
 
-        assertEquals(141, totalTools,
-            "Expected 141 total tools across all domain registries, but found: " + totalTools);
+        assertEquals(171, totalTools,
+            "Expected 171 total tools across all domain registries (154 Phase 1 + 17 Phase 2: 4 ContactFieldType CRUD + 13 contact-scoped lists), but found: " + totalTools);
     }
 
     @Test
@@ -157,10 +157,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 7 contact field/tag tools")
+        @DisplayName("Should register 8 contact field/tag tools")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(7, contactFieldToolRegistry.getToolCount(),
-                "ContactFieldToolRegistry should have 7 tools");
+            assertEquals(8, contactFieldToolRegistry.getToolCount(),
+                "ContactFieldToolRegistry should have 8 tools (6 base + 1 contactfield_list_by_contact + 2 tag ops)");
         }
 
         @Test
@@ -192,10 +192,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 15 extension tools (5 address + 5 group + 5 occupation)")
+        @DisplayName("Should register 26 extension tools (5+1 address + 5 group + 5+1 occupation + 5 place + 4 lifeevent)")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(15, contactExtensionToolRegistry.getToolCount(),
-                "ContactExtensionToolRegistry should have 15 tools");
+            assertEquals(26, contactExtensionToolRegistry.getToolCount(),
+                "ContactExtensionToolRegistry should have 26 tools (24 + address_list_by_contact + occupation_list_by_contact)");
         }
 
         @Test
@@ -319,10 +319,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 15 activity tools (5 activity + 5 type + 5 category)")
+        @DisplayName("Should register 16 activity tools (5+1 activity + 5 type + 5 category)")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(15, activityToolRegistry.getToolCount(),
-                "ActivityToolRegistry should have 15 tools");
+            assertEquals(16, activityToolRegistry.getToolCount(),
+                "ActivityToolRegistry should have 16 tools (15 + activity_list_by_contact)");
         }
 
         @Test
@@ -376,10 +376,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 15 communication tools (5 call + 5 conversation + 5 message)")
+        @DisplayName("Should register 16 communication tools (5+1 call + 5 conversation + 5 message)")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(15, communicationToolRegistry.getToolCount(),
-                "CommunicationToolRegistry should have 15 tools");
+            assertEquals(16, communicationToolRegistry.getToolCount(),
+                "CommunicationToolRegistry should have 16 tools (15 + call_list_by_contact)");
         }
 
         @Test
@@ -433,10 +433,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 20 productivity tools (5 note + 5 task + 5 reminder + 5 tag)")
+        @DisplayName("Should register 23 productivity tools (5+1 note + 5+1 task + 5+1 reminder + 5 tag)")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(20, productivityToolRegistry.getToolCount(),
-                "ProductivityToolRegistry should have 20 tools");
+            assertEquals(23, productivityToolRegistry.getToolCount(),
+                "ProductivityToolRegistry should have 23 tools (20 + 3 contact-scoped lists)");
         }
 
         @Test
@@ -502,10 +502,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 15 content tools (5 document + 5 photo + 5 pet)")
+        @DisplayName("Should register 18 content tools (5+1 document + 5+1 photo + 5+1 pet)")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(15, contentToolRegistry.getToolCount(),
-                "ContentToolRegistry should have 15 tools");
+            assertEquals(18, contentToolRegistry.getToolCount(),
+                "ContentToolRegistry should have 18 tools (15 + 3 contact-scoped lists)");
         }
 
         @Test
@@ -559,10 +559,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 10 financial tools (5 debt + 5 gift)")
+        @DisplayName("Should register 12 financial tools (5+1 debt + 5+1 gift)")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(10, financialToolRegistry.getToolCount(),
-                "FinancialToolRegistry should have 10 tools");
+            assertEquals(12, financialToolRegistry.getToolCount(),
+                "FinancialToolRegistry should have 12 tools (10 + debt_list_by_contact + gift_list_by_contact)");
         }
 
         @Test
@@ -604,10 +604,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 11 reference data tools")
+        @DisplayName("Should register 19 reference data tools")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(11, referenceDataToolRegistry.getToolCount(),
-                "ReferenceDataToolRegistry should have 11 tools");
+            assertEquals(19, referenceDataToolRegistry.getToolCount(),
+                "ReferenceDataToolRegistry should have 19 tools (11 + 4 gender CRUD + 4 ContactFieldType CRUD)");
         }
 
         @Test

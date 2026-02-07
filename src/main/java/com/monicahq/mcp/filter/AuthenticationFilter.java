@@ -57,7 +57,7 @@ public class AuthenticationFilter implements WebFilter {
             
             // Validate token
             if (!isValidToken(token)) {
-                log.debug("Invalid token: {}", token);
+                log.debug("Invalid token format detected");
                 return unauthorizedResponse(exchange, "Invalid or expired token");
             }
             
@@ -72,10 +72,10 @@ public class AuthenticationFilter implements WebFilter {
             if ("monica-rejected-token".equals(token)) {
                 // Simulate Monica API rejecting the token
                 // This will be handled differently - let it pass here and fail in the service
-                log.debug("Token will be rejected by Monica API: {}", token);
+                log.debug("Test token will be rejected by Monica API");
             }
-            
-            log.debug("Authentication successful for token: {}...", token.substring(0, Math.min(token.length(), 10)));
+
+            log.debug("Authentication successful");
         }
         
         return chain.filter(exchange);

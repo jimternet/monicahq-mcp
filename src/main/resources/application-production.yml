@@ -1,0 +1,29 @@
+# Production logging configuration
+# Activate with: --spring.profiles.active=production or SPRING_PROFILES_ACTIVE=production
+
+logging:
+  level:
+    # Production logging - INFO level for application code
+    com.monicahq.mcp: INFO
+
+    # Framework logging - WARN level to reduce noise
+    org.springframework.web: WARN
+    org.springframework.websocket: WARN
+    org.springframework.boot: WARN
+
+    # Security logging - INFO to track auth events without exposing tokens
+    com.monicahq.mcp.client.AuthInterceptor: INFO
+    com.monicahq.mcp.filter.AuthenticationFilter: INFO
+
+    # Circuit breaker - INFO for monitoring
+    io.github.resilience4j: INFO
+
+  pattern:
+    console: "%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n"
+
+# Disable detailed health endpoint info in production
+management:
+  endpoint:
+    health:
+      show-details: when-authorized

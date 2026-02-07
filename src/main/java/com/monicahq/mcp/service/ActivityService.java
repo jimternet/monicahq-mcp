@@ -149,6 +149,62 @@ public class ActivityService extends AbstractCrudService<Object> {
         return list(arguments);
     }
 
+    /**
+     * Lists all activities for a specific contact.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The contact ID to retrieve activities for</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including contactId and optional pagination
+     * @return a Mono containing the list of activities for the contact and pagination metadata
+     */
+    public Mono<Map<String, Object>> listActivitiesByContact(Map<String, Object> arguments) {
+        try {
+            // Extract contactId parameter
+            if (arguments == null || !arguments.containsKey("contactId")) {
+                throw new IllegalArgumentException("contactId is required");
+            }
+            Object contactIdValue = arguments.get("contactId");
+            if (contactIdValue == null) {
+                throw new IllegalArgumentException("contactId is required");
+            }
+            Long contactId = contactIdValue instanceof Number
+                ? ((Number) contactIdValue).longValue()
+                : Long.parseLong(contactIdValue.toString().trim());
+
+            // Extract pagination parameters
+            int page = 1;
+            int limit = 10;
+            if (arguments.containsKey("page")) {
+                page = Integer.parseInt(arguments.get("page").toString());
+            }
+            if (arguments.containsKey("limit")) {
+                limit = parseLimit(arguments.get("limit"));
+            }
+
+            String endpoint = "/contacts/" + contactId + "/activities";
+            Map<String, String> queryParams = Map.of(
+                "page", String.valueOf(page),
+                "limit", String.valueOf(limit)
+            );
+
+            return monicaClient.get(endpoint, queryParams)
+                .map(this::formatListResponse)
+                .doOnSuccess(result -> log.info("Activities for contact {} listed successfully", contactId))
+                .doOnError(error -> log.error("Failed to list activities for contact {}: {}", contactId, error.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return Mono.error(new IllegalArgumentException("Invalid arguments: " + e.getMessage()));
+        }
+    }
+
     // ========================================================================================
     // CUSTOM VALIDATION
     // ========================================================================================

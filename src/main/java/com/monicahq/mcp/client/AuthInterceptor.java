@@ -115,9 +115,8 @@ public class AuthInterceptor {
         boolean lengthValid = trimmedToken.length() >= 20 && trimmedToken.length() <= 2000;
         boolean patternValid = BEARER_TOKEN_PATTERN.matcher(trimmedToken).matches();
         
-        log.debug("Token validation - length: {} (valid: {}), pattern: {} (valid: {})", 
-                 trimmedToken.length(), lengthValid, 
-                 trimmedToken.substring(0, Math.min(20, trimmedToken.length())) + "...", patternValid);
+        log.debug("Token validation - length: {} (valid: {}), pattern match: {}",
+                 trimmedToken.length(), lengthValid, patternValid);
         
         return lengthValid && patternValid;
     }

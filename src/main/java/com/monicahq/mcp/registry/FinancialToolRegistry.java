@@ -85,6 +85,13 @@ public class FinancialToolRegistry extends AbstractDomainToolRegistry {
             DEBT_CATEGORY
         );
 
+        registerTool(
+            "debt_list_by_contact",
+            "[Debt] List all debts for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve debts for"),
+            DEBT_CATEGORY
+        );
+
         // Gift CRUD operations (5)
         registerTool(
             "gift_create",
@@ -120,6 +127,13 @@ public class FinancialToolRegistry extends AbstractDomainToolRegistry {
             createListSchema(),
             GIFT_CATEGORY
         );
+
+        registerTool(
+            "gift_list_by_contact",
+            "[Gift] List all gifts for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve gifts for"),
+            GIFT_CATEGORY
+        );
     }
 
     @Override
@@ -131,6 +145,7 @@ public class FinancialToolRegistry extends AbstractDomainToolRegistry {
             case "debt_update" -> debtService.updateDebt(arguments);
             case "debt_delete" -> debtService.deleteDebt(arguments);
             case "debt_list" -> debtService.listDebts(arguments);
+            case "debt_list_by_contact" -> debtService.listDebtsByContact(arguments);
 
             // Gift operations
             case "gift_create" -> giftService.createGift(arguments);
@@ -138,6 +153,7 @@ public class FinancialToolRegistry extends AbstractDomainToolRegistry {
             case "gift_update" -> giftService.updateGift(arguments);
             case "gift_delete" -> giftService.deleteGift(arguments);
             case "gift_list" -> giftService.listGifts(arguments);
+            case "gift_list_by_contact" -> giftService.listGiftsByContact(arguments);
 
             default -> Mono.error(new UnsupportedOperationException(
                 "Tool '" + toolName + "' is not implemented in " + DOMAIN + " domain registry"));
@@ -256,5 +272,40 @@ public class FinancialToolRegistry extends AbstractDomainToolRegistry {
      */
     private Map<String, Object> createGiftUpdateSchema() {
         return createUpdateSchema(createGiftSchema());
+    }
+
+    // ========== Contact-Scoped List Schema ==========
+
+    /**
+     * Creates the schema for contact-scoped list operations.
+     * Includes contactId as required parameter with optional pagination.
+     *
+     * @param contactIdDescription description for the contactId parameter
+     * @return schema Map with contactId and pagination properties
+     */
+    private Map<String, Object> createContactScopedListSchema(String contactIdDescription) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("contactId", Map.of(
+            "type", "integer",
+            "description", contactIdDescription
+        ));
+        properties.put("page", Map.of(
+            "type", "integer",
+            "description", "Page number (starting from 1)",
+            "default", 1
+        ));
+        properties.put("limit", Map.of(
+            "type", "integer",
+            "description", "Number of items per page",
+            "default", 10,
+            "maximum", 100
+        ));
+
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", List.of("contactId"));
+
+        return schema;
     }
 }

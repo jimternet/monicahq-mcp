@@ -12,14 +12,14 @@ import java.util.Set;
  * Field mapping configuration for Gender entities.
  * <p>
  * Defines the field mappings and API endpoint for Gender operations.
- * Gender entities are read-only lookup values used when creating contacts.
+ * Gender entities support full CRUD operations for managing custom gender types.
  * </p>
  * <p>
  * Implements Constitutional Principle VII: API Discovery and Completeness.
- * This discovery tool eliminates the need to hardcode gender values.
+ * Enables users to create and manage custom gender definitions per account.
  * </p>
  * <p>
- * This is a read-only entity - only list operation is supported.
+ * Gap Analysis Phase 1: Enabled CRUD operations (previously read-only).
  * </p>
  */
 @Component
@@ -35,6 +35,12 @@ public class GenderFieldMappingConfig implements FieldMappingConfig {
         "created_at", "createdAt",
         "updated_at", "updatedAt"
     );
+
+    /**
+     * Required fields for creating a new gender.
+     * Only 'name' is required - the gender display name.
+     */
+    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("name");
 
     @Override
     public String getEndpointPath() {
@@ -58,7 +64,7 @@ public class GenderFieldMappingConfig implements FieldMappingConfig {
 
     @Override
     public Set<String> getRequiredCreateFields() {
-        return Collections.emptySet();
+        return REQUIRED_CREATE_FIELDS;
     }
 
     @Override
@@ -67,29 +73,32 @@ public class GenderFieldMappingConfig implements FieldMappingConfig {
     }
 
     /**
-     * Gender entities are read-only lookup values.
-     * @return false - create is not supported
+     * Gender entities support create operations.
+     * Allows creation of custom gender types per account.
+     * @return true - create is supported
      */
     @Override
     public boolean supportsCreate() {
-        return false;
+        return true;
     }
 
     /**
-     * Gender entities are read-only lookup values.
-     * @return false - update is not supported
+     * Gender entities support update operations.
+     * Allows modification of gender display names.
+     * @return true - update is supported
      */
     @Override
     public boolean supportsUpdate() {
-        return false;
+        return true;
     }
 
     /**
-     * Gender entities are read-only lookup values.
-     * @return false - delete is not supported
+     * Gender entities support delete operations.
+     * Allows removal of custom gender types.
+     * @return true - delete is supported
      */
     @Override
     public boolean supportsDelete() {
-        return false;
+        return true;
     }
 }

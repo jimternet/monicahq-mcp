@@ -306,6 +306,38 @@ public class TestMonicaHqClient extends MonicaHqClient {
             data.put("content", getValueFromRequest(requestBody, "content", "content", "Legal compliance document content"));
             data.put("version", "1.0");
             data.put("created_at", "2025-09-13T09:00:00Z");
+        } else if (endpoint.contains("/genders")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1);
+            data.put("name", getValueFromRequest(requestBody, "name", "name", "Male"));
+            data.put("created_at", "2025-09-14T10:00:00Z");
+        } else if (endpoint.contains("/places")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1);
+            data.put("street", getValueFromRequest(requestBody, "street", "street", "123 Main Street"));
+            data.put("city", getValueFromRequest(requestBody, "city", "city", "San Francisco"));
+            data.put("province", getValueFromRequest(requestBody, "province", "province", "California"));
+            data.put("postal_code", getValueFromRequest(requestBody, "postalCode", "postal_code", "94102"));
+            data.put("country", getValueFromRequest(requestBody, "country", "country", "USA"));
+            data.put("latitude", getValueFromRequest(requestBody, "latitude", "latitude", 37.7749));
+            data.put("longitude", getValueFromRequest(requestBody, "longitude", "longitude", -122.4194));
+            data.put("created_at", "2025-09-14T11:00:00Z");
+        } else if (endpoint.contains("/lifeevents")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1);
+            data.put("contact_id", getValueFromRequest(requestBody, "contactId", "contact_id", 12345));
+            data.put("life_event_type_id", getValueFromRequest(requestBody, "lifeEventTypeId", "life_event_type_id", 1));
+            data.put("name", getValueFromRequest(requestBody, "name", "name", "Life Event"));
+            data.put("happened_at", getValueFromRequest(requestBody, "happenedAt", "happened_at", "2020-01-01"));
+            data.put("note", getValueFromRequest(requestBody, "note", "note", "Life event note"));
+            data.put("happened_at_month_unknown", getValueFromRequest(requestBody, "happenedAtMonthUnknown", "happened_at_month_unknown", false));
+            data.put("happened_at_day_unknown", getValueFromRequest(requestBody, "happenedAtDayUnknown", "happened_at_day_unknown", false));
+            data.put("created_at", "2025-09-14T12:00:00Z");
+        } else if (endpoint.contains("/contactfieldtypes")) {
+            data.put("id", idFromEndpoint != null ? idFromEndpoint : 1);
+            data.put("name", getValueFromRequest(requestBody, "name", "name", "Email Address"));
+            data.put("type", getValueFromRequest(requestBody, "type", "type", "email"));
+            data.put("protocol", getValueFromRequest(requestBody, "protocol", "protocol", "mailto"));
+            data.put("fontawesome_icon", getValueFromRequest(requestBody, "fontawesomeIcon", "fontawesome_icon", "fa fa-envelope"));
+            data.put("delible", getValueFromRequest(requestBody, "delible", "delible", true));
+            data.put("created_at", "2025-09-14T13:00:00Z");
         } else {
             // Generic response for other endpoints
             data.put("id", 999);
@@ -318,9 +350,15 @@ public class TestMonicaHqClient extends MonicaHqClient {
             return Map.of("status", "success");
         }
         
+        // Handle contact-scoped list endpoints (GET /contacts/{id}/entities)
+        boolean isContactScopedList = method.equals("GET") && endpoint.matches("^/contacts/\\d+/\\w+$");
+        if (isContactScopedList) {
+            return createListResponse(endpoint, queryParams);
+        }
+
         // Handle list endpoints (GET with no ID in path OR nested list endpoints)
         boolean isListEndpoint = method.equals("GET") && (
-            endpoint.equals("/contacts") || endpoint.equals("/activities") 
+            endpoint.equals("/contacts") || endpoint.equals("/activities")
             || endpoint.equals("/calls") || endpoint.equals("/notes") || endpoint.equals("/tasks")
             || endpoint.equals("/tags") || endpoint.equals("/reminders") || endpoint.equals("/entries")
             || endpoint.equals("/contactfields") || endpoint.equals("/conversations") || endpoint.equals("/messages")
@@ -330,11 +368,13 @@ public class TestMonicaHqClient extends MonicaHqClient {
             || endpoint.equals("/gifts") || endpoint.equals("/auditlogs") || endpoint.equals("/countries")
             || endpoint.contains("/logs")
             || endpoint.equals("/currencies") || endpoint.equals("/users") || endpoint.equals("/compliance")
+            || endpoint.equals("/genders") || endpoint.equals("/places") || endpoint.equals("/lifeevents")
+            || endpoint.equals("/contactfieldtypes")
             || (endpoint.contains("/contactfields") && endpoint.endsWith("/contactfields"))
             || (endpoint.contains("/messages") && endpoint.endsWith("/messages"))
             || (endpoint.contains("/tags") && endpoint.contains("/contacts"))
         );
-        
+
         if (isListEndpoint) {
             return createListResponse(endpoint, queryParams);
         }
@@ -344,7 +384,60 @@ public class TestMonicaHqClient extends MonicaHqClient {
     
     private Map<String, Object> createListResponse(String endpoint, Map<String, String> queryParams) {
         List<Map<String, Object>> items = new ArrayList<>();
-        
+
+        // Handle contact-scoped list endpoints: /contacts/{id}/entities
+        if (endpoint.matches("^/contacts/\\d+/\\w+$")) {
+            String[] parts = endpoint.split("/");
+            Long contactId = Long.parseLong(parts[2]);
+            String entityType = parts[3];
+
+            // Create stub items for contact-scoped lists
+            switch (entityType) {
+                case "activities":
+                    items.add(Map.of("id", 456L, "contact_id", contactId, "summary", "Had coffee", "happened_at", "2025-09-13T10:30:00Z"));
+                    break;
+                case "addresses":
+                    items.add(Map.of("id", 700L, "contact_id", contactId, "street", "123 Main St", "city", "San Francisco", "country", "USA"));
+                    break;
+                case "calls":
+                    items.add(Map.of("id", 789L, "contact_id", contactId, "duration", 25, "called_at", "2025-09-13T14:30:00Z"));
+                    break;
+                case "contactfields":
+                    items.add(Map.of("id", 606L, "contact_id", contactId, "contact_field_type_id", 1L, "data", "Field data"));
+                    break;
+                case "debts":
+                    items.add(Map.of("id", 1001L, "contact_id", contactId, "amount", 500.00, "currency", "USD", "in_debt", "contact", "status", "pending"));
+                    break;
+                case "documents":
+                    items.add(Map.of("id", 1002L, "contact_id", contactId, "filename", "document.pdf", "mime_type", "application/pdf", "size", 204800));
+                    break;
+                case "gifts":
+                    items.add(Map.of("id", 1004L, "contact_id", contactId, "name", "Gift name", "value", 99.99, "status", "idea", "date", "2025-12-25"));
+                    break;
+                case "notes":
+                    items.add(Map.of("id", 101L, "contact_id", contactId, "body", "Important note", "is_favorited", false));
+                    break;
+                case "occupations":
+                    items.add(Map.of("id", 2001L, "contact_id", contactId, "company", "Tech Corp", "title", "Software Engineer"));
+                    break;
+                case "pets":
+                    items.add(Map.of("id", 2002L, "contact_id", contactId, "pet_category_id", 1L, "name", "Fluffy"));
+                    break;
+                case "photos":
+                    items.add(Map.of("id", 1003L, "contact_id", contactId, "filename", "photo.jpg", "width", 800, "height", 600, "filesize", 102400));
+                    break;
+                case "reminders":
+                    items.add(Map.of("id", 404L, "contact_id", contactId, "title", "Birthday reminder", "next_expected_date", "2025-12-25"));
+                    break;
+                case "tasks":
+                    items.add(Map.of("id", 202L, "contact_id", contactId, "title", "Task title", "completed", false));
+                    break;
+                default:
+                    items.add(Map.of("id", 999L, "contact_id", contactId, "name", "Generic item"));
+                    break;
+            }
+        }
+
         // Create sample list items based on endpoint
         if (endpoint.equals("/contacts")) {
             items.add(Map.of("id", 123L, "first_name", "John", "last_name", "Doe", "email", "john.doe@example.com"));
@@ -401,8 +494,19 @@ public class TestMonicaHqClient extends MonicaHqClient {
         } else if (endpoint.equals("/compliance")) {
             items.add(Map.of("id", 1L, "type", "terms_of_service", "description", "Terms of Service", "version", "1.0"));
             items.add(Map.of("id", 2L, "type", "privacy_policy", "description", "Privacy Policy", "version", "1.0"));
+        } else if (endpoint.equals("/genders")) {
+            items.add(Map.of("id", 1L, "name", "Male", "created_at", "2025-09-14T10:00:00Z"));
+            items.add(Map.of("id", 2L, "name", "Female", "created_at", "2025-09-14T10:00:00Z"));
+        } else if (endpoint.equals("/places")) {
+            items.add(Map.of("id", 1L, "street", "123 Main St", "city", "San Francisco", "province", "CA", "country", "USA", "created_at", "2025-09-14T11:00:00Z"));
+            items.add(Map.of("id", 2L, "street", "456 Oak Ave", "city", "New York", "province", "NY", "country", "USA", "created_at", "2025-09-14T11:00:00Z"));
+        } else if (endpoint.equals("/lifeevents")) {
+            items.add(Map.of("id", 1L, "contact_id", 12345L, "life_event_type_id", 1L, "name", "Graduation", "happened_at", "2020-06-15", "created_at", "2025-09-14T12:00:00Z"));
+        } else if (endpoint.equals("/contactfieldtypes")) {
+            items.add(Map.of("id", 1L, "name", "Email Address", "type", "email", "protocol", "mailto", "fontawesome_icon", "fa fa-envelope", "delible", true, "created_at", "2025-09-14T13:00:00Z"));
+            items.add(Map.of("id", 2L, "name", "Phone Number", "type", "phone", "protocol", "tel", "fontawesome_icon", "fa fa-phone", "delible", true, "created_at", "2025-09-14T13:00:00Z"));
         }
-        
+
         // Extract pagination params
         int page = queryParams != null && queryParams.containsKey("page") ? 
             Integer.parseInt(queryParams.get("page")) : 1;

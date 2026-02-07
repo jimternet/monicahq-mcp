@@ -32,7 +32,7 @@ public class McpMessageHandler {
             log.debug("[MCP-DEBUG] Processing message with id: {}", id);
             log.debug("[MCP-DEBUG] Message content: {}", message.toString());
             if (authHeader != null) {
-                log.debug("[MCP-DEBUG] Auth header present: {}", authHeader.substring(0, Math.min(20, authHeader.length())) + "...");
+                log.debug("[MCP-DEBUG] Auth header present (length: {})", authHeader.length());
             }
         }
         

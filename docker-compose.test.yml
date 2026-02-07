@@ -1,0 +1,116 @@
+version: '3.8'
+
+# Docker Compose for MonicaHQ MCP Server Integration Testing
+# Provides a complete isolated testing environment with real Monica instance
+
+services:
+  # MySQL database for Monica
+  monica-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: monica_root_pass
+      MYSQL_DATABASE: monica
+      MYSQL_USER: monica_user
+      MYSQL_PASSWORD: monica_pass
+    volumes:
+      - monica-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "monica_user", "-pmonica_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - monica-test-network
+
+  # Monica CRM instance
+  monica:
+    image: monica:latest
+    depends_on:
+      monica-db:
+        condition: service_healthy
+    environment:
+      # Database configuration
+      DB_HOST: monica-db
+      DB_PORT: 3306
+      DB_DATABASE: monica
+      DB_USERNAME: monica_user
+      DB_PASSWORD: monica_pass
+
+      # App configuration
+      APP_KEY: base64:your-app-key-here-32-chars-random
+      APP_ENV: local
+      APP_DEBUG: true
+      APP_URL: http://localhost:8081
+
+      # Default admin credentials for testing
+      ADMIN_EMAIL: test@example.com
+      ADMIN_PASSWORD: password123
+
+      # Monica features
+      CHECK_VERSION: false
+      ALLOW_STATISTICS_COLLECTION: false
+
+    ports:
+      - "8081:80"
+    volumes:
+      - monica-data:/var/www/html/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - monica-test-network
+
+  # MonicaHQ MCP Server (connected to test Monica instance)
+  monicahq-mcp-test:
+    build: .
+    depends_on:
+      monica:
+        condition: service_healthy
+    environment:
+      # Point to local Monica instance
+      MONICA_API_URL: http://monica/api
+      MONICA_API_TOKEN: ${MONICA_TEST_API_TOKEN:-test-token-placeholder}
+
+      SPRING_PROFILES_ACTIVE: test
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    ports:
+      - "8082:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - monica-test-network
+
+  # Integration test runner
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.integration-tests
+    depends_on:
+      monicahq-mcp-test:
+        condition: service_healthy
+    environment:
+      MCP_SERVER_URL: http://monicahq-mcp-test:8080
+      MONICA_API_URL: http://monica/api
+      MONICA_API_TOKEN: ${MONICA_TEST_API_TOKEN:-test-token-placeholder}
+    volumes:
+      - ./validation:/validation
+      - ./test-results:/test-results
+    networks:
+      - monica-test-network
+    profiles:
+      - test  # Only run with: docker-compose --profile test up
+
+volumes:
+  monica-db-data:
+  monica-data:
+
+networks:
+  monica-test-network:
+    driver: bridge

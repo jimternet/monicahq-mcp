@@ -145,4 +145,41 @@ public class ReminderService extends AbstractCrudService<Object> {
     public Mono<Map<String, Object>> listReminders(Map<String, Object> arguments) {
         return list(arguments);
     }
+
+    public Mono<Map<String, Object>> listRemindersByContact(Map<String, Object> arguments) {
+        try {
+            if (arguments == null || !arguments.containsKey("contactId")) {
+                throw new IllegalArgumentException("contactId is required");
+            }
+            Object contactIdValue = arguments.get("contactId");
+            if (contactIdValue == null) {
+                throw new IllegalArgumentException("contactId is required");
+            }
+            Long contactId = contactIdValue instanceof Number
+                ? ((Number) contactIdValue).longValue()
+                : Long.parseLong(contactIdValue.toString().trim());
+
+            int page = 1;
+            int limit = 10;
+            if (arguments.containsKey("page")) {
+                page = Integer.parseInt(arguments.get("page").toString());
+            }
+            if (arguments.containsKey("limit")) {
+                limit = parseLimit(arguments.get("limit"));
+            }
+
+            String endpoint = "/contacts/" + contactId + "/reminders";
+            Map<String, String> queryParams = Map.of(
+                "page", String.valueOf(page),
+                "limit", String.valueOf(limit)
+            );
+
+            return monicaClient.get(endpoint, queryParams)
+                .map(this::formatListResponse)
+                .doOnSuccess(result -> log.info("Reminders for contact {} listed successfully", contactId))
+                .doOnError(error -> log.error("Failed to list reminders for contact {}: {}", contactId, error.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return Mono.error(new IllegalArgumentException("Invalid arguments: " + e.getMessage()));
+        }
+    }
 }

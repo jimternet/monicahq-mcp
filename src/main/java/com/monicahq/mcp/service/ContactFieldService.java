@@ -163,6 +163,31 @@ public class ContactFieldService extends AbstractCrudService<Object> {
     }
 
     /**
+     * Lists contact fields for a specific contact (alias for listContactFields with consistent naming).
+     * <p>
+     * This method provides a consistent naming convention with other contact-scoped list operations
+     * (activity_list_by_contact, address_list_by_contact, etc.) while delegating to listContactFields.
+     * </p>
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact to list fields for</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>page - Page number (default: 1)</li>
+     *   <li>limit - Number of items per page, max 100 (default: 10)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the list arguments including required contactId and optional pagination
+     * @return a Mono containing the list of contact fields and pagination metadata
+     */
+    public Mono<Map<String, Object>> listContactFieldsByContact(Map<String, Object> arguments) {
+        return listContactFields(arguments);
+    }
+
+    /**
      * Extracts the contact ID from the arguments.
      *
      * @param arguments the arguments containing contactId

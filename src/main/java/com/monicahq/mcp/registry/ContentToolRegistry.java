@@ -95,6 +95,13 @@ public class ContentToolRegistry extends AbstractDomainToolRegistry {
             CATEGORY
         );
 
+        registerTool(
+            "document_list_by_contact",
+            "[Document] List all documents for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve documents for"),
+            CATEGORY
+        );
+
         // Photo CRUD operations (5)
         registerTool(
             "photo_create",
@@ -128,6 +135,13 @@ public class ContentToolRegistry extends AbstractDomainToolRegistry {
             "photo_list",
             "[Photo] List photos with pagination",
             createListSchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "photo_list_by_contact",
+            "[Photo] List all photos for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve photos for"),
             CATEGORY
         );
 
@@ -167,6 +181,13 @@ public class ContentToolRegistry extends AbstractDomainToolRegistry {
             createListSchema(),
             PET_CATEGORY
         );
+
+        registerTool(
+            "pet_list_by_contact",
+            "[Pet] List all pets for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve pets for"),
+            PET_CATEGORY
+        );
     }
 
     @Override
@@ -178,6 +199,7 @@ public class ContentToolRegistry extends AbstractDomainToolRegistry {
             case "document_update" -> documentService.updateDocument(arguments);
             case "document_delete" -> documentService.deleteDocument(arguments);
             case "document_list" -> documentService.listDocuments(arguments);
+            case "document_list_by_contact" -> documentService.listDocumentsByContact(arguments);
 
             // Photo operations
             case "photo_create" -> photoService.createPhoto(arguments);
@@ -185,6 +207,7 @@ public class ContentToolRegistry extends AbstractDomainToolRegistry {
             case "photo_update" -> photoService.updatePhoto(arguments);
             case "photo_delete" -> photoService.deletePhoto(arguments);
             case "photo_list" -> photoService.listPhotos(arguments);
+            case "photo_list_by_contact" -> photoService.listPhotosByContact(arguments);
 
             // Pet operations
             case "pet_create" -> petService.createPet(arguments);
@@ -192,6 +215,7 @@ public class ContentToolRegistry extends AbstractDomainToolRegistry {
             case "pet_update" -> petService.updatePet(arguments);
             case "pet_delete" -> petService.deletePet(arguments);
             case "pet_list" -> petService.listPets(arguments);
+            case "pet_list_by_contact" -> petService.listPetsByContact(arguments);
 
             default -> Mono.error(new UnsupportedOperationException(
                 "Tool '" + toolName + "' is not implemented in " + DOMAIN + " domain registry"));
@@ -344,5 +368,40 @@ public class ContentToolRegistry extends AbstractDomainToolRegistry {
      */
     private Map<String, Object> createPetUpdateSchema() {
         return createUpdateSchema(createPetSchema());
+    }
+
+    // ========== Contact-Scoped List Schema ==========
+
+    /**
+     * Creates the schema for contact-scoped list operations.
+     * Includes contactId as required parameter with optional pagination.
+     *
+     * @param contactIdDescription description for the contactId parameter
+     * @return schema Map with contactId and pagination properties
+     */
+    private Map<String, Object> createContactScopedListSchema(String contactIdDescription) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("contactId", Map.of(
+            "type", "integer",
+            "description", contactIdDescription
+        ));
+        properties.put("page", Map.of(
+            "type", "integer",
+            "description", "Page number (starting from 1)",
+            "default", 1
+        ));
+        properties.put("limit", Map.of(
+            "type", "integer",
+            "description", "Number of items per page",
+            "default", 10,
+            "maximum", 100
+        ));
+
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", List.of("contactId"));
+
+        return schema;
     }
 }

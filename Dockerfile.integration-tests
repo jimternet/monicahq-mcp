@@ -1,0 +1,24 @@
+# Integration Test Runner
+# Runs validation scripts against real Monica instance in Docker
+
+FROM openjdk:17-slim
+
+# Install required tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    jq \
+    bash \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy validation scripts
+COPY validation/ /validation/
+RUN chmod +x /validation/**/*.sh
+
+# Copy test results directory
+RUN mkdir -p /test-results
+
+# Default command: run all integration tests
+CMD ["/validation/integration/test-mcp-complete.sh"]

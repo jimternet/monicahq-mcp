@@ -92,6 +92,13 @@ public class ActivityToolRegistry extends AbstractDomainToolRegistry {
             CATEGORY_ACTIVITY
         );
 
+        registerTool(
+            "activity_list_by_contact",
+            "[Activity] List all activities for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve activities for"),
+            CATEGORY_ACTIVITY
+        );
+
         // Activity Type CRUD operations (5)
         registerTool(
             "activity_type_create",
@@ -174,6 +181,7 @@ public class ActivityToolRegistry extends AbstractDomainToolRegistry {
             case "activity_update" -> activityService.updateActivity(arguments);
             case "activity_delete" -> activityService.deleteActivity(arguments);
             case "activity_list" -> activityService.listActivities(arguments);
+            case "activity_list_by_contact" -> activityService.listActivitiesByContact(arguments);
 
             // Activity type operations
             case "activity_type_create" -> activityTypeService.createActivityType(arguments);
@@ -347,5 +355,40 @@ public class ActivityToolRegistry extends AbstractDomainToolRegistry {
      */
     private Map<String, Object> createActivityTypeCategoryUpdateSchema() {
         return createUpdateSchema(createActivityTypeCategorySchema());
+    }
+
+    // ========== Contact-Scoped List Schema ==========
+
+    /**
+     * Creates the schema for contact-scoped list operations.
+     * Includes contactId as required parameter with optional pagination.
+     *
+     * @param contactIdDescription description for the contactId parameter
+     * @return schema Map with contactId and pagination properties
+     */
+    private Map<String, Object> createContactScopedListSchema(String contactIdDescription) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("contactId", Map.of(
+            "type", "integer",
+            "description", contactIdDescription
+        ));
+        properties.put("page", Map.of(
+            "type", "integer",
+            "description", "Page number (starting from 1)",
+            "default", 1
+        ));
+        properties.put("limit", Map.of(
+            "type", "integer",
+            "description", "Number of items per page",
+            "default", 10,
+            "maximum", 100
+        ));
+
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", List.of("contactId"));
+
+        return schema;
     }
 }

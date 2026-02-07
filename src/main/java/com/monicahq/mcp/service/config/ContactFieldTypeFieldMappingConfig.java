@@ -12,15 +12,14 @@ import java.util.Set;
  * Field mapping configuration for Contact Field Type entities.
  * <p>
  * Defines the field mappings and API endpoint for Contact Field Type operations.
- * Contact Field Types are read-only lookup values that define valid types for
- * contact fields (e.g., email, phone, social media handles).
+ * Contact Field Types define valid types for contact fields (e.g., email, phone, social media handles).
  * </p>
  * <p>
  * Implements Constitutional Principle VII: API Discovery and Completeness.
- * This discovery tool shows valid contactFieldTypeId values for contact field creation.
+ * Enables users to create and manage custom field type definitions per account.
  * </p>
  * <p>
- * This is a read-only entity - only list operation is supported.
+ * Gap Analysis Phase 2: Enabled CRUD operations (previously read-only).
  * </p>
  */
 @Component
@@ -34,8 +33,15 @@ public class ContactFieldTypeFieldMappingConfig implements FieldMappingConfig {
      */
     private static final Map<String, String> FROM_API_MAPPINGS = Map.of(
         "created_at", "createdAt",
-        "updated_at", "updatedAt"
+        "updated_at", "updatedAt",
+        "fontawesome_icon", "fontawesomeIcon"
     );
+
+    /**
+     * Required fields for creating a new contact field type.
+     * Both 'name' and 'type' are required for field type creation.
+     */
+    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("name", "type");
 
     @Override
     public String getEndpointPath() {
@@ -59,7 +65,7 @@ public class ContactFieldTypeFieldMappingConfig implements FieldMappingConfig {
 
     @Override
     public Set<String> getRequiredCreateFields() {
-        return Collections.emptySet();
+        return REQUIRED_CREATE_FIELDS;
     }
 
     @Override
@@ -68,29 +74,32 @@ public class ContactFieldTypeFieldMappingConfig implements FieldMappingConfig {
     }
 
     /**
-     * Contact Field Types are read-only lookup values.
-     * @return false - create is not supported
+     * Contact Field Type entities support create operations.
+     * Allows creation of custom field type definitions per account.
+     * @return true - create is supported
      */
     @Override
     public boolean supportsCreate() {
-        return false;
+        return true;
     }
 
     /**
-     * Contact Field Types are read-only lookup values.
-     * @return false - update is not supported
+     * Contact Field Type entities support update operations.
+     * Allows modification of field type definitions.
+     * @return true - update is supported
      */
     @Override
     public boolean supportsUpdate() {
-        return false;
+        return true;
     }
 
     /**
-     * Contact Field Types are read-only lookup values.
-     * @return false - delete is not supported
+     * Contact Field Type entities support delete operations.
+     * Allows removal of custom field type definitions.
+     * @return true - delete is supported
      */
     @Override
     public boolean supportsDelete() {
-        return false;
+        return true;
     }
 }

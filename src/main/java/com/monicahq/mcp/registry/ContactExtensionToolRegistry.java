@@ -2,7 +2,9 @@ package com.monicahq.mcp.registry;
 
 import com.monicahq.mcp.service.AddressService;
 import com.monicahq.mcp.service.GroupService;
+import com.monicahq.mcp.service.LifeEventService;
 import com.monicahq.mcp.service.OccupationService;
+import com.monicahq.mcp.service.PlaceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -14,15 +16,18 @@ import java.util.Map;
 /**
  * Domain-specific tool registry for Contact Extension operations.
  *
- * This registry handles address, group, and occupation-related MCP tools:
+ * This registry handles address, group, occupation, place, and life event-related MCP tools:
  * - Address CRUD operations (create, get, update, delete, list)
  * - Group CRUD operations (create, get, update, delete, list)
  * - Occupation CRUD operations (create, get, update, delete, list)
+ * - Place CRUD operations (create, get, update, delete, list) - Gap Analysis Phase 1
+ * - LifeEvent CRUD operations (create, get, update, delete) - Gap Analysis Phase 1
  *
  * These are extensions to the core contact functionality, providing
- * additional metadata and relationships for contacts.
+ * additional metadata, locations, milestones, and relationships for contacts.
  *
- * The registry delegates execution to AddressService, GroupService, and OccupationService.
+ * The registry delegates execution to AddressService, GroupService, OccupationService,
+ * PlaceService, and LifeEventService.
  */
 @Component
 @Slf4j
@@ -34,14 +39,20 @@ public class ContactExtensionToolRegistry extends AbstractDomainToolRegistry {
     private final AddressService addressService;
     private final GroupService groupService;
     private final OccupationService occupationService;
+    private final PlaceService placeService;
+    private final LifeEventService lifeEventService;
 
     public ContactExtensionToolRegistry(
             AddressService addressService,
             GroupService groupService,
-            OccupationService occupationService) {
+            OccupationService occupationService,
+            PlaceService placeService,
+            LifeEventService lifeEventService) {
         this.addressService = addressService;
         this.groupService = groupService;
         this.occupationService = occupationService;
+        this.placeService = placeService;
+        this.lifeEventService = lifeEventService;
     }
 
     @Override
@@ -84,6 +95,13 @@ public class ContactExtensionToolRegistry extends AbstractDomainToolRegistry {
             "address_list",
             "[Address] List addresses with pagination",
             createListSchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "address_list_by_contact",
+            "[Address] List all addresses for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve addresses for"),
             CATEGORY
         );
 
@@ -158,6 +176,78 @@ public class ContactExtensionToolRegistry extends AbstractDomainToolRegistry {
             createListSchema(),
             CATEGORY
         );
+
+        registerTool(
+            "occupation_list_by_contact",
+            "[Occupation] List all occupations for a specific contact",
+            createContactScopedListSchema("Contact ID to retrieve occupations for"),
+            CATEGORY
+        );
+
+        // Place CRUD operations (5) - Gap Analysis Phase 1
+        registerTool(
+            "place_create",
+            "[Place] Create a new geographic place/location",
+            createPlaceSchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "place_get",
+            "[Place] Get a place by ID",
+            createIdSchema("Place ID"),
+            CATEGORY
+        );
+
+        registerTool(
+            "place_update",
+            "[Place] Update an existing place",
+            createPlaceUpdateSchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "place_delete",
+            "[Place] Delete a place",
+            createIdSchema("Place ID"),
+            CATEGORY
+        );
+
+        registerTool(
+            "place_list",
+            "[Place] List places with pagination",
+            createListSchema(),
+            CATEGORY
+        );
+
+        // LifeEvent CRUD operations (4) - Gap Analysis Phase 1
+        registerTool(
+            "lifeevent_create",
+            "[LifeEvent] Create a new life event for a contact",
+            createLifeEventSchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "lifeevent_get",
+            "[LifeEvent] Get a life event by ID",
+            createIdSchema("LifeEvent ID"),
+            CATEGORY
+        );
+
+        registerTool(
+            "lifeevent_update",
+            "[LifeEvent] Update an existing life event",
+            createLifeEventUpdateSchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "lifeevent_delete",
+            "[LifeEvent] Delete a life event",
+            createIdSchema("LifeEvent ID"),
+            CATEGORY
+        );
     }
 
     @Override
@@ -169,6 +259,7 @@ public class ContactExtensionToolRegistry extends AbstractDomainToolRegistry {
             case "address_update" -> addressService.updateAddress(arguments);
             case "address_delete" -> addressService.deleteAddress(arguments);
             case "address_list" -> addressService.listAddresses(arguments);
+            case "address_list_by_contact" -> addressService.listAddressesByContact(arguments);
 
             // Group operations
             case "group_create" -> groupService.createGroup(arguments);
@@ -183,6 +274,20 @@ public class ContactExtensionToolRegistry extends AbstractDomainToolRegistry {
             case "occupation_update" -> occupationService.updateOccupation(arguments);
             case "occupation_delete" -> occupationService.deleteOccupation(arguments);
             case "occupation_list" -> occupationService.listOccupations(arguments);
+            case "occupation_list_by_contact" -> occupationService.listOccupationsByContact(arguments);
+
+            // Place operations (Gap Analysis Phase 1)
+            case "place_create" -> placeService.createPlace(arguments);
+            case "place_get" -> placeService.getPlace(arguments);
+            case "place_update" -> placeService.updatePlace(arguments);
+            case "place_delete" -> placeService.deletePlace(arguments);
+            case "place_list" -> placeService.listPlaces(arguments);
+
+            // LifeEvent operations (Gap Analysis Phase 1)
+            case "lifeevent_create" -> lifeEventService.createLifeEvent(arguments);
+            case "lifeevent_get" -> lifeEventService.getLifeEvent(arguments);
+            case "lifeevent_update" -> lifeEventService.updateLifeEvent(arguments);
+            case "lifeevent_delete" -> lifeEventService.deleteLifeEvent(arguments);
 
             default -> Mono.error(new UnsupportedOperationException(
                 "Tool '" + toolName + "' is not implemented in " + DOMAIN + " domain registry"));
@@ -369,5 +474,204 @@ public class ContactExtensionToolRegistry extends AbstractDomainToolRegistry {
      */
     private Map<String, Object> createOccupationUpdateSchema() {
         return createUpdateSchema(createOccupationSchema());
+    }
+
+    // ========== Place Schema Methods (Gap Analysis Phase 1) ==========
+
+    /**
+     * Creates the schema for place creation.
+     * Defines fields for creating a new geographic place/location.
+     * All fields are optional - can create minimal places or detailed ones.
+     */
+    private Map<String, Object> createPlaceSchema() {
+        Map<String, Object> properties = new HashMap<>();
+
+        properties.put("street", Map.of(
+            "type", "string",
+            "description", "Street address (optional)",
+            "maxLength", 255
+        ));
+
+        properties.put("city", Map.of(
+            "type", "string",
+            "description", "City name (optional)",
+            "maxLength", 255
+        ));
+
+        properties.put("province", Map.of(
+            "type", "string",
+            "description", "Province or state (optional)",
+            "maxLength", 255
+        ));
+
+        properties.put("postalCode", Map.of(
+            "type", "string",
+            "description", "Postal or ZIP code (optional)",
+            "maxLength", 20
+        ));
+
+        properties.put("country", Map.of(
+            "type", "string",
+            "description", "Country name (optional)",
+            "maxLength", 255
+        ));
+
+        properties.put("latitude", Map.of(
+            "type", "number",
+            "format", "float",
+            "description", "Latitude coordinate for geocoding (optional)",
+            "minimum", -90,
+            "maximum", 90
+        ));
+
+        properties.put("longitude", Map.of(
+            "type", "number",
+            "format", "float",
+            "description", "Longitude coordinate for geocoding (optional)",
+            "minimum", -180,
+            "maximum", 180
+        ));
+
+        return Map.of(
+            "type", "object",
+            "properties", properties,
+            "required", List.of()  // All fields optional
+        );
+    }
+
+    /**
+     * Creates the schema for place updates.
+     * Allows updating any place field.
+     */
+    private Map<String, Object> createPlaceUpdateSchema() {
+        Map<String, Object> createSchema = createPlaceSchema();
+        Map<String, Object> properties = new HashMap<>((Map<String, Object>) createSchema.get("properties"));
+
+        properties.put("id", Map.of(
+            "type", "integer",
+            "description", "Place ID (required)"
+        ));
+
+        return Map.of(
+            "type", "object",
+            "properties", properties,
+            "required", List.of("id")
+        );
+    }
+
+    // ========== LifeEvent Schema Methods (Gap Analysis Phase 1) ==========
+
+    /**
+     * Creates the schema for life event creation.
+     * Defines fields for creating a significant life event for a contact.
+     */
+    private Map<String, Object> createLifeEventSchema() {
+        Map<String, Object> properties = new HashMap<>();
+
+        properties.put("contactId", Map.of(
+            "type", "integer",
+            "description", "Contact ID this life event belongs to (required)"
+        ));
+
+        properties.put("lifeEventTypeId", Map.of(
+            "type", "integer",
+            "description", "Life event type ID (required) - e.g., birth, graduation, marriage, etc. Use lifeeventtype_list to see available types."
+        ));
+
+        properties.put("name", Map.of(
+            "type", "string",
+            "description", "Name/title of the life event (required)",
+            "maxLength", 255
+        ));
+
+        properties.put("note", Map.of(
+            "type", "string",
+            "description", "Additional notes or details about the event (optional)",
+            "maxLength", 1000
+        ));
+
+        properties.put("happenedAt", Map.of(
+            "type", "string",
+            "format", "date",
+            "description", "Date when the event occurred in YYYY-MM-DD format (required)"
+        ));
+
+        properties.put("happenedAtMonthUnknown", Map.of(
+            "type", "boolean",
+            "description", "Set to true if the month is unknown (optional, default: false)",
+            "default", false
+        ));
+
+        properties.put("happenedAtDayUnknown", Map.of(
+            "type", "boolean",
+            "description", "Set to true if the day is unknown (optional, default: false)",
+            "default", false
+        ));
+
+        properties.put("reminderId", Map.of(
+            "type", "integer",
+            "description", "Associated reminder ID (optional)"
+        ));
+
+        return Map.of(
+            "type", "object",
+            "properties", properties,
+            "required", List.of("contactId", "lifeEventTypeId", "name", "happenedAt")
+        );
+    }
+
+    /**
+     * Creates the schema for life event updates.
+     * Allows updating any life event field.
+     */
+    private Map<String, Object> createLifeEventUpdateSchema() {
+        Map<String, Object> createSchema = createLifeEventSchema();
+        Map<String, Object> properties = new HashMap<>((Map<String, Object>) createSchema.get("properties"));
+
+        properties.put("id", Map.of(
+            "type", "integer",
+            "description", "LifeEvent ID (required)"
+        ));
+
+        return Map.of(
+            "type", "object",
+            "properties", properties,
+            "required", List.of("id")
+        );
+    }
+
+    // ========== Contact-Scoped List Schema ==========
+
+    /**
+     * Creates the schema for contact-scoped list operations.
+     * Includes contactId as required parameter with optional pagination.
+     *
+     * @param contactIdDescription description for the contactId parameter
+     * @return schema Map with contactId and pagination properties
+     */
+    private Map<String, Object> createContactScopedListSchema(String contactIdDescription) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("contactId", Map.of(
+            "type", "integer",
+            "description", contactIdDescription
+        ));
+        properties.put("page", Map.of(
+            "type", "integer",
+            "description", "Page number (starting from 1)",
+            "default", 1
+        ));
+        properties.put("limit", Map.of(
+            "type", "integer",
+            "description", "Number of items per page",
+            "default", 10,
+            "maximum", 100
+        ));
+
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", List.of("contactId"));
+
+        return schema;
     }
 }

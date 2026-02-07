@@ -135,7 +135,11 @@ tasks.named('test') {
 		includeEngines 'junit-jupiter'
 	}
 	
-	// Exclude tests that require Monica instance by package
+	// Exclude tests that require Monica instance or external dependencies
+	// - contract/**: Contract tests requiring live Monica API
+	// - integration/**: Integration tests including future debug mode functionality
+	// - performance/**: Performance benchmarking tests
+	// - docker/**: Docker-specific integration tests
 	exclude '**/contract/**'
 	exclude '**/integration/**'
 	exclude '**/performance/**'
