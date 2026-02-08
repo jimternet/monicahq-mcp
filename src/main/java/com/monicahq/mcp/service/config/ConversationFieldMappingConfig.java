@@ -37,23 +37,25 @@ public class ConversationFieldMappingConfig implements FieldMappingConfig {
      */
     private static final Map<String, String> TO_API_MAPPINGS = Map.of(
         "contactId", "contact_id",
-        "happenedAt", "happened_at"
+        "happenedAt", "happened_at",
+        "contactFieldTypeId", "contact_field_type_id"
     );
 
     /**
      * Field mappings from snake_case (API) to camelCase (client).
      */
-    private static final Map<String, String> FROM_API_MAPPINGS = Map.of(
-        "contact_id", "contactId",
-        "happened_at", "happenedAt",
-        "created_at", "createdAt",
-        "updated_at", "updatedAt"
+    private static final Map<String, String> FROM_API_MAPPINGS = Map.ofEntries(
+        Map.entry("contact_id", "contactId"),
+        Map.entry("happened_at", "happenedAt"),
+        Map.entry("contact_field_type_id", "contactFieldTypeId"),
+        Map.entry("created_at", "createdAt"),
+        Map.entry("updated_at", "updatedAt")
     );
 
     /**
      * Required fields for Conversation creation.
      */
-    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "happenedAt");
+    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "happenedAt", "contactFieldTypeId");
 
     /**
      * Fields that can be used as filters in list operations.

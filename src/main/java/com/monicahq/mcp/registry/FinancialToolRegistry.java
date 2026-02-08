@@ -187,7 +187,7 @@ public class FinancialToolRegistry extends AbstractDomainToolRegistry {
         ));
         properties.put("status", Map.of(
             "type", "string",
-            "description", "Debt status (optional)",
+            "description", "Debt status - 'inprogress' or 'complete'",
             "maxLength", 255
         ));
         properties.put("reason", Map.of(
@@ -199,7 +199,7 @@ public class FinancialToolRegistry extends AbstractDomainToolRegistry {
         Map<String, Object> schema = new HashMap<>();
         schema.put("type", "object");
         schema.put("properties", properties);
-        schema.put("required", List.of("contactId", "amount"));
+        schema.put("required", List.of("contactId", "amount", "status"));
 
         return schema;
     }

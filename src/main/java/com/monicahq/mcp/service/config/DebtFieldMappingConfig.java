@@ -50,7 +50,7 @@ public class DebtFieldMappingConfig implements FieldMappingConfig {
     /**
      * Required fields for Debt creation.
      */
-    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "amount");
+    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "amount", "inDebt", "status");
 
     /**
      * Fields that can be used as filters in list operations.

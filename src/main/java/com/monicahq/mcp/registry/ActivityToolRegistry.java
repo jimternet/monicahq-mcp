@@ -230,16 +230,16 @@ public class ActivityToolRegistry extends AbstractDomainToolRegistry {
         properties.put("happenedAt", Map.of(
             "type", "string",
             "format", "date-time",
-            "description", "Date when activity happened in ISO 8601 format (optional, e.g., '2025-01-15T10:00:00Z')"
+            "description", "Date when activity happened in ISO 8601 format (required, e.g., '2025-01-15T10:00:00Z')"
         ));
         properties.put("attendees", Map.of(
             "type", "array",
-            "description", "List of activity attendees (required). Supports both string names ['John Doe'] and contact objects [{'contactId': 123}]",
+            "description", "List of contact IDs for activity attendees (required). Use contact IDs as integers: [91, 73] or objects with contactId: [{'contactId': 91}]",
             "items", Map.of(
                 "oneOf", List.of(
                     Map.of(
-                        "type", "string",
-                        "description", "Contact name as a string"
+                        "type", "integer",
+                        "description", "Contact ID as an integer"
                     ),
                     Map.of(
                         "type", "object",
@@ -258,7 +258,7 @@ public class ActivityToolRegistry extends AbstractDomainToolRegistry {
         Map<String, Object> schema = new HashMap<>();
         schema.put("type", "object");
         schema.put("properties", properties);
-        schema.put("required", List.of("summary", "attendees"));
+        schema.put("required", List.of("summary", "attendees", "happenedAt"));
 
         return schema;
     }

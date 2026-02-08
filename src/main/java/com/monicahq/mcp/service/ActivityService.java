@@ -289,7 +289,7 @@ public class ActivityService extends AbstractCrudService<Object> {
 
         arguments.forEach((key, value) -> {
             if ("attendees".equals(key)) {
-                apiRequest.put("attendees", transformAttendeesToApi(value));
+                apiRequest.put("contacts", transformAttendeesToApi(value));
             } else {
                 // Use parent's mapping for other fields
                 String apiKey = getFieldMappingConfig().getToApiMappings().getOrDefault(key, key);
@@ -338,16 +338,16 @@ public class ActivityService extends AbstractCrudService<Object> {
     /**
      * Transforms attendees array for API format.
      * <p>
-     * Handles three attendee formats:
+     * The Monica API expects a simple array of contact IDs (integers).
+     * Handles two attendee formats:
      * <ul>
-     *   <li>Object with contactId: maps contactId to contact_id</li>
-     *   <li>String: wraps in object with name field</li>
-     *   <li>Number/Boolean: converts to string and wraps with name field</li>
+     *   <li>Object with contactId: extracts just the contact ID as an integer</li>
+     *   <li>Number: uses the number directly as the contact ID</li>
      * </ul>
      * </p>
      *
      * @param value the attendees value (expected to be a List)
-     * @return transformed attendees list for API
+     * @return array of contact IDs for API (e.g., [91, 73])
      */
     private Object transformAttendeesToApi(Object value) {
         if (value instanceof List) {
@@ -355,33 +355,23 @@ public class ActivityService extends AbstractCrudService<Object> {
             List<?> attendeeList = (List<?>) value;
             return attendeeList.stream()
                 .map(attendee -> {
-                    Map<String, Object> formatted = new HashMap<>();
-
-                    // Handle object format: {"contactId": 123}
+                    // Handle object format: {"contactId": 123} -> extract just the ID
                     if (attendee instanceof Map) {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> attendeeMap = (Map<String, Object>) attendee;
                         if (attendeeMap.containsKey("contactId")) {
-                            formatted.put("contact_id", attendeeMap.get("contactId"));
+                            return attendeeMap.get("contactId");
                         }
-                        // Copy other properties as-is
-                        attendeeMap.forEach((k, v) -> {
-                            if (!"contactId".equals(k)) {
-                                formatted.put(k, v);
-                            }
-                        });
                     }
-                    // Handle string format: "John Doe"
-                    else if (attendee instanceof String) {
-                        formatted.put("name", attendee);
-                    }
-                    // Handle other types by converting to string
-                    else {
-                        formatted.put("name", attendee.toString());
+                    // Handle number format: 123 -> use directly
+                    else if (attendee instanceof Number) {
+                        return attendee;
                     }
 
-                    return formatted;
+                    // If we can't extract a contact ID, return null (will be filtered out)
+                    return null;
                 })
+                .filter(id -> id != null)
                 .toList();
         }
         return value;

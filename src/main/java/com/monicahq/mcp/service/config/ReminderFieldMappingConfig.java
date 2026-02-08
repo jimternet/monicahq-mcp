@@ -37,30 +37,32 @@ public class ReminderFieldMappingConfig implements FieldMappingConfig {
     /**
      * Field mappings from camelCase (client) to snake_case (API).
      */
-    private static final Map<String, String> TO_API_MAPPINGS = Map.of(
-        "contactId", "contact_id",
-        "initialDate", "initial_date",
-        "nextExpectedDate", "next_expected_date",
-        "lastTriggered", "last_triggered"
+    private static final Map<String, String> TO_API_MAPPINGS = Map.ofEntries(
+        Map.entry("contactId", "contact_id"),
+        Map.entry("initialDate", "initial_date"),
+        Map.entry("frequencyNumber", "frequency_number"),
+        Map.entry("nextExpectedDate", "next_expected_date"),
+        Map.entry("lastTriggered", "last_triggered")
     );
 
     /**
      * Field mappings from snake_case (API) to camelCase (client).
      */
-    private static final Map<String, String> FROM_API_MAPPINGS = Map.of(
-        "contact_id", "contactId",
-        "initial_date", "initialDate",
-        "next_expected_date", "nextExpectedDate",
-        "last_triggered", "lastTriggered",
-        "created_at", "createdAt",
-        "updated_at", "updatedAt"
+    private static final Map<String, String> FROM_API_MAPPINGS = Map.ofEntries(
+        Map.entry("contact_id", "contactId"),
+        Map.entry("initial_date", "initialDate"),
+        Map.entry("frequency_number", "frequencyNumber"),
+        Map.entry("next_expected_date", "nextExpectedDate"),
+        Map.entry("last_triggered", "lastTriggered"),
+        Map.entry("created_at", "createdAt"),
+        Map.entry("updated_at", "updatedAt")
     );
 
     /**
      * Required fields for Reminder creation.
      * Note: title requires additional non-empty string validation in the service.
      */
-    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "title", "initialDate");
+    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "title", "initialDate", "frequencyType", "frequencyNumber");
 
     /**
      * Fields that can be used as filters in list operations.
