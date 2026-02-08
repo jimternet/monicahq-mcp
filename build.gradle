@@ -28,12 +28,14 @@ ext {
 	set('nettyVersion', '4.1.129.Final')
 	// Tomcat - fixes path traversal and escape sequence vulnerabilities
 	set('tomcatVersion', '10.1.47')
-	// Logback - fixes arbitrary code execution vulnerability
-	set('logbackVersion', '1.5.19')
+	// Logback - fixes arbitrary code execution vulnerability (CVE-2026-1225)
+	set('logbackVersion', '1.5.25')
 	// Commons Lang - fixes DoS via uncontrolled recursion
 	set('commonsLang3Version', '3.18.0')
 	// Rhino - fixes DoS vulnerability in toFixed()
 	set('rhinoVersion', '1.7.14.1')
+	// AssertJ - fixes XML External Entity (XXE) vulnerability (CVE-2026-24400)
+	set('assertjVersion', '3.27.7')
 }
 
 // Specify main class for Spring Boot
@@ -94,6 +96,9 @@ dependencyManagement {
 
 		// Rhino - override to patched version (fixes DoS in toFixed())
 		dependency "org.mozilla:rhino:${rhinoVersion}"
+
+		// AssertJ - override to patched version (fixes XXE vulnerability)
+		dependency "org.assertj:assertj-core:${assertjVersion}"
 	}
 }
 
