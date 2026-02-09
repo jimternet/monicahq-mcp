@@ -170,6 +170,23 @@ public class ContactService extends AbstractCrudService<Contact> {
                         Object value = existingData.get("is_deceased_date_known");
                         updateData.put("isDeceasedDateKnown", value != null ? value : false);
                     }
+                    // Add missing required fields per OpenAPI spec (lines 1195-1202)
+                    if (!updateData.containsKey("isPartial")) {
+                        Object value = existingData.get("is_partial");
+                        updateData.put("isPartial", value != null ? value : false);
+                    }
+                    if (!updateData.containsKey("birthdateIsAgeBased")) {
+                        Object value = existingData.get("birthdate_is_age_based");
+                        updateData.put("birthdateIsAgeBased", value != null ? value : false);
+                    }
+                    if (!updateData.containsKey("deceasedDateIsAgeBased")) {
+                        Object value = existingData.get("deceased_date_is_age_based");
+                        updateData.put("deceasedDateIsAgeBased", value != null ? value : false);
+                    }
+                    if (!updateData.containsKey("deceasedDateIsYearUnknown")) {
+                        Object value = existingData.get("deceased_date_is_year_unknown");
+                        updateData.put("deceasedDateIsYearUnknown", value != null ? value : false);
+                    }
 
                     // Validate that we have required fields
                     validateContactUpdateArguments(updateData);
@@ -177,6 +194,38 @@ public class ContactService extends AbstractCrudService<Contact> {
                     Map<String, Object> apiRequest = mapToApiFormat(updateData);
 
                     log.info("Sending update request for contact {} with data: {}", contactId, apiRequest);
+                    log.debug("===== CONTACT UPDATE DEBUG =====");
+                    log.debug("Contact ID: {}", contactId);
+                    log.debug("Original update arguments: {}", arguments);
+                    log.debug("Merged updateData (before API mapping): {}", updateData);
+                    log.debug("API request payload (after mapToApiFormat): {}", apiRequest);
+                    log.debug("Birthdate-related fields in payload:");
+                    log.debug("  - birthdate_year: {} (type: {})",
+                        apiRequest.get("birthdate_year"),
+                        apiRequest.get("birthdate_year") != null ? apiRequest.get("birthdate_year").getClass().getSimpleName() : "null");
+                    log.debug("  - birthdate_month: {} (type: {})",
+                        apiRequest.get("birthdate_month"),
+                        apiRequest.get("birthdate_month") != null ? apiRequest.get("birthdate_month").getClass().getSimpleName() : "null");
+                    log.debug("  - birthdate_day: {} (type: {})",
+                        apiRequest.get("birthdate_day"),
+                        apiRequest.get("birthdate_day") != null ? apiRequest.get("birthdate_day").getClass().getSimpleName() : "null");
+                    log.debug("  - is_birthdate_known: {} (type: {})",
+                        apiRequest.get("is_birthdate_known"),
+                        apiRequest.get("is_birthdate_known") != null ? apiRequest.get("is_birthdate_known").getClass().getSimpleName() : "null");
+                    log.debug("Required boolean fields in payload:");
+                    log.debug("  - is_partial: {} (type: {})",
+                        apiRequest.get("is_partial"),
+                        apiRequest.get("is_partial") != null ? apiRequest.get("is_partial").getClass().getSimpleName() : "null");
+                    log.debug("  - birthdate_is_age_based: {} (type: {})",
+                        apiRequest.get("birthdate_is_age_based"),
+                        apiRequest.get("birthdate_is_age_based") != null ? apiRequest.get("birthdate_is_age_based").getClass().getSimpleName() : "null");
+                    log.debug("  - deceased_date_is_age_based: {} (type: {})",
+                        apiRequest.get("deceased_date_is_age_based"),
+                        apiRequest.get("deceased_date_is_age_based") != null ? apiRequest.get("deceased_date_is_age_based").getClass().getSimpleName() : "null");
+                    log.debug("  - deceased_date_is_year_unknown: {} (type: {})",
+                        apiRequest.get("deceased_date_is_year_unknown"),
+                        apiRequest.get("deceased_date_is_year_unknown") != null ? apiRequest.get("deceased_date_is_year_unknown").getClass().getSimpleName() : "null");
+                    log.debug("================================");
 
                     return monicaClient.put("/contacts/" + contactId, apiRequest)
                         .map(this::formatSingleResponse)
@@ -505,17 +554,18 @@ public class ContactService extends AbstractCrudService<Contact> {
 
         arguments.forEach((key, value) -> {
             if ("birthdate".equals(key)) {
-                // MonicaHQ API expects day, month, year as integers instead of YYYY-MM-DD
+                // MonicaHQ API expects birthdate_day, birthdate_month, birthdate_year as integers
                 if (value != null && !value.toString().trim().isEmpty()) {
                     try {
                         String birthdateStr = value.toString();
                         String[] parts = birthdateStr.split("-");
                         if (parts.length == 3) {
                             // Convert to integers - Monica API requires integers not strings
-                            apiRequest.put("year", Integer.parseInt(parts[0]));
-                            apiRequest.put("month", Integer.parseInt(parts[1]));
-                            apiRequest.put("day", Integer.parseInt(parts[2]));
-                            log.info("Converted birthdate {} to year={}, month={}, day={}",
+                            // Field names must have "birthdate_" prefix per OpenAPI spec
+                            apiRequest.put("birthdate_year", Integer.parseInt(parts[0]));
+                            apiRequest.put("birthdate_month", Integer.parseInt(parts[1]));
+                            apiRequest.put("birthdate_day", Integer.parseInt(parts[2]));
+                            log.info("Converted birthdate {} to birthdate_year={}, birthdate_month={}, birthdate_day={}",
                                 birthdateStr, parts[0], parts[1], parts[2]);
                         } else {
                             log.warn("Invalid birthdate format: {}, expected YYYY-MM-DD", birthdateStr);
@@ -530,6 +580,13 @@ public class ContactService extends AbstractCrudService<Contact> {
                 apiRequest.put(apiKey, value);
             }
         });
+
+        // Add required boolean fields with defaults if not present
+        // These fields are required by Monica API but often not provided in updates
+        apiRequest.putIfAbsent("is_partial", false);
+        apiRequest.putIfAbsent("birthdate_is_age_based", false);
+        apiRequest.putIfAbsent("deceased_date_is_age_based", false);
+        apiRequest.putIfAbsent("deceased_date_is_year_unknown", false);
 
         return apiRequest;
     }

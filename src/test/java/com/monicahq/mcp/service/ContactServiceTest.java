@@ -1362,9 +1362,9 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).post(eq("/contacts"), argThat(data ->
-                Integer.valueOf(1990).equals(data.get("year")) &&
-                Integer.valueOf(5).equals(data.get("month")) &&
-                Integer.valueOf(15).equals(data.get("day"))
+                Integer.valueOf(1990).equals(data.get("birthdate_year")) &&
+                Integer.valueOf(5).equals(data.get("birthdate_month")) &&
+                Integer.valueOf(15).equals(data.get("birthdate_day"))
             ));
         }
 
@@ -1385,9 +1385,9 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).post(eq("/contacts"), argThat(data ->
-                Integer.valueOf(2001).equals(data.get("year")) &&
-                Integer.valueOf(3).equals(data.get("month")) &&
-                Integer.valueOf(7).equals(data.get("day"))
+                Integer.valueOf(2001).equals(data.get("birthdate_year")) &&
+                Integer.valueOf(3).equals(data.get("birthdate_month")) &&
+                Integer.valueOf(7).equals(data.get("birthdate_day"))
             ));
         }
 
@@ -1408,9 +1408,9 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).post(eq("/contacts"), argThat(data ->
-                Integer.valueOf(1985).equals(data.get("year")) &&
-                Integer.valueOf(12).equals(data.get("month")) &&
-                Integer.valueOf(31).equals(data.get("day"))
+                Integer.valueOf(1985).equals(data.get("birthdate_year")) &&
+                Integer.valueOf(12).equals(data.get("birthdate_month")) &&
+                Integer.valueOf(31).equals(data.get("birthdate_day"))
             ));
         }
 
@@ -1431,9 +1431,9 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).post(eq("/contacts"), argThat(data ->
-                Integer.valueOf(2000).equals(data.get("year")) &&
-                Integer.valueOf(1).equals(data.get("month")) &&
-                Integer.valueOf(1).equals(data.get("day"))
+                Integer.valueOf(2000).equals(data.get("birthdate_year")) &&
+                Integer.valueOf(1).equals(data.get("birthdate_month")) &&
+                Integer.valueOf(1).equals(data.get("birthdate_day"))
             ));
         }
 
@@ -1454,9 +1454,9 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).post(eq("/contacts"), argThat(data ->
-                !data.containsKey("year") &&
-                !data.containsKey("month") &&
-                !data.containsKey("day")
+                !data.containsKey("birthdate_year") &&
+                !data.containsKey("birthdate_month") &&
+                !data.containsKey("birthdate_day")
             ));
         }
 
@@ -1477,9 +1477,9 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).post(eq("/contacts"), argThat(data ->
-                !data.containsKey("year") &&
-                !data.containsKey("month") &&
-                !data.containsKey("day")
+                !data.containsKey("birthdate_year") &&
+                !data.containsKey("birthdate_month") &&
+                !data.containsKey("birthdate_day")
             ));
         }
 
@@ -1500,9 +1500,9 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).post(eq("/contacts"), argThat(data ->
-                !data.containsKey("year") &&
-                !data.containsKey("month") &&
-                !data.containsKey("day")
+                !data.containsKey("birthdate_year") &&
+                !data.containsKey("birthdate_month") &&
+                !data.containsKey("birthdate_day")
             ));
         }
 
@@ -1523,9 +1523,33 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).post(eq("/contacts"), argThat(data ->
-                Integer.valueOf(2000).equals(data.get("year")) &&
-                Integer.valueOf(2).equals(data.get("month")) &&
-                Integer.valueOf(29).equals(data.get("day"))
+                Integer.valueOf(2000).equals(data.get("birthdate_year")) &&
+                Integer.valueOf(2).equals(data.get("birthdate_month")) &&
+                Integer.valueOf(29).equals(data.get("birthdate_day"))
+            ));
+        }
+
+        @Test
+        @DisplayName("adds required boolean fields with defaults")
+        void birthdate_AddsRequiredBooleanFields() {
+            // Given
+            Map<String, Object> arguments = new HashMap<>();
+            arguments.put("firstName", "John");
+            arguments.put("genderId", 1);
+            arguments.put("birthdate", "1990-05-15");
+
+            Map<String, Object> apiResponse = createSingleEntityResponse(contactBuilder().build());
+            when(monicaClient.post(eq("/contacts"), any())).thenReturn(Mono.just(apiResponse));
+
+            // When
+            contactService.createContact(arguments).block();
+
+            // Then - verify required boolean fields are added
+            verify(monicaClient).post(eq("/contacts"), argThat(data ->
+                Boolean.FALSE.equals(data.get("is_partial")) &&
+                Boolean.FALSE.equals(data.get("birthdate_is_age_based")) &&
+                Boolean.FALSE.equals(data.get("deceased_date_is_age_based")) &&
+                Boolean.FALSE.equals(data.get("deceased_date_is_year_unknown"))
             ));
         }
     }
