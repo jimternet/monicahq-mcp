@@ -40,6 +40,7 @@ public class ReminderFieldMappingConfig implements FieldMappingConfig {
     private static final Map<String, String> TO_API_MAPPINGS = Map.ofEntries(
         Map.entry("contactId", "contact_id"),
         Map.entry("initialDate", "initial_date"),
+        Map.entry("frequencyType", "frequency_type"),
         Map.entry("frequencyNumber", "frequency_number"),
         Map.entry("nextExpectedDate", "next_expected_date"),
         Map.entry("lastTriggered", "last_triggered")
@@ -51,6 +52,7 @@ public class ReminderFieldMappingConfig implements FieldMappingConfig {
     private static final Map<String, String> FROM_API_MAPPINGS = Map.ofEntries(
         Map.entry("contact_id", "contactId"),
         Map.entry("initial_date", "initialDate"),
+        Map.entry("frequency_type", "frequencyType"),
         Map.entry("frequency_number", "frequencyNumber"),
         Map.entry("next_expected_date", "nextExpectedDate"),
         Map.entry("last_triggered", "lastTriggered"),
@@ -110,5 +112,14 @@ public class ReminderFieldMappingConfig implements FieldMappingConfig {
     @Override
     public Map<String, String> getQueryParamMappings() {
         return QUERY_PARAM_MAPPINGS;
+    }
+
+    @Override
+    public Map<String, Object> getCreateDefaults() {
+        // Default frequency_number to 1 and frequency_type to "one_time" if not provided (required by Monica API)
+        return Map.of(
+            "frequencyNumber", 1,
+            "frequencyType", "one_time"
+        );
     }
 }

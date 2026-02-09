@@ -60,6 +60,10 @@ public class ContactFieldService extends AbstractCrudService<Object> {
     /**
      * Creates a new contact field.
      * <p>
+     * Note: Uses the global /contactfields endpoint with contact_id in the request body.
+     * The nested endpoint /contacts/{id}/contactfields POST returns 405 Method Not Allowed.
+     * </p>
+     * <p>
      * Required arguments:
      * <ul>
      *   <li>contactId - The ID of the contact this field belongs to</li>
@@ -76,6 +80,7 @@ public class ContactFieldService extends AbstractCrudService<Object> {
         if (arguments != null && !arguments.isEmpty()) {
             validateRequiredString(arguments, "data");
         }
+        // Use the base create() method which uses /contactfields from the config
         return create(arguments);
     }
 

@@ -63,6 +63,8 @@ class DebtServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 42L);
         arguments.put("amount", "100.00");
+        arguments.put("inDebt", "yes");
+        arguments.put("status", "inprogress");
 
         when(monicaClient.post(eq("/debts"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted debt JSON");

@@ -210,15 +210,15 @@ public class ActivityService extends AbstractCrudService<Object> {
     // ========================================================================================
 
     /**
-     * Validates activity creation arguments with special attendees handling.
+     * Validates activity creation arguments with special attendees/contactIds handling.
      * <p>
      * The base class validates required fields presence, but activities need
      * additional validation:
      * <ul>
      *   <li>summary must be a non-empty string</li>
-     *   <li>attendees must be an array</li>
-     *   <li>attendees array cannot be empty</li>
-     *   <li>each attendee must be a string or object with contactId</li>
+     *   <li>attendees OR contactIds must be provided (at least one)</li>
+     *   <li>the contact list array cannot be empty</li>
+     *   <li>each attendee must be a string, number, or object with contactId</li>
      * </ul>
      * </p>
      *
@@ -229,43 +229,50 @@ public class ActivityService extends AbstractCrudService<Object> {
         // Validate summary is a non-empty string
         validateRequiredString(arguments, "summary");
 
-        // Validate attendees format (beyond just presence check)
-        Object attendees = arguments.get("attendees");
-        if (attendees == null) {
-            throw new IllegalArgumentException("attendees is required");
+        // Accept either 'attendees' or 'contactIds' field name
+        Object contacts = arguments.get("attendees");
+        String fieldName = "attendees";
+
+        if (contacts == null) {
+            contacts = arguments.get("contactIds");
+            fieldName = "contactIds";
         }
 
-        if (attendees instanceof List) {
+        if (contacts == null) {
+            throw new IllegalArgumentException("Either 'attendees' or 'contactIds' is required");
+        }
+
+        if (contacts instanceof List) {
             @SuppressWarnings("unchecked")
-            List<?> attendeeList = (List<?>) attendees;
-            if (attendeeList.isEmpty()) {
-                throw new IllegalArgumentException("attendees cannot be empty");
+            List<?> contactList = (List<?>) contacts;
+            if (contactList.isEmpty()) {
+                throw new IllegalArgumentException(fieldName + " cannot be empty");
             }
 
-            // Validate each attendee format
-            for (Object attendee : attendeeList) {
-                if (attendee instanceof Map) {
+            // Validate each contact format
+            for (Object contact : contactList) {
+                if (contact instanceof Map) {
                     // Object format validation - should have contactId
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> attendeeMap = (Map<String, Object>) attendee;
-                    if (!attendeeMap.containsKey("contactId")) {
-                        throw new IllegalArgumentException("Invalid attendees format: object must contain 'contactId' field");
+                    Map<String, Object> contactMap = (Map<String, Object>) contact;
+                    if (!contactMap.containsKey("contactId")) {
+                        throw new IllegalArgumentException("Invalid " + fieldName + " format: object must contain 'contactId' field");
                     }
-                } else if (attendee instanceof String) {
+                } else if (contact instanceof String) {
                     // String format validation - should not be empty
-                    if (((String) attendee).trim().isEmpty()) {
-                        throw new IllegalArgumentException("Invalid attendees format: attendee name cannot be empty");
+                    if (((String) contact).trim().isEmpty()) {
+                        throw new IllegalArgumentException("Invalid " + fieldName + " format: contact name cannot be empty");
                     }
-                } else if (attendee instanceof Number || attendee instanceof Boolean) {
-                    // Numbers and booleans are allowed - will be converted to string
+                } else if (contact instanceof Number || contact instanceof Boolean) {
+                    // Numbers and booleans are allowed - will be converted to contact IDs
                     continue;
                 } else {
                     // Other types are not allowed
-                    throw new IllegalArgumentException("Invalid attendees format: attendee must be a string or object with contactId, got: " + attendee.getClass().getSimpleName());
+                    throw new IllegalArgumentException("Invalid " + fieldName + " format: contact must be a string, number, or object with contactId, got: " + contact.getClass().getSimpleName());
                 }
             }
         } else {
-            throw new IllegalArgumentException("attendees must be an array");
+            throw new IllegalArgumentException(fieldName + " must be an array");
         }
     }
 
@@ -288,8 +295,12 @@ public class ActivityService extends AbstractCrudService<Object> {
         Map<String, Object> apiRequest = new HashMap<>();
 
         arguments.forEach((key, value) -> {
-            if ("attendees".equals(key)) {
+            // Handle both 'attendees' and 'contactIds' field names (map both to 'contacts')
+            if ("attendees".equals(key) || "contactIds".equals(key)) {
                 apiRequest.put("contacts", transformAttendeesToApi(value));
+            } else if ("happenedAt".equals(key)) {
+                // Monica API expects date-only format (Y-m-d) for happened_at, not datetime
+                apiRequest.put("happened_at", convertToDateOnly(value));
             } else {
                 // Use parent's mapping for other fields
                 String apiKey = getFieldMappingConfig().getToApiMappings().getOrDefault(key, key);
@@ -298,6 +309,27 @@ public class ActivityService extends AbstractCrudService<Object> {
         });
 
         return apiRequest;
+    }
+
+    /**
+     * Converts a datetime value to date-only format (YYYY-MM-DD).
+     * Monica API expects happened_at in Y-m-d format, not ISO datetime.
+     *
+     * @param value the date/datetime value (String or LocalDateTime)
+     * @return date-only string in YYYY-MM-DD format
+     */
+    private String convertToDateOnly(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        String strValue = value.toString();
+        // If it's an ISO datetime like "2026-02-08T10:00:00Z", extract just the date part
+        if (strValue.contains("T")) {
+            return strValue.substring(0, strValue.indexOf("T"));
+        }
+        // If it's already date-only, return as-is
+        return strValue;
     }
 
     /**

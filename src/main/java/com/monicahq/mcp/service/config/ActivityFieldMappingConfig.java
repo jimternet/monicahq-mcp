@@ -38,12 +38,13 @@ public class ActivityFieldMappingConfig implements FieldMappingConfig {
 
     /**
      * Field mappings from camelCase (client) to snake_case (API).
-     * Note: 'attendees' requires custom transformation in ActivityService.
+     * Note: 'attendees' and 'contactIds' both require custom transformation in ActivityService.
      */
-    private static final Map<String, String> TO_API_MAPPINGS = Map.of(
-        "happenedAt", "happened_at",
-        "activityTypeId", "activity_type_id",
-        "attendees", "contacts"
+    private static final Map<String, String> TO_API_MAPPINGS = Map.ofEntries(
+        Map.entry("happenedAt", "happened_at"),
+        Map.entry("activityTypeId", "activity_type_id"),
+        Map.entry("attendees", "contacts"),
+        Map.entry("contactIds", "contacts")
     );
 
     /**

@@ -60,6 +60,7 @@ public class ConversationService extends AbstractCrudService<Object> {
      * <ul>
      *   <li>contactId - The ID of the contact associated with the conversation</li>
      *   <li>happenedAt - The date when the conversation happened</li>
+     *   <li>contactFieldTypeId - The type of conversation (defaults to 1)</li>
      * </ul>
      * </p>
      *

@@ -58,7 +58,8 @@ public class MonicaHqClient {
     @CircuitBreaker(name = "monicaApi", fallbackMethod = "fallbackResponse")
     @Retry(name = "monicaApi")
     public Mono<Map<String, Object>> post(String endpoint, Map<String, Object> requestBody) {
-        log.debug("POST request to MonicaHQ API: {} with body: {}", endpoint, requestBody);
+        log.info("POST request to MonicaHQ API: {}", endpoint);
+        log.info("Request body: {}", requestBody);
 
         WebClient.ResponseSpec responseSpec = webClient
             .post()
@@ -74,7 +75,8 @@ public class MonicaHqClient {
     @CircuitBreaker(name = "monicaApi", fallbackMethod = "fallbackResponse")
     @Retry(name = "monicaApi")
     public Mono<Map<String, Object>> put(String endpoint, Map<String, Object> requestBody) {
-        log.debug("PUT request to MonicaHQ API: {} with body: {}", endpoint, requestBody);
+        log.info("PUT request to MonicaHQ API: {}", endpoint);
+        log.info("Request body: {}", requestBody);
 
         WebClient.ResponseSpec responseSpec = webClient
             .put()
@@ -119,8 +121,17 @@ public class MonicaHqClient {
         return responseSpec
             .bodyToMono(RESPONSE_TYPE)
             .timeout(timeout)
-            .doOnSuccess(response -> log.debug("{} successful for endpoint: {}", method, endpoint))
-            .doOnError(error -> log.error("{} failed for endpoint {}: {}", method, endpoint, error.getMessage()));
+            .doOnSuccess(response -> log.info("{} successful for endpoint: {}", method, endpoint))
+            .doOnError(error -> {
+                log.error("===== {} FAILED =====", method);
+                log.error("Endpoint: {}", endpoint);
+                log.error("Error Type: {}", error.getClass().getName());
+                log.error("Error Message: {}", error.getMessage());
+                if (error.getCause() != null) {
+                    log.error("Root Cause: {}", error.getCause().getMessage());
+                }
+                log.error("========================");
+            });
     }
 
     // Circuit breaker fallback

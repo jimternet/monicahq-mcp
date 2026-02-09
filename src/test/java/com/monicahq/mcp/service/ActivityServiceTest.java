@@ -85,16 +85,17 @@ class ActivityServiceTest extends ServiceTestBase {
 
         verify(monicaClient).post(eq("/activities"), argThat(data ->
             "Team meeting".equals(data.get("summary")) &&
-            data.containsKey("attendees")
+            data.containsKey("contacts")
         ));
     }
 
     @Test
-    void createActivity_WithStringAttendees_ReturnsFormattedResponse() {
-        // Given
+    void createActivity_WithIntegerAttendees_ReturnsFormattedResponse() {
+        // Given - Attendees can be raw integers (contact IDs)
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("summary", "Lunch meeting");
-        arguments.put("attendees", List.of("John Doe", "Jane Smith"));
+        arguments.put("attendees", List.of(91, 73));
+        arguments.put("happenedAt", "2025-01-15");
 
         when(monicaClient.post(eq("/activities"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted activity JSON");
@@ -106,11 +107,11 @@ class ActivityServiceTest extends ServiceTestBase {
         assertNotNull(result);
         verify(monicaClient).post(eq("/activities"), argThat(data -> {
             @SuppressWarnings("unchecked")
-            List<Map<String, Object>> attendees = (List<Map<String, Object>>) data.get("attendees");
-            return attendees != null &&
-                   attendees.size() == 2 &&
-                   "John Doe".equals(attendees.get(0).get("name")) &&
-                   "Jane Smith".equals(attendees.get(1).get("name"));
+            List<Integer> contacts = (List<Integer>) data.get("contacts");
+            return contacts != null &&
+                   contacts.size() == 2 &&
+                   Integer.valueOf(91).equals(contacts.get(0)) &&
+                   Integer.valueOf(73).equals(contacts.get(1));
         }));
     }
 
@@ -276,6 +277,7 @@ class ActivityServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("summary", "Meeting");
         arguments.put("attendees", List.of(123, 456));
+        arguments.put("happenedAt", "2025-01-15");
 
         when(monicaClient.post(eq("/activities"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted activity JSON");
@@ -525,7 +527,7 @@ class ActivityServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void updateActivity_WithAttendees_MapsContactIdCorrectly() {
+    void updateActivity_WithAttendees_ExtractsContactIdCorrectly() {
         // Given
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("id", 1L);
@@ -537,13 +539,13 @@ class ActivityServiceTest extends ServiceTestBase {
         // When
         activityService.updateActivity(arguments).block();
 
-        // Then - verify attendees contactId is mapped to contact_id
+        // Then - verify contacts array contains just the contact ID (not an object)
         verify(monicaClient).put(eq("/activities/1"), argThat(data -> {
             @SuppressWarnings("unchecked")
-            List<Map<String, Object>> attendees = (List<Map<String, Object>>) data.get("attendees");
-            return attendees != null &&
-                   attendees.size() == 1 &&
-                   Long.valueOf(10L).equals(attendees.get(0).get("contact_id"));
+            List<?> contacts = (List<?>) data.get("contacts");
+            return contacts != null &&
+                   contacts.size() == 1 &&
+                   Long.valueOf(10L).equals(contacts.get(0));
         }));
     }
 

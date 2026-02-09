@@ -15,12 +15,17 @@
     <root level="WARN">
         <appender-ref ref="STDERR"/>
     </root>
-    
-    <!-- Application logger - only errors -->
-    <logger name="com.monicahq.mcp" level="ERROR" additivity="false">
+
+    <!-- Application logger - INFO level for debugging endpoint failures -->
+    <logger name="com.monicahq.mcp" level="INFO" additivity="false">
         <appender-ref ref="STDERR"/>
     </logger>
-    
+
+    <!-- Monica API Client - detailed logging for errors -->
+    <logger name="com.monicahq.mcp.client" level="INFO" additivity="false">
+        <appender-ref ref="STDERR"/>
+    </logger>
+
     <!-- Spring framework - only errors -->
     <logger name="org.springframework" level="ERROR" additivity="false">
         <appender-ref ref="STDERR"/>

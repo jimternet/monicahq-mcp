@@ -86,10 +86,16 @@ public abstract class AbstractCrudService<T> implements CrudOperations {
                     entityName + " does not support create operations"));
             }
 
-            validateRequiredFields(arguments, config.getRequiredCreateFields());
+            // Validate arguments are present before applying defaults
+            if (arguments == null || arguments.isEmpty()) {
+                throw new IllegalArgumentException(entityName + " arguments cannot be empty");
+            }
 
-            // Apply defaults before mapping to API format
+            // Apply defaults BEFORE validating required fields so defaults can satisfy requirements
             Map<String, Object> dataWithDefaults = applyDefaults(arguments, config.getCreateDefaults());
+
+            validateRequiredFields(dataWithDefaults, config.getRequiredCreateFields());
+
             Map<String, Object> apiRequest = mapToApiFormat(dataWithDefaults);
 
             return monicaClient.post(config.getEndpointPath(), apiRequest)
@@ -537,14 +543,7 @@ public abstract class AbstractCrudService<T> implements CrudOperations {
      * @throws IllegalArgumentException if any required field is missing or null
      */
     protected void validateRequiredFields(Map<String, Object> arguments, Set<String> requiredFields) {
-        FieldMappingConfig config = getFieldMappingConfig();
-        String entityName = config.getEntityName();
-
-        if (arguments == null || arguments.isEmpty()) {
-            throw new IllegalArgumentException(
-                entityName + " arguments cannot be empty");
-        }
-
+        // Note: Null/empty check is done before calling this method (see create() method)
         for (String field : requiredFields) {
             if (!arguments.containsKey(field) || arguments.get(field) == null) {
                 throw new IllegalArgumentException(field + " is required");

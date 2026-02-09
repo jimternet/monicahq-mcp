@@ -91,4 +91,11 @@ public class ConversationFieldMappingConfig implements FieldMappingConfig {
     public List<String> getListFilterFields() {
         return LIST_FILTER_FIELDS;
     }
+
+    @Override
+    public Map<String, Object> getCreateDefaults() {
+        // Default contact_field_type_id to 1 (typically "Email" or first contact field type)
+        // This is required by Monica API
+        return Map.of("contactFieldTypeId", 1);
+    }
 }

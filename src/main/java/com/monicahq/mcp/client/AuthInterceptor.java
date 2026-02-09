@@ -28,14 +28,22 @@ public class AuthInterceptor {
 
     public ExchangeFilterFunction logRequests() {
         return ExchangeFilterFunction.ofRequestProcessor(request -> {
-            log.debug("Request: {} {}", request.method(), request.url());
+            log.info("MonicaHQ API Request: {} {}", request.method(), request.url());
+            request.headers().forEach((name, values) -> {
+                if (!name.equalsIgnoreCase("Authorization")) {
+                    log.debug("  Header: {}: {}", name, values);
+                }
+            });
             return Mono.just(request);
         });
     }
 
     public ExchangeFilterFunction logResponses() {
         return ExchangeFilterFunction.ofResponseProcessor(response -> {
-            log.debug("Response: {} for {}", response.statusCode(), response.request().getURI());
+            log.info("MonicaHQ API Response: {} for {} {}",
+                response.statusCode(),
+                response.request().getMethod(),
+                response.request().getURI());
             return Mono.just(response);
         });
     }
@@ -66,40 +74,51 @@ public class AuthInterceptor {
     }
 
     private Mono<ClientResponse> handleErrorResponse(ClientResponse response) {
-        if (response.statusCode().is4xxClientError()) {
-            log.warn("Client error response: {} for {}", response.statusCode(), response.request().getURI());
-            
-            if (response.statusCode().value() == 401) {
-                log.error("Authentication failed - invalid or expired API token");
-                return Mono.error(new RuntimeException("Authentication failed: Invalid or expired API token"));
-            }
-            
-            if (response.statusCode().value() == 403) {
-                log.error("Access forbidden - insufficient permissions");
-                return Mono.error(new RuntimeException("Access forbidden: Insufficient permissions"));
-            }
-            
-            if (response.statusCode().value() == 404) {
-                log.warn("Resource not found: {}", response.request().getURI());
-                return Mono.error(new RuntimeException("Resource not found: The requested item does not exist in your MonicaHQ account"));
-            }
-            
-            if (response.statusCode().value() == 422) {
-                log.warn("Validation error for request: {}", response.request().getURI());
-                return Mono.error(new RuntimeException("Validation error: Please check the required fields and try again"));
-            }
-            
-            if (response.statusCode().value() == 429) {
-                log.warn("Rate limit exceeded for MonicaHQ API");
-                return Mono.error(new RuntimeException("Rate limit exceeded"));
-            }
+        if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+            // Extract the response body for detailed error logging
+            return response.bodyToMono(String.class)
+                .defaultIfEmpty("")
+                .flatMap(responseBody -> {
+                    String errorType = response.statusCode().is4xxClientError() ? "Client error" : "Server error";
+
+                    log.error("===== MonicaHQ API Error =====");
+                    log.error("Request: {} {}", response.request().getMethod(), response.request().getURI());
+                    log.error("Status Code: {}", response.statusCode().value());
+                    log.error("Response Body: {}", responseBody);
+                    log.error("==============================");
+
+                    // Handle specific error codes with detailed messages
+                    int statusCode = response.statusCode().value();
+                    String errorMessage;
+
+                    switch (statusCode) {
+                        case 401:
+                            errorMessage = "Authentication failed: Invalid or expired API token";
+                            break;
+                        case 403:
+                            errorMessage = "Access forbidden: Insufficient permissions";
+                            break;
+                        case 404:
+                            errorMessage = "Resource not found: The requested item does not exist in your MonicaHQ account";
+                            break;
+                        case 422:
+                            errorMessage = "Validation error from Monica API: " + responseBody;
+                            break;
+                        case 429:
+                            errorMessage = "Rate limit exceeded";
+                            break;
+                        default:
+                            if (response.statusCode().is5xxServerError()) {
+                                errorMessage = "MonicaHQ API server error (" + statusCode + "): " + responseBody;
+                            } else {
+                                errorMessage = errorType + " (" + statusCode + "): " + responseBody;
+                            }
+                    }
+
+                    return Mono.error(new RuntimeException(errorMessage));
+                });
         }
-        
-        if (response.statusCode().is5xxServerError()) {
-            log.error("Server error response: {} for {}", response.statusCode(), response.request().getURI());
-            return Mono.error(new RuntimeException("MonicaHQ API server error: " + response.statusCode()));
-        }
-        
+
         return Mono.just(response);
     }
 

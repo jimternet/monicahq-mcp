@@ -40,17 +40,20 @@ public class DebtFieldMappingConfig implements FieldMappingConfig {
     /**
      * Field mappings from snake_case (API) to camelCase (client).
      */
-    private static final Map<String, String> FROM_API_MAPPINGS = Map.of(
-        "contact_id", "contactId",
-        "in_debt", "inDebt",
-        "created_at", "createdAt",
-        "updated_at", "updatedAt"
+    private static final Map<String, String> FROM_API_MAPPINGS = Map.ofEntries(
+        Map.entry("contact_id", "contactId"),
+        Map.entry("in_debt", "inDebt"),
+        Map.entry("created_at", "createdAt"),
+        Map.entry("updated_at", "updatedAt")
     );
 
     /**
      * Required fields for Debt creation.
+     * Monica API requires contactId and amount.
+     * inDebt defaults to "owed" if not provided.
+     * status is also required by the API.
      */
-    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "amount", "inDebt", "status");
+    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "amount", "status");
 
     /**
      * Fields that can be used as filters in list operations.
@@ -99,5 +102,12 @@ public class DebtFieldMappingConfig implements FieldMappingConfig {
     @Override
     public Map<String, String> getQueryParamMappings() {
         return QUERY_PARAM_MAPPINGS;
+    }
+
+    @Override
+    public Map<String, Object> getCreateDefaults() {
+        // Default in_debt to "yes" (user owes contact) if not provided
+        // Valid values: "yes" (I owe them) or "no" (they owe me)
+        return Map.of("inDebt", "yes");
     }
 }

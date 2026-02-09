@@ -5,8 +5,9 @@
     <!-- Define correlation ID pattern -->
     <property name="CORRELATION_ID_LOG_PATTERN" value="[%X{correlationId:-NO_CORRELATION_ID}]"/>
     
-    <!-- Console appender with structured logging -->
+    <!-- Console appender with structured logging - MUST use stderr for MCP STDIO protocol -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
         <encoder>
             <pattern>%d{ISO8601} ${CORRELATION_ID_LOG_PATTERN} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
@@ -31,9 +32,10 @@
         <discardingThreshold>0</discardingThreshold>
     </appender>
     
-    <!-- JSON structured logging for production -->
+    <!-- JSON structured logging for production - MUST use stderr for MCP STDIO protocol -->
     <springProfile name="production">
         <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <target>System.err</target>
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                 <customFields>{"service":"monicahq-mcp","version":"0.1.0"}</customFields>
                 <includeMdc>true</includeMdc>

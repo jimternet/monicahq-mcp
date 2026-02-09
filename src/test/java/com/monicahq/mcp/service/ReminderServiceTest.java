@@ -333,7 +333,7 @@ class ReminderServiceTest extends ServiceTestBase {
         arguments.put("contactId", 10L);
         arguments.put("title", "Test reminder");
         arguments.put("initialDate", "2024-03-15");
-        arguments.put("frequency_type", "yearly");
+        arguments.put("frequencyType", "yearly");  // Use camelCase as per field mapping config
 
         when(monicaClient.post(eq("/reminders"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted reminder JSON");
@@ -341,7 +341,7 @@ class ReminderServiceTest extends ServiceTestBase {
         // When
         reminderService.createReminder(arguments).block();
 
-        // Then - verify frequency_type passes through unchanged (not in camelCase mapping)
+        // Then - verify frequencyType is mapped to frequency_type for API
         verify(monicaClient).post(eq("/reminders"), argThat(data ->
             "yearly".equals(data.get("frequency_type"))
         ));
@@ -505,9 +505,9 @@ class ReminderServiceTest extends ServiceTestBase {
         assertEquals("2024-03-15", data.get("lastTriggered"));
         assertEquals("2024-01-15T10:00:00Z", data.get("createdAt"));
         assertEquals("2024-01-15T09:00:00Z", data.get("updatedAt"));
+        assertEquals("yearly", data.get("frequencyType"));  // frequency_type is mapped to frequencyType
         // These should pass through unchanged
         assertEquals("Birthday Reminder", data.get("title"));
-        assertEquals("yearly", data.get("frequency_type"));
     }
 
     // ========================================================================================
@@ -1043,9 +1043,9 @@ class ReminderServiceTest extends ServiceTestBase {
         assertEquals("2024-03-15", data.get(0).get("lastTriggered"));
         assertEquals("2024-01-15T10:00:00Z", data.get(0).get("createdAt"));
         assertEquals("2024-01-15T10:00:00Z", data.get(0).get("updatedAt"));
+        assertEquals("yearly", data.get(0).get("frequencyType"));  // frequency_type is mapped to frequencyType
         // These should pass through unchanged
         assertEquals("Reminder with contact", data.get(0).get("title"));
-        assertEquals("yearly", data.get(0).get("frequency_type"));
     }
 
     @Test
