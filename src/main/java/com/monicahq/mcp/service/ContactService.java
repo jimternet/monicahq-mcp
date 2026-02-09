@@ -68,7 +68,7 @@ public class ContactService extends AbstractCrudService<Contact> {
      * <ul>
      *   <li>lastName - The contact's last name</li>
      *   <li>nickname - A nickname for the contact</li>
-     *   <li>birthdate - Birth date in YYYY-MM-DD format</li>
+     *   <li>birthdate - Birth date in YYYY-MM-DD format (full) or MM-DD format (partial, year unknown)</li>
      *   <li>jobTitle - The contact's job title</li>
      *   <li>company - The contact's company</li>
      * </ul>
@@ -110,7 +110,7 @@ public class ContactService extends AbstractCrudService<Contact> {
      * <ul>
      *   <li>firstName - New first name</li>
      *   <li>lastName - New last name</li>
-     *   <li>birthdate - New birth date in YYYY-MM-DD format (auto-sets isBirthdateKnown=true)</li>
+     *   <li>birthdate - New birth date in YYYY-MM-DD format (full) or MM-DD format (partial, year unknown). Auto-sets isBirthdateKnown=true.</li>
      *   <li>jobTitle - New job title</li>
      *   <li>All other contact fields</li>
      * </ul>
@@ -555,20 +555,27 @@ public class ContactService extends AbstractCrudService<Contact> {
         arguments.forEach((key, value) -> {
             if ("birthdate".equals(key)) {
                 // MonicaHQ API expects birthdate_day, birthdate_month, birthdate_year as integers
+                // Supports both full (YYYY-MM-DD) and partial (MM-DD) formats for year-unknown dates
                 if (value != null && !value.toString().trim().isEmpty()) {
                     try {
                         String birthdateStr = value.toString();
                         String[] parts = birthdateStr.split("-");
                         if (parts.length == 3) {
-                            // Convert to integers - Monica API requires integers not strings
-                            // Field names must have "birthdate_" prefix per OpenAPI spec
+                            // Full birthdate: YYYY-MM-DD
                             apiRequest.put("birthdate_year", Integer.parseInt(parts[0]));
                             apiRequest.put("birthdate_month", Integer.parseInt(parts[1]));
                             apiRequest.put("birthdate_day", Integer.parseInt(parts[2]));
-                            log.info("Converted birthdate {} to birthdate_year={}, birthdate_month={}, birthdate_day={}",
+                            log.info("Converted full birthdate {} to birthdate_year={}, birthdate_month={}, birthdate_day={}",
                                 birthdateStr, parts[0], parts[1], parts[2]);
+                        } else if (parts.length == 2) {
+                            // Partial birthdate: MM-DD (year unknown)
+                            // Omit birthdate_year - Monica will auto-set is_year_unknown=true
+                            apiRequest.put("birthdate_month", Integer.parseInt(parts[0]));
+                            apiRequest.put("birthdate_day", Integer.parseInt(parts[1]));
+                            log.info("Converted partial birthdate {} to birthdate_month={}, birthdate_day={} (year unknown)",
+                                birthdateStr, parts[0], parts[1]);
                         } else {
-                            log.warn("Invalid birthdate format: {}, expected YYYY-MM-DD", birthdateStr);
+                            log.warn("Invalid birthdate format: {}, expected YYYY-MM-DD or MM-DD", birthdateStr);
                         }
                     } catch (Exception e) {
                         log.error("Error parsing birthdate {}: {}", value, e.getMessage());

@@ -1552,6 +1552,75 @@ class ContactServiceTest extends ServiceTestBase {
                 Boolean.FALSE.equals(data.get("deceased_date_is_year_unknown"))
             ));
         }
+
+        @Test
+        @DisplayName("parses partial birthdate MM-DD format (year unknown)")
+        void birthdate_ParsesPartialFormat_YearUnknown() {
+            // Given
+            Map<String, Object> arguments = new HashMap<>();
+            arguments.put("firstName", "Liz");
+            arguments.put("genderId", 2);
+            arguments.put("birthdate", "09-17");
+
+            Map<String, Object> apiResponse = createSingleEntityResponse(contactBuilder().build());
+            when(monicaClient.post(eq("/contacts"), any())).thenReturn(Mono.just(apiResponse));
+
+            // When
+            contactService.createContact(arguments).block();
+
+            // Then - verify month/day set, year omitted
+            verify(monicaClient).post(eq("/contacts"), argThat(data ->
+                Integer.valueOf(9).equals(data.get("birthdate_month")) &&
+                Integer.valueOf(17).equals(data.get("birthdate_day")) &&
+                !data.containsKey("birthdate_year")  // Year omitted for partial birthdate
+            ));
+        }
+
+        @Test
+        @DisplayName("partial birthdate with leading zeros parses correctly")
+        void birthdate_PartialFormat_LeadingZeros() {
+            // Given
+            Map<String, Object> arguments = new HashMap<>();
+            arguments.put("firstName", "Test");
+            arguments.put("genderId", 1);
+            arguments.put("birthdate", "03-07");
+
+            Map<String, Object> apiResponse = createSingleEntityResponse(contactBuilder().build());
+            when(monicaClient.post(eq("/contacts"), any())).thenReturn(Mono.just(apiResponse));
+
+            // When
+            contactService.createContact(arguments).block();
+
+            // Then
+            verify(monicaClient).post(eq("/contacts"), argThat(data ->
+                Integer.valueOf(3).equals(data.get("birthdate_month")) &&
+                Integer.valueOf(7).equals(data.get("birthdate_day")) &&
+                !data.containsKey("birthdate_year")
+            ));
+        }
+
+        @Test
+        @DisplayName("partial birthdate December 31st parses correctly")
+        void birthdate_PartialFormat_December31() {
+            // Given
+            Map<String, Object> arguments = new HashMap<>();
+            arguments.put("firstName", "Test");
+            arguments.put("genderId", 1);
+            arguments.put("birthdate", "12-31");
+
+            Map<String, Object> apiResponse = createSingleEntityResponse(contactBuilder().build());
+            when(monicaClient.post(eq("/contacts"), any())).thenReturn(Mono.just(apiResponse));
+
+            // When
+            contactService.createContact(arguments).block();
+
+            // Then
+            verify(monicaClient).post(eq("/contacts"), argThat(data ->
+                Integer.valueOf(12).equals(data.get("birthdate_month")) &&
+                Integer.valueOf(31).equals(data.get("birthdate_day")) &&
+                !data.containsKey("birthdate_year")
+            ));
+        }
     }
 
     // ========================================================================================
