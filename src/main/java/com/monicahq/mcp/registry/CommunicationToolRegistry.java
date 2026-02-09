@@ -101,7 +101,7 @@ public class CommunicationToolRegistry extends AbstractDomainToolRegistry {
         // Conversation CRUD operations (5)
         registerTool(
             "conversation_create",
-            "[Conversation] Create a new conversation",
+            "[Conversation] Create a new conversation. PREREQUISITES: Use contact_list to get a valid contactId, and contact_field_type_list to get a valid contactFieldTypeId before calling this tool.",
             createConversationSchema(),
             CATEGORY
         );

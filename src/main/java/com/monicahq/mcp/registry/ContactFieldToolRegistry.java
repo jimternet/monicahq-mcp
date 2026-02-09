@@ -43,7 +43,7 @@ public class ContactFieldToolRegistry extends AbstractDomainToolRegistry {
         // Contact Field CRUD operations (5)
         registerTool(
             "contact_field_create",
-            "[Contact Field] Create a new contact field",
+            "[Contact Field] Create a new contact field. PREREQUISITES: Use contact_list to get a valid contactId, and contact_field_type_list to get a valid contactFieldTypeId before calling this tool.",
             createContactFieldSchema(),
             CATEGORY
         );
