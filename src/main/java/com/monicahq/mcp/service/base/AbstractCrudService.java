@@ -97,6 +97,8 @@ public abstract class AbstractCrudService<T> implements CrudOperations {
             validateRequiredFields(dataWithDefaults, config.getRequiredCreateFields());
 
             Map<String, Object> apiRequest = mapToApiFormat(dataWithDefaults);
+            log.info("API request for {} create - Endpoint: {}, Payload: {}",
+                entityName, config.getEndpointPath(), apiRequest);
 
             return monicaClient.post(config.getEndpointPath(), apiRequest)
                 .map(this::formatSingleResponse)
