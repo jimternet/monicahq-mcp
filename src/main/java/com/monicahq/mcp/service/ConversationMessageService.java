@@ -79,6 +79,10 @@ public class ConversationMessageService extends AbstractCrudService<Object> {
         log.info("Creating conversation message with arguments: {}", arguments);
 
         try {
+            if (arguments == null || arguments.isEmpty()) {
+                throw new IllegalArgumentException("ConversationMessage arguments cannot be empty");
+            }
+
             validateRequiredFields(arguments, fieldMappingConfig.getRequiredCreateFields());
             Long conversationId = extractConversationId(arguments);
             Map<String, Object> apiRequest = mapToApiFormat(arguments);

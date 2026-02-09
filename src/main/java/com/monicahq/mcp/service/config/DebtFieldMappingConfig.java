@@ -50,10 +50,9 @@ public class DebtFieldMappingConfig implements FieldMappingConfig {
     /**
      * Required fields for Debt creation.
      * Monica API requires contactId and amount.
-     * inDebt defaults to "owed" if not provided.
-     * status is also required by the API.
+     * inDebt and status have defaults if not provided.
      */
-    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "amount", "status");
+    private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "amount");
 
     /**
      * Fields that can be used as filters in list operations.
@@ -108,6 +107,11 @@ public class DebtFieldMappingConfig implements FieldMappingConfig {
     public Map<String, Object> getCreateDefaults() {
         // Default in_debt to "yes" (user owes contact) if not provided
         // Valid values: "yes" (I owe them) or "no" (they owe me)
-        return Map.of("inDebt", "yes");
+        // Default status to "inprogress" if not provided
+        // Valid values: "inprogress" or "complete"
+        return Map.of(
+            "inDebt", "yes",
+            "status", "inprogress"
+        );
     }
 }

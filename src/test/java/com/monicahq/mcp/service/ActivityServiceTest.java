@@ -164,12 +164,13 @@ class ActivityServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("summary", "Meeting");
+        arguments.put("happenedAt", "2026-02-08");
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityService.createActivity(arguments).block();
         });
-        assertEquals("attendees is required", exception.getMessage());
+        assertEquals("Either 'attendees' or 'contactIds' is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -178,13 +179,14 @@ class ActivityServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("summary", "Meeting");
+        arguments.put("happenedAt", "2026-02-08");
         arguments.put("attendees", null);
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityService.createActivity(arguments).block();
         });
-        assertEquals("attendees is required", exception.getMessage());
+        assertEquals("Either 'attendees' or 'contactIds' is required", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 
@@ -238,13 +240,14 @@ class ActivityServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("summary", "Meeting");
+        arguments.put("happenedAt", "2026-02-08");
         arguments.put("attendees", List.of("   "));
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             activityService.createActivity(arguments).block();
         });
-        assertEquals("Invalid attendees format: attendee name cannot be empty", exception.getMessage());
+        assertEquals("Invalid attendees format: contact name cannot be empty", exception.getMessage());
         verifyNoInteractions(monicaClient);
     }
 

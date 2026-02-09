@@ -91,9 +91,10 @@ class DebtServiceTest extends ServiceTestBase {
 
     @Test
     void createDebt_MissingContactId_ThrowsException() {
-        // Given - has other field but no contactId
+        // Given - has other fields but no contactId
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("amount", "50.00");
+        arguments.put("status", "inprogress");
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -120,9 +121,10 @@ class DebtServiceTest extends ServiceTestBase {
 
     @Test
     void createDebt_MissingAmount_ThrowsException() {
-        // Given - has contactId but no amount
+        // Given - has contactId and status but no amount
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 42L);
+        arguments.put("status", "inprogress");
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
