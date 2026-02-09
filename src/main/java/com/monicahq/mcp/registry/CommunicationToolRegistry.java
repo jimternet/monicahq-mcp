@@ -254,18 +254,22 @@ public class CommunicationToolRegistry extends AbstractDomainToolRegistry {
         Map<String, Object> properties = new HashMap<>();
         properties.put("contactId", Map.of(
             "type", "integer",
-            "description", "Associated contact ID"
+            "description", "Associated contact ID - use contact_list to find valid IDs"
         ));
         properties.put("happenedAt", Map.of(
             "type", "string",
             "format", "date-time",
             "description", "Conversation timestamp"
         ));
+        properties.put("contactFieldTypeId", Map.of(
+            "type", "integer",
+            "description", "Contact field type ID (e.g., Email, Phone, Twitter). IMPORTANT: Use contact_field_type_list tool first to get valid IDs from your Monica instance."
+        ));
 
         Map<String, Object> schema = new HashMap<>();
         schema.put("type", "object");
         schema.put("properties", properties);
-        schema.put("required", List.of("contactId", "happenedAt"));
+        schema.put("required", List.of("contactId", "happenedAt", "contactFieldTypeId"));
 
         return schema;
     }

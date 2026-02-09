@@ -61,6 +61,7 @@ class ConversationServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 10L);
         arguments.put("happenedAt", "2024-01-15");
+        arguments.put("contactFieldTypeId", 1);
 
         when(monicaClient.post(eq("/conversations"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted conversation JSON");
@@ -90,6 +91,7 @@ class ConversationServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("happenedAt", "2024-01-15");
+        arguments.put("contactFieldTypeId", 1);
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -105,6 +107,7 @@ class ConversationServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", null);
         arguments.put("happenedAt", "2024-01-15");
+        arguments.put("contactFieldTypeId", 1);
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -119,6 +122,7 @@ class ConversationServiceTest extends ServiceTestBase {
         // Given
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 10L);
+        arguments.put("contactFieldTypeId", 1);
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -134,6 +138,7 @@ class ConversationServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 10L);
         arguments.put("happenedAt", null);
+        arguments.put("contactFieldTypeId", 1);
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -172,6 +177,7 @@ class ConversationServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", "10");
         arguments.put("happenedAt", "2024-01-15");
+        arguments.put("contactFieldTypeId", 1);
 
         when(monicaClient.post(eq("/conversations"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted conversation JSON");
@@ -190,6 +196,7 @@ class ConversationServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 10L);
         arguments.put("happenedAt", "2024-01-15");
+        arguments.put("contactFieldTypeId", 1);
 
         when(monicaClient.post(eq("/conversations"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted conversation JSON");
@@ -210,6 +217,7 @@ class ConversationServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 10L);
         arguments.put("happenedAt", "2024-01-15");
+        arguments.put("contactFieldTypeId", 1);
 
         when(monicaClient.post(eq("/conversations"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted conversation JSON");
@@ -230,6 +238,7 @@ class ConversationServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 10L);
         arguments.put("happenedAt", "2024-01-15");
+        arguments.put("contactFieldTypeId", 1);
         arguments.put("description", "Meeting notes");
 
         when(monicaClient.post(eq("/conversations"), any())).thenReturn(Mono.just(mockApiResponse));
@@ -252,6 +261,7 @@ class ConversationServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 10);
         arguments.put("happenedAt", "2024-01-15");
+        arguments.put("contactFieldTypeId", 1);
 
         when(monicaClient.post(eq("/conversations"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted conversation JSON");

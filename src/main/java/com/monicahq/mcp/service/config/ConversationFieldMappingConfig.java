@@ -54,6 +54,7 @@ public class ConversationFieldMappingConfig implements FieldMappingConfig {
 
     /**
      * Required fields for Conversation creation.
+     * All three fields are required by the Monica API.
      */
     private static final Set<String> REQUIRED_CREATE_FIELDS = Set.of("contactId", "happenedAt", "contactFieldTypeId");
 
@@ -94,8 +95,8 @@ public class ConversationFieldMappingConfig implements FieldMappingConfig {
 
     @Override
     public Map<String, Object> getCreateDefaults() {
-        // Default contact_field_type_id to 1 (typically "Email" or first contact field type)
-        // This is required by Monica API
-        return Map.of("contactFieldTypeId", 1);
+        // No defaults - all fields are required and should be explicitly provided
+        // Users should use contact_field_type_list to find valid contactFieldTypeId values
+        return Map.of();
     }
 }

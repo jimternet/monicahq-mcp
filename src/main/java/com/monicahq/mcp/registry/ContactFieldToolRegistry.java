@@ -127,11 +127,11 @@ public class ContactFieldToolRegistry extends AbstractDomainToolRegistry {
             "properties", Map.of(
                 "contactId", Map.of(
                     "type", "integer",
-                    "description", "Associated contact ID"
+                    "description", "Associated contact ID - use contact_list to find valid IDs"
                 ),
                 "contactFieldTypeId", Map.of(
                     "type", "integer",
-                    "description", "Field type ID - Use contact_field_type_list tool to see available types (email, phone, etc.)"
+                    "description", "Field type ID (e.g., Email, Phone, Twitter). IMPORTANT: Use contact_field_type_list tool first to get valid IDs from your Monica instance."
                 ),
                 "data", Map.of(
                     "type", "string",

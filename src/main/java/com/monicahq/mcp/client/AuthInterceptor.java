@@ -102,7 +102,7 @@ public class AuthInterceptor {
                             errorMessage = "Resource not found: The requested item does not exist in your MonicaHQ account";
                             break;
                         case 422:
-                            errorMessage = "Validation error from Monica API: " + responseBody;
+                            errorMessage = enhanceValidationError(responseBody);
                             break;
                         case 429:
                             errorMessage = "Rate limit exceeded";
@@ -120,6 +120,37 @@ public class AuthInterceptor {
         }
 
         return Mono.just(response);
+    }
+
+    /**
+     * Enhances validation error messages with helpful guidance.
+     * Detects common validation errors and provides actionable suggestions.
+     *
+     * @param responseBody the raw error response from Monica API
+     * @return enhanced error message with guidance
+     */
+    private String enhanceValidationError(String responseBody) {
+        // Check for common validation errors and provide helpful guidance
+        if (responseBody.contains("contact field type id is invalid")) {
+            return "Invalid contactFieldTypeId. " +
+                   "Use the contact_field_type_list tool to see available field types in your Monica instance. " +
+                   "Original error: " + responseBody;
+        }
+
+        if (responseBody.contains("contact id") && responseBody.contains("invalid")) {
+            return "Invalid contactId. " +
+                   "Use the contact_list tool to find valid contact IDs in your Monica instance. " +
+                   "Original error: " + responseBody;
+        }
+
+        if (responseBody.contains("contact id") && responseBody.contains("required")) {
+            return "Missing required field: contactId. " +
+                   "Use the contact_list tool to find a valid contact ID. " +
+                   "Original error: " + responseBody;
+        }
+
+        // Default: return original validation error
+        return "Validation error from Monica API: " + responseBody;
     }
 
     private boolean isValidBearerToken(String token) {
