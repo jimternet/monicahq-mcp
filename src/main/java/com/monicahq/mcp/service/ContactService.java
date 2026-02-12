@@ -551,8 +551,12 @@ public class ContactService extends AbstractCrudService<Contact> {
     @Override
     protected Map<String, Object> mapToApiFormat(Map<String, Object> arguments) {
         Map<String, Object> apiRequest = new HashMap<>();
+        boolean isPartialBirthdate = false;
 
-        arguments.forEach((key, value) -> {
+        for (Map.Entry<String, Object> entry : arguments.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
             if ("birthdate".equals(key)) {
                 // MonicaHQ API expects birthdate_day, birthdate_month, birthdate_year as integers
                 // Supports both full (YYYY-MM-DD) and partial (MM-DD) formats for year-unknown dates
@@ -569,9 +573,9 @@ public class ContactService extends AbstractCrudService<Contact> {
                                 birthdateStr, parts[0], parts[1], parts[2]);
                         } else if (parts.length == 2) {
                             // Partial birthdate: MM-DD (year unknown)
-                            // Omit birthdate_year - Monica will auto-set is_year_unknown=true
                             apiRequest.put("birthdate_month", Integer.parseInt(parts[0]));
                             apiRequest.put("birthdate_day", Integer.parseInt(parts[1]));
+                            isPartialBirthdate = true;
                             log.info("Converted partial birthdate {} to birthdate_month={}, birthdate_day={} (year unknown)",
                                 birthdateStr, parts[0], parts[1]);
                         } else {
@@ -586,7 +590,7 @@ public class ContactService extends AbstractCrudService<Contact> {
                 String apiKey = getFieldMappingConfig().getToApiMappings().getOrDefault(key, key);
                 apiRequest.put(apiKey, value);
             }
-        });
+        }
 
         // Add required boolean fields with defaults if not present
         // These fields are required by Monica API but often not provided in updates
@@ -594,6 +598,14 @@ public class ContactService extends AbstractCrudService<Contact> {
         apiRequest.putIfAbsent("birthdate_is_age_based", false);
         apiRequest.putIfAbsent("deceased_date_is_age_based", false);
         apiRequest.putIfAbsent("deceased_date_is_year_unknown", false);
+
+        // Set birthdate_is_year_unknown to true for partial birthdates (MM-DD format)
+        if (isPartialBirthdate) {
+            apiRequest.put("birthdate_is_year_unknown", true);
+            log.info("Set birthdate_is_year_unknown=true for partial birthdate");
+        } else {
+            apiRequest.putIfAbsent("birthdate_is_year_unknown", false);
+        }
 
         return apiRequest;
     }

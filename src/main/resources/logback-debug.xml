@@ -45,7 +45,13 @@
         <appender-ref ref="STDERR"/>
         <appender-ref ref="DEBUG_FILE"/>
     </logger>
-    
+
+    <!-- MonicaHQ API Client Debug Logger - captures HTTP request payloads -->
+    <logger name="com.monicahq.mcp.client" level="DEBUG" additivity="false">
+        <appender-ref ref="STDERR"/>
+        <appender-ref ref="DEBUG_FILE"/>
+    </logger>
+
     <!-- Spring Framework at INFO level to reduce noise -->
     <logger name="org.springframework" level="INFO"/>
     

@@ -58,7 +58,12 @@ public class ContactFieldMappingConfig implements FieldMappingConfig {
         Map.entry("isBirthdateKnown", "is_birthdate_known"),
         Map.entry("isDeceased", "is_deceased"),
         Map.entry("isDeceasedDateKnown", "is_deceased_date_known"),
-        Map.entry("jobTitle", "job_title")
+        Map.entry("jobTitle", "job_title"),
+        Map.entry("isPartial", "is_partial"),
+        Map.entry("birthdateIsAgeBased", "birthdate_is_age_based"),
+        Map.entry("birthdateIsYearUnknown", "birthdate_is_year_unknown"),
+        Map.entry("deceasedDateIsAgeBased", "deceased_date_is_age_based"),
+        Map.entry("deceasedDateIsYearUnknown", "deceased_date_is_year_unknown")
     );
 
     /**
@@ -73,7 +78,12 @@ public class ContactFieldMappingConfig implements FieldMappingConfig {
         Map.entry("is_deceased_date_known", "isDeceasedDateKnown"),
         Map.entry("job_title", "jobTitle"),
         Map.entry("created_at", "createdAt"),
-        Map.entry("updated_at", "updatedAt")
+        Map.entry("updated_at", "updatedAt"),
+        Map.entry("is_partial", "isPartial"),
+        Map.entry("birthdate_is_age_based", "birthdateIsAgeBased"),
+        Map.entry("birthdate_is_year_unknown", "birthdateIsYearUnknown"),
+        Map.entry("deceased_date_is_age_based", "deceasedDateIsAgeBased"),
+        Map.entry("deceased_date_is_year_unknown", "deceasedDateIsYearUnknown")
     );
 
     /**

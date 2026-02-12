@@ -78,6 +78,20 @@ public class MonicaHqClient {
         log.info("PUT request to MonicaHQ API: {}", endpoint);
         log.info("Request body: {}", requestBody);
 
+        // Enhanced debug logging for HTTP payload inspection
+        log.debug("===== HTTP PUT REQUEST DETAILS =====");
+        log.debug("Endpoint: {}", endpoint);
+        log.debug("Request body keys: {}", requestBody != null ? requestBody.keySet() : "null");
+        if (requestBody != null) {
+            requestBody.forEach((key, value) -> {
+                log.debug("  {} = {} (type: {})",
+                    key,
+                    value,
+                    value != null ? value.getClass().getSimpleName() : "null");
+            });
+        }
+        log.debug("====================================");
+
         WebClient.ResponseSpec responseSpec = webClient
             .put()
             .uri(endpoint)
