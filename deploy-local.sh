@@ -57,7 +57,7 @@ echo ""
 
 # Step 4: Build Docker image
 echo "Step 4: Building Docker image (local tag)..."
-docker build -t monicahq-mcp:local . -q
+docker build --no-cache -t monicahq-mcp:local . -q
 if [ $? -ne 0 ]; then
     echo "❌ Docker build failed"
     exit 1
