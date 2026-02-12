@@ -168,7 +168,13 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
         properties.put("birthdate", Map.of(
             "type", "string",
             "format", "date",
-            "description", "Birthdate in YYYY-MM-DD format (optional, only if isBirthdateKnown=true)"
+            "description", "Birthdate in YYYY-MM-DD format (full) or MM-DD format (partial, year unknown). Use MM-DD format (e.g., '09-17') when you don't know the birth year (optional, only if isBirthdateKnown=true)"
+        ));
+
+        properties.put("birthdateIsYearUnknown", Map.of(
+            "type", "boolean",
+            "description", "Set to true when birth year is unknown (optional - automatically set to true when birthdate is in MM-DD format). Use for partial birthdates where you know month/day but not the year.",
+            "default", false
         ));
 
         properties.put("isDeceased", Map.of(
@@ -264,12 +270,17 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
         properties.put("birthdate", Map.of(
             "type", "string",
             "format", "date",
-            "description", "Birthdate in YYYY-MM-DD format (optional). When provided, isBirthdateKnown will automatically be set to true."
+            "description", "Birthdate in YYYY-MM-DD format (full) or MM-DD format (partial, year unknown). When provided, isBirthdateKnown will automatically be set to true. Use MM-DD format (e.g., '09-17') when you don't know the birth year."
         ));
 
         properties.put("isBirthdateKnown", Map.of(
             "type", "boolean",
             "description", "Whether the birthdate is known (optional - defaults to existing value, automatically set to true when birthdate is provided)"
+        ));
+
+        properties.put("birthdateIsYearUnknown", Map.of(
+            "type", "boolean",
+            "description", "Set to true when birth year is unknown (optional - automatically set to true when birthdate is in MM-DD format). Use for partial birthdates like '09-17' where you know month/day but not the year."
         ));
 
         properties.put("isDeceased", Map.of(
