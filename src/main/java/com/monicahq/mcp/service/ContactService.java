@@ -585,6 +585,27 @@ public class ContactService extends AbstractCrudService<Contact> {
                         log.error("Error parsing birthdate {}: {}", value, e.getMessage());
                     }
                 }
+            } else if ("deceasedDate".equals(key)) {
+                // MonicaHQ API expects deceased_date_day, deceased_date_month, deceased_date_year as integers
+                // Parse YYYY-MM-DD format to separate integer fields
+                if (value != null && !value.toString().trim().isEmpty()) {
+                    try {
+                        String deceasedDateStr = value.toString();
+                        String[] parts = deceasedDateStr.split("-");
+                        if (parts.length == 3) {
+                            // Full deceased date: YYYY-MM-DD
+                            apiRequest.put("deceased_date_year", Integer.parseInt(parts[0]));
+                            apiRequest.put("deceased_date_month", Integer.parseInt(parts[1]));
+                            apiRequest.put("deceased_date_day", Integer.parseInt(parts[2]));
+                            log.info("Converted deceased date {} to deceased_date_year={}, deceased_date_month={}, deceased_date_day={}",
+                                deceasedDateStr, parts[0], parts[1], parts[2]);
+                        } else {
+                            log.warn("Invalid deceased date format: {}, expected YYYY-MM-DD", deceasedDateStr);
+                        }
+                    } catch (Exception e) {
+                        log.error("Error parsing deceased date {}: {}", value, e.getMessage());
+                    }
+                }
             } else {
                 // Use parent's mapping for other fields
                 String apiKey = getFieldMappingConfig().getToApiMappings().getOrDefault(key, key);

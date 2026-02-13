@@ -293,12 +293,18 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
             "description", "Whether the deceased date is known (optional - defaults to existing value)"
         ));
 
+        properties.put("deceasedDate", Map.of(
+            "type", "string",
+            "format", "date",
+            "description", "Death date in YYYY-MM-DD format (optional, only if isDeceasedDateKnown=true)"
+        ));
+
         return Map.of(
             "type", "object",
             "properties", properties,
             "required", List.of("id"),
             "additionalProperties", false,
-            "description", "Update a contact. NOTE: MonicaHQ API will automatically fetch and preserve existing values for all fields not provided in the update."
+            "description", "Update a contact. IMPORTANT: MonicaHQ uses PUT semantics - omitted fields reset to defaults (e.g., boolean fields like isDeceased reset to false). This MCP server automatically preserves existing values for unspecified fields by fetching current data first, but you should still include all relevant fields in a single update call for clarity and to avoid potential race conditions."
         );
     }
 

@@ -77,6 +77,10 @@ public class McpException extends RuntimeException {
         return new McpException(GlobalExceptionHandler.McpErrorCodes.MONICA_API_ERROR, message, details);
     }
 
+    public static McpException monicaApiError(String message, Object details, Throwable cause) {
+        return new McpException(GlobalExceptionHandler.McpErrorCodes.MONICA_API_ERROR, message, details, cause);
+    }
+
     public static McpException monicaConnectionError(String message) {
         return new McpException(GlobalExceptionHandler.McpErrorCodes.MONICA_CONNECTION_ERROR, message);
     }

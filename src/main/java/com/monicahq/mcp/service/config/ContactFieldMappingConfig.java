@@ -58,6 +58,7 @@ public class ContactFieldMappingConfig implements FieldMappingConfig {
         Map.entry("isBirthdateKnown", "is_birthdate_known"),
         Map.entry("isDeceased", "is_deceased"),
         Map.entry("isDeceasedDateKnown", "is_deceased_date_known"),
+        Map.entry("deceasedDate", "deceased_date"),
         Map.entry("jobTitle", "job_title"),
         Map.entry("isPartial", "is_partial"),
         Map.entry("birthdateIsAgeBased", "birthdate_is_age_based"),
