@@ -72,9 +72,23 @@ public class ContactTagService extends AbstractCrudService<Object> {
         try {
             validateAttachArguments(arguments);
             Long contactId = extractContactId(arguments);
-            Map<String, Object> apiRequest = buildTagsRequest(arguments);
+            Long tagId = extractTagId(arguments);
 
-            return monicaClient.post("/contacts/" + contactId + "/setTags", apiRequest)
+            // Fetch tag details to get the tag name (MonicaHQ API expects tag names, not IDs)
+            return monicaClient.get("/tags/" + tagId, null)
+                .flatMap(tagResponse -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> tagData = (Map<String, Object>) tagResponse.get("data");
+                    String tagName = (String) tagData.get("name");
+
+                    log.info("Resolved tag ID {} to name: {}", tagId, tagName);
+
+                    // Build request with tag name instead of ID
+                    Map<String, Object> apiRequest = new HashMap<>();
+                    apiRequest.put("tags", List.of(tagName));
+
+                    return monicaClient.post("/contacts/" + contactId + "/setTags", apiRequest);
+                })
                 .map(this::formatSingleResponse)
                 .doOnSuccess(result -> log.info("Tag attached to contact successfully"))
                 .doOnError(error -> log.error("Failed to attach tag to contact: {}", error.getMessage()));
@@ -132,9 +146,23 @@ public class ContactTagService extends AbstractCrudService<Object> {
 
         try {
             Long contactId = extractContactId(arguments);
-            Map<String, Object> apiRequest = buildTagsRequest(arguments);
+            Long tagId = extractTagId(arguments);
 
-            return monicaClient.put("/contacts/" + contactId + "/setTags", apiRequest)
+            // Fetch tag details to get the tag name (MonicaHQ API expects tag names, not IDs)
+            return monicaClient.get("/tags/" + tagId, null)
+                .flatMap(tagResponse -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> tagData = (Map<String, Object>) tagResponse.get("data");
+                    String tagName = (String) tagData.get("name");
+
+                    log.info("Resolved tag ID {} to name: {}", tagId, tagName);
+
+                    // Build request with tag name instead of ID
+                    Map<String, Object> apiRequest = new HashMap<>();
+                    apiRequest.put("tags", List.of(tagName));
+
+                    return monicaClient.put("/contacts/" + contactId + "/setTags", apiRequest);
+                })
                 .map(this::formatSingleResponse)
                 .doOnSuccess(result -> log.info("Contact tags updated successfully: {}", contactId))
                 .doOnError(error -> log.error("Failed to update contact tags for {}: {}", contactId, error.getMessage()));
