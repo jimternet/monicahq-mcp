@@ -1,6 +1,6 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.5.5'
+	id 'org.springframework.boot' version '4.0.3'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -21,13 +21,8 @@ repositories {
 // Security patch version overrides for vulnerable dependencies
 // See: https://github.com/jimternet/monicahq-mcp/security/dependabot
 ext {
-	// Spring Framework - fixes CVE-2025-41249 (high) and CVE-2025-41254 (medium)
-	// Must be >= 6.2.10 for compatibility with Spring Boot 3.5.5
-	set('springFrameworkVersion', '6.2.12')
-	// Netty - fixes CRLF injection (CVE) and DoS via zip bomb
-	set('nettyVersion', '4.1.129.Final')
-	// Tomcat - fixes path traversal and escape sequence vulnerabilities
-	set('tomcatVersion', '10.1.47')
+	// Netty - Spring Boot 4.0.3 requires Netty 4.2.x (MultiThreadIoEventLoopGroup added in 4.2)
+	set('nettyVersion', '4.2.10.Final')
 	// Logback - fixes arbitrary code execution vulnerability (CVE-2026-1225)
 	set('logbackVersion', '1.5.25')
 	// Commons Lang - fixes DoS via uncontrolled recursion
@@ -47,42 +42,21 @@ springBoot {
 // Uses Spring Dependency Management plugin to enforce these versions across all configurations
 dependencyManagement {
 	dependencies {
-		// Spring Framework - override ALL modules using dependencySet for consistency
-		// This ensures all Spring modules are at the same version to avoid binary incompatibility
-		dependencySet(group: 'org.springframework', version: springFrameworkVersion) {
-			entry 'spring-aop'
-			entry 'spring-beans'
-			entry 'spring-context'
-			entry 'spring-context-support'
-			entry 'spring-core'
-			entry 'spring-expression'
-			entry 'spring-jcl'
-			entry 'spring-messaging'
-			entry 'spring-web'
-			entry 'spring-webflux'
-			entry 'spring-webmvc'
-			entry 'spring-websocket'
-		}
-
 		// Netty - override all modules to patched version (fixes CRLF injection, DoS)
 		dependencySet(group: 'io.netty', version: nettyVersion) {
 			entry 'netty-buffer'
 			entry 'netty-codec'
 			entry 'netty-codec-http'
 			entry 'netty-codec-http2'
+			entry 'netty-codec-http3'
 			entry 'netty-common'
 			entry 'netty-handler'
+			entry 'netty-handler-proxy'
 			entry 'netty-resolver'
+			entry 'netty-resolver-dns'
 			entry 'netty-transport'
 			entry 'netty-transport-native-epoll'
 			entry 'netty-transport-native-unix-common'
-		}
-
-		// Tomcat - override embedded Tomcat modules (fixes path traversal)
-		dependencySet(group: 'org.apache.tomcat.embed', version: tomcatVersion) {
-			entry 'tomcat-embed-core'
-			entry 'tomcat-embed-el'
-			entry 'tomcat-embed-websocket'
 		}
 
 		// Logback - override core logging modules (fixes arbitrary code execution)
@@ -115,8 +89,8 @@ dependencies {
 	implementation 'org.projectlombok:lombok'
 
 	// OpenAPI Documentation (WebFlux variant - CRITICAL for Spring WebFlux)
-	// Note: springdoc 2.8.x is compatible with Spring Boot 3.x; version 3.0.0 requires Spring Boot 4.x
-	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.8'
+	// Note: springdoc 3.x requires Spring Boot 4.x
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.1'
 
 	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

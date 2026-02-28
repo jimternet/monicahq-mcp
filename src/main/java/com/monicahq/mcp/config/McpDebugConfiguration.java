@@ -3,8 +3,6 @@ package com.monicahq.mcp.config;
 import com.monicahq.mcp.util.DebugInfoProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,34 +24,6 @@ public class McpDebugConfiguration {
     private final DebugInfoProvider debugInfoProvider;
     
     private static final boolean DEBUG_MODE = Boolean.parseBoolean(System.getenv().getOrDefault("MCP_DEBUG", "false"));
-
-    /**
-     * Health indicator for MCP server status
-     */
-    @Bean
-    public HealthIndicator mcpHealthIndicator() {
-        return () -> {
-            try {
-                Map<String, Object> healthCheck = debugInfoProvider.getHealthCheck();
-                
-                boolean isHealthy = (Boolean) healthCheck.getOrDefault("memory_healthy", false) &&
-                                  (Boolean) healthCheck.getOrDefault("operation_healthy", false) &&
-                                  (Boolean) healthCheck.getOrDefault("environment_healthy", false);
-                
-                Health.Builder builder = isHealthy ? Health.up() : Health.down();
-                
-                healthCheck.forEach(builder::withDetail);
-                
-                return builder.build();
-                
-            } catch (Exception e) {
-                return Health.down()
-                    .withDetail("error", e.getMessage())
-                    .withDetail("debug_mode", DEBUG_MODE)
-                    .build();
-            }
-        };
-    }
 
     /**
      * Application startup event handler
