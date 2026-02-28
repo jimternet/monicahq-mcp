@@ -81,8 +81,8 @@ public class DomainToolRegistryTest {
             .mapToInt(registry -> registry.getTools().size())
             .sum();
 
-        assertEquals(172, totalTools,
-            "Expected 172 total tools across all domain registries (154 Phase 1 + 17 Phase 2 + 1 introduction tool), but found: " + totalTools);
+        assertEquals(177, totalTools,
+            "Expected 177 total tools across all domain registries (172 previous + 5 journal entry tools), but found: " + totalTools);
     }
 
     @Test
@@ -434,10 +434,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 23 productivity tools (5+1 note + 5+1 task + 5+1 reminder + 5 tag)")
+        @DisplayName("Should register 28 productivity tools (5+1 note + 5+1 task + 5+1 reminder + 5 tag + 5 journal)")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(23, productivityToolRegistry.getToolCount(),
-                "ProductivityToolRegistry should have 23 tools (20 + 3 contact-scoped lists)");
+            assertEquals(28, productivityToolRegistry.getToolCount(),
+                "ProductivityToolRegistry should have 28 tools (23 previous + 5 journal entry tools)");
         }
 
         @Test
@@ -486,6 +486,18 @@ public class DomainToolRegistryTest {
             assertTrue(supportedTools.contains("tag_update"));
             assertTrue(supportedTools.contains("tag_delete"));
             assertTrue(supportedTools.contains("tag_list"));
+        }
+
+        @Test
+        @DisplayName("Should support journal entry tools")
+        void shouldSupportJournalEntryTools() {
+            Set<String> supportedTools = productivityToolRegistry.getSupportedToolNames();
+
+            assertTrue(supportedTools.contains("journal_entry_create"));
+            assertTrue(supportedTools.contains("journal_entry_get"));
+            assertTrue(supportedTools.contains("journal_entry_update"));
+            assertTrue(supportedTools.contains("journal_entry_delete"));
+            assertTrue(supportedTools.contains("journal_entry_list"));
         }
     }
 

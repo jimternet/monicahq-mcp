@@ -1,5 +1,6 @@
 package com.monicahq.mcp.registry;
 
+import com.monicahq.mcp.service.JournalEntryService;
 import com.monicahq.mcp.service.NoteService;
 import com.monicahq.mcp.service.ReminderService;
 import com.monicahq.mcp.service.TagService;
@@ -43,16 +44,19 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
     private final TaskService taskService;
     private final ReminderService reminderService;
     private final TagService tagService;
+    private final JournalEntryService journalEntryService;
 
     public ProductivityToolRegistry(
             NoteService noteService,
             TaskService taskService,
             ReminderService reminderService,
-            TagService tagService) {
+            TagService tagService,
+            JournalEntryService journalEntryService) {
         this.noteService = noteService;
         this.taskService = taskService;
         this.reminderService = reminderService;
         this.tagService = tagService;
+        this.journalEntryService = journalEntryService;
     }
 
     @Override
@@ -226,6 +230,42 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
             createListSchema(),
             CATEGORY
         );
+
+        // Journal Entry CRUD operations (5)
+        registerTool(
+            "journal_entry_create",
+            "[JournalEntry] Create a new journal entry",
+            createJournalEntrySchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "journal_entry_get",
+            "[JournalEntry] Get a journal entry by ID",
+            createIdSchema("Journal Entry ID"),
+            CATEGORY
+        );
+
+        registerTool(
+            "journal_entry_update",
+            "[JournalEntry] Update an existing journal entry",
+            createJournalEntryUpdateSchema(),
+            CATEGORY
+        );
+
+        registerTool(
+            "journal_entry_delete",
+            "[JournalEntry] Delete a journal entry",
+            createIdSchema("Journal Entry ID"),
+            CATEGORY
+        );
+
+        registerTool(
+            "journal_entry_list",
+            "[JournalEntry] List journal entries with pagination",
+            createListSchema(),
+            CATEGORY
+        );
     }
 
     @Override
@@ -261,6 +301,13 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
             case "tag_update" -> tagService.updateTag(arguments);
             case "tag_delete" -> tagService.deleteTag(arguments);
             case "tag_list" -> tagService.listTags(arguments);
+
+            // Journal Entry operations
+            case "journal_entry_create" -> journalEntryService.createJournalEntry(arguments);
+            case "journal_entry_get" -> journalEntryService.getJournalEntry(arguments);
+            case "journal_entry_update" -> journalEntryService.updateJournalEntry(arguments);
+            case "journal_entry_delete" -> journalEntryService.deleteJournalEntry(arguments);
+            case "journal_entry_list" -> journalEntryService.listJournalEntries(arguments);
 
             default -> Mono.error(new UnsupportedOperationException(
                 "Tool '" + toolName + "' is not implemented in " + DOMAIN + " domain registry"));
@@ -433,6 +480,48 @@ public class ProductivityToolRegistry extends AbstractDomainToolRegistry {
      */
     private Map<String, Object> createTagUpdateSchema() {
         return createUpdateSchema(createTagSchema());
+    }
+
+    // ========== Journal Entry Schema Methods ==========
+
+    /**
+     * Creates the schema for journal entry creation.
+     * Journal entries are personal diary/log entries with a title and date.
+     */
+    private Map<String, Object> createJournalEntrySchema() {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("title", Map.of(
+            "type", "string",
+            "description", "Journal entry title (required)"
+        ));
+        properties.put("date", Map.of(
+            "type", "string",
+            "format", "date",
+            "description", "Date of the journal entry in YYYY-MM-DD format (required)"
+        ));
+        properties.put("post", Map.of(
+            "type", "string",
+            "description", "Main content/body of the journal entry (optional)"
+        ));
+        properties.put("journalEntry", Map.of(
+            "type", "string",
+            "description", "Additional notes or reflections (optional)"
+        ));
+
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", List.of("title", "date"));
+
+        return schema;
+    }
+
+    /**
+     * Creates the schema for journal entry updates.
+     * Wraps the create schema with an ID field requirement.
+     */
+    private Map<String, Object> createJournalEntryUpdateSchema() {
+        return createUpdateSchema(createJournalEntrySchema());
     }
 
     // ========== Contact-Scoped List Schema ==========

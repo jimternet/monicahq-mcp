@@ -158,7 +158,22 @@ public class TagService extends AbstractCrudService<Object> {
         log.info("Listing contacts by tag with arguments: {}", arguments);
 
         try {
-            Long tagId = extractId(arguments);
+            // Support "tagId" parameter (as declared in schema) with "id" as fallback
+            Long tagId;
+            if (arguments != null && arguments.containsKey("tagId") && arguments.get("tagId") != null) {
+                Object tagIdVal = arguments.get("tagId");
+                if (tagIdVal instanceof Number) {
+                    tagId = ((Number) tagIdVal).longValue();
+                } else {
+                    try {
+                        tagId = Long.parseLong(tagIdVal.toString().trim());
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Invalid tagId format: " + tagIdVal);
+                    }
+                }
+            } else {
+                tagId = extractId(arguments);
+            }
             Map<String, String> queryParams = buildListQueryParams(arguments);
 
             return monicaClient.get("/tags/" + tagId + "/contacts", queryParams)

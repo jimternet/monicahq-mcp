@@ -83,8 +83,8 @@ public class RelationshipToolRegistry extends AbstractDomainToolRegistry {
 
         registerTool(
             "relationship_list",
-            "[Relationship] List relationships with pagination",
-            createListSchema(),
+            "[Relationship] List relationships for a specific contact",
+            createRelationshipListSchema(),
             CATEGORY
         );
 
@@ -179,5 +179,33 @@ public class RelationshipToolRegistry extends AbstractDomainToolRegistry {
      */
     private Map<String, Object> createRelationshipUpdateSchema() {
         return createUpdateSchema(createRelationshipSchema());
+    }
+
+    /**
+     * Creates the schema for listing relationships by contact.
+     * Monica API's GET /relationships returns 405; relationships are contact-scoped.
+     */
+    private Map<String, Object> createRelationshipListSchema() {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "contactId", Map.of(
+                    "type", "integer",
+                    "description", "Contact ID to list relationships for (required)"
+                ),
+                "page", Map.of(
+                    "type", "integer",
+                    "description", "Page number (default: 1)",
+                    "minimum", 1
+                ),
+                "limit", Map.of(
+                    "type", "integer",
+                    "description", "Number of results per page (default: 10, max: 100)",
+                    "minimum", 1,
+                    "maximum", 100
+                )
+            ),
+            "required", List.of("contactId")
+        );
     }
 }

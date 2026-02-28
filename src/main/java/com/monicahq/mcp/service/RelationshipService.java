@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -122,8 +124,15 @@ public class RelationshipService extends AbstractCrudService<Object> {
     }
 
     /**
-     * Lists relationships with optional pagination.
+     * Lists relationships for a specific contact.
      * <p>
+     * Monica API's GET /relationships returns 405 Method Not Allowed.
+     * Relationships are contact-scoped; use GET /contacts/{contactId}/relationships.
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The ID of the contact to list relationships for</li>
+     * </ul>
      * Optional arguments:
      * <ul>
      *   <li>page - Page number (default: 1)</li>
@@ -131,10 +140,42 @@ public class RelationshipService extends AbstractCrudService<Object> {
      * </ul>
      * </p>
      *
-     * @param arguments the list arguments including optional pagination
+     * @param arguments the list arguments including contactId and optional pagination
      * @return a Mono containing the list of relationships and pagination metadata
      */
     public Mono<Map<String, Object>> listRelationships(Map<String, Object> arguments) {
-        return list(arguments);
+        if (arguments == null || !arguments.containsKey("contactId") || arguments.get("contactId") == null) {
+            return Mono.error(new IllegalArgumentException("contactId is required to list relationships"));
+        }
+
+        Object contactIdVal = arguments.get("contactId");
+        Long contactId;
+        if (contactIdVal instanceof Number) {
+            contactId = ((Number) contactIdVal).longValue();
+        } else {
+            try {
+                contactId = Long.parseLong(contactIdVal.toString().trim());
+            } catch (NumberFormatException e) {
+                return Mono.error(new IllegalArgumentException("Invalid contactId format: " + contactIdVal));
+            }
+        }
+
+        Map<String, String> queryParams = buildListQueryParams(arguments);
+        return monicaClient.get("/contacts/" + contactId + "/relationships", queryParams)
+            .map(apiResponse -> {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> data = (List<Map<String, Object>>) apiResponse.get("data");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> meta = (Map<String, Object>) apiResponse.get("meta");
+                String formattedContent = contentFormatter.formatListAsEscapedJson(apiResponse);
+
+                Map<String, Object> result = new HashMap<>();
+                result.put("data", data != null ? data : List.of());
+                if (meta != null) {
+                    result.put("meta", meta);
+                }
+                result.put("content", List.of(Map.of("type", "text", "text", formattedContent)));
+                return result;
+            });
     }
 }

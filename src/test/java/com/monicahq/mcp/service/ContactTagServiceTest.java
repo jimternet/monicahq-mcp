@@ -531,14 +531,20 @@ class ContactTagServiceTest extends ServiceTestBase {
 
     @Test
     void detachTag_ValidArgs_ReturnsSuccessMessage() {
-        // Given
+        // Given - new implementation: fetch tags, filter out target, POST remaining
         Map<String, Object> arguments = Map.of(
             "contactId", 10L,
             "tagId", 1L
         );
-        Map<String, Object> deleteResponse = createDeleteResponse(1L);
+        Map<String, Object> currentTagsResponse = new HashMap<>();
+        currentTagsResponse.put("data", List.of(
+            Map.of("id", 1L, "name", "Family"),
+            Map.of("id", 2L, "name", "Work")
+        ));
+        Map<String, Object> setTagsResponse = Map.of("data", List.of(Map.of("id", 2L, "name", "Work")));
 
-        when(monicaClient.delete(eq("/contacts/10/unsetTag/1"))).thenReturn(Mono.just(deleteResponse));
+        when(monicaClient.get(eq("/contacts/10/tags"), isNull())).thenReturn(Mono.just(currentTagsResponse));
+        when(monicaClient.post(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(setTagsResponse));
         when(contentFormatter.formatOperationResult(
             eq("Detach"), eq("Contact Tag"), eq(1L), eq(true), anyString()
         )).thenReturn("Tag detached successfully");
@@ -555,7 +561,12 @@ class ContactTagServiceTest extends ServiceTestBase {
         assertEquals(1, content.size());
         assertEquals("text", content.get(0).get("type"));
 
-        verify(monicaClient).delete(eq("/contacts/10/unsetTag/1"));
+        verify(monicaClient).get(eq("/contacts/10/tags"), isNull());
+        verify(monicaClient).post(eq("/contacts/10/setTags"), argThat(body -> {
+            @SuppressWarnings("unchecked")
+            List<String> tags = (List<String>) ((Map<String, Object>) body).get("tags");
+            return tags != null && tags.size() == 1 && "Work".equals(tags.get(0));
+        }));
     }
 
     @Test
@@ -565,9 +576,12 @@ class ContactTagServiceTest extends ServiceTestBase {
             "contactId", "42",
             "tagId", 5L
         );
-        Map<String, Object> deleteResponse = createDeleteResponse(5L);
+        Map<String, Object> currentTagsResponse = new HashMap<>();
+        currentTagsResponse.put("data", List.of(Map.of("id", 5L, "name", "Family")));
+        Map<String, Object> setTagsResponse = Map.of("data", List.of());
 
-        when(monicaClient.delete(eq("/contacts/42/unsetTag/5"))).thenReturn(Mono.just(deleteResponse));
+        when(monicaClient.get(eq("/contacts/42/tags"), isNull())).thenReturn(Mono.just(currentTagsResponse));
+        when(monicaClient.post(eq("/contacts/42/setTags"), any())).thenReturn(Mono.just(setTagsResponse));
         when(contentFormatter.formatOperationResult(
             eq("Detach"), eq("Contact Tag"), eq(5L), eq(true), anyString()
         )).thenReturn("Tag detached successfully");
@@ -577,7 +591,8 @@ class ContactTagServiceTest extends ServiceTestBase {
 
         // Then
         assertNotNull(result);
-        verify(monicaClient).delete(eq("/contacts/42/unsetTag/5"));
+        verify(monicaClient).get(eq("/contacts/42/tags"), isNull());
+        verify(monicaClient).post(eq("/contacts/42/setTags"), any());
     }
 
     @Test
@@ -587,9 +602,12 @@ class ContactTagServiceTest extends ServiceTestBase {
             "contactId", 10L,
             "tagId", "99"
         );
-        Map<String, Object> deleteResponse = createDeleteResponse(99L);
+        Map<String, Object> currentTagsResponse = new HashMap<>();
+        currentTagsResponse.put("data", List.of(Map.of("id", 99L, "name", "OtherTag")));
+        Map<String, Object> setTagsResponse = Map.of("data", List.of());
 
-        when(monicaClient.delete(eq("/contacts/10/unsetTag/99"))).thenReturn(Mono.just(deleteResponse));
+        when(monicaClient.get(eq("/contacts/10/tags"), isNull())).thenReturn(Mono.just(currentTagsResponse));
+        when(monicaClient.post(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(setTagsResponse));
         when(contentFormatter.formatOperationResult(
             eq("Detach"), eq("Contact Tag"), eq(99L), eq(true), anyString()
         )).thenReturn("Tag detached successfully");
@@ -599,7 +617,8 @@ class ContactTagServiceTest extends ServiceTestBase {
 
         // Then
         assertNotNull(result);
-        verify(monicaClient).delete(eq("/contacts/10/unsetTag/99"));
+        verify(monicaClient).get(eq("/contacts/10/tags"), isNull());
+        verify(monicaClient).post(eq("/contacts/10/setTags"), any());
     }
 
     @Test
@@ -609,9 +628,12 @@ class ContactTagServiceTest extends ServiceTestBase {
             "contactId", 15,
             "tagId", 7
         );
-        Map<String, Object> deleteResponse = createDeleteResponse(7L);
+        Map<String, Object> currentTagsResponse = new HashMap<>();
+        currentTagsResponse.put("data", List.of(Map.of("id", 7L, "name", "TestTag")));
+        Map<String, Object> setTagsResponse = Map.of("data", List.of());
 
-        when(monicaClient.delete(eq("/contacts/15/unsetTag/7"))).thenReturn(Mono.just(deleteResponse));
+        when(monicaClient.get(eq("/contacts/15/tags"), isNull())).thenReturn(Mono.just(currentTagsResponse));
+        when(monicaClient.post(eq("/contacts/15/setTags"), any())).thenReturn(Mono.just(setTagsResponse));
         when(contentFormatter.formatOperationResult(
             eq("Detach"), eq("Contact Tag"), eq(7L), eq(true), anyString()
         )).thenReturn("Tag detached successfully");
@@ -621,7 +643,8 @@ class ContactTagServiceTest extends ServiceTestBase {
 
         // Then
         assertNotNull(result);
-        verify(monicaClient).delete(eq("/contacts/15/unsetTag/7"));
+        verify(monicaClient).get(eq("/contacts/15/tags"), isNull());
+        verify(monicaClient).post(eq("/contacts/15/setTags"), any());
     }
 
     @Test
