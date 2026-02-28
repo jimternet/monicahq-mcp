@@ -2182,9 +2182,9 @@ paths:
             schema:
               type: object
               required:
-                - is_first_met_date_known
+                - is_date_known
               properties:
-                information:
+                general_information:
                   type: string
                   maxLength: 65535
                   nullable: true
@@ -2201,7 +2201,7 @@ paths:
                   nullable: true
                   description: Date when you first met (YYYY-MM-DD)
                   example: 2023-06-15
-                is_first_met_date_known:
+                is_date_known:
                   type: boolean
                   nullable: true
                   description: Whether the first met date is known
