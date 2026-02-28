@@ -390,11 +390,11 @@ public class ContactService extends AbstractCrudService<Contact> {
      * Required arguments:
      * <ul>
      *   <li>contactId - The contact ID</li>
-     *   <li>isFirstMetDateKnown - Whether the first met date is known (boolean, required)</li>
+     *   <li>isDateKnown - Whether the first met date is known (boolean, required)</li>
      * </ul>
      * Optional arguments:
      * <ul>
-     *   <li>information - How you met description (max 65535 characters)</li>
+     *   <li>generalInformation - How you met description (maps to general_information, max 65535 characters)</li>
      *   <li>firstMetThroughContactId - ID of contact who introduced you</li>
      *   <li>firstMetDate - Date when you first met (YYYY-MM-DD format)</li>
      * </ul>
@@ -427,15 +427,15 @@ public class ContactService extends AbstractCrudService<Contact> {
             }
 
             // Validate required field
-            if (!arguments.containsKey("isFirstMetDateKnown")) {
-                throw new IllegalArgumentException("isFirstMetDateKnown is required");
+            if (!arguments.containsKey("isDateKnown")) {
+                throw new IllegalArgumentException("isDateKnown is required");
             }
 
-            // Build introduction data (map from camelCase to snake_case per Monica API spec)
+            // Build introduction data (map from camelCase to snake_case per Monica API)
             Map<String, Object> introductionData = new HashMap<>();
 
-            if (arguments.containsKey("information")) {
-                introductionData.put("information", arguments.get("information"));
+            if (arguments.containsKey("generalInformation")) {
+                introductionData.put("general_information", arguments.get("generalInformation"));
             }
 
             if (arguments.containsKey("firstMetThroughContactId")) {
@@ -466,8 +466,8 @@ public class ContactService extends AbstractCrudService<Contact> {
                 }
             }
 
-            // Required field - map isFirstMetDateKnown to is_first_met_date_known
-            introductionData.put("is_first_met_date_known", arguments.get("isFirstMetDateKnown"));
+            // Required field - map isDateKnown to is_date_known (Monica API field name)
+            introductionData.put("is_date_known", arguments.get("isDateKnown"));
 
             log.debug("Sending introduction update request for contact {} with data: {}", contactId, introductionData);
 

@@ -437,7 +437,7 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
             "description", "Contact ID (required)"
         ));
 
-        properties.put("information", Map.of(
+        properties.put("generalInformation", Map.of(
             "type", "string",
             "description", "How you met this contact (optional, max 65535 characters)",
             "maxLength", 65535
@@ -474,7 +474,7 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
             "minimum", 1900
         ));
 
-        properties.put("isFirstMetDateKnown", Map.of(
+        properties.put("isDateKnown", Map.of(
             "type", "boolean",
             "description", "Whether the first met date is known (required)",
             "default", false
@@ -483,7 +483,7 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
         return Map.of(
             "type", "object",
             "properties", properties,
-            "required", List.of("contactId", "isFirstMetDateKnown")
+            "required", List.of("contactId", "isDateKnown")
         );
     }
 }
