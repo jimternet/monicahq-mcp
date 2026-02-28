@@ -32,15 +32,12 @@
         <discardingThreshold>0</discardingThreshold>
     </appender>
     
-    <!-- JSON structured logging for production - MUST use stderr for MCP STDIO protocol -->
+    <!-- Structured logging for production - MUST use stderr for MCP STDIO protocol -->
     <springProfile name="production">
         <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <target>System.err</target>
-            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <customFields>{"service":"monicahq-mcp","version":"0.1.0"}</customFields>
-                <includeMdc>true</includeMdc>
-                <includeContext>true</includeContext>
-                <includeCallerData>true</includeCallerData>
+            <encoder>
+                <pattern>%d{ISO8601} ${CORRELATION_ID_LOG_PATTERN} [%thread] %-5level %logger{36} - %msg%n</pattern>
             </encoder>
         </appender>
         <root level="INFO">

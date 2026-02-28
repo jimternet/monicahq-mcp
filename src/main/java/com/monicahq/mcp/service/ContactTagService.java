@@ -193,7 +193,36 @@ public class ContactTagService extends AbstractCrudService<Object> {
             Long contactId = extractContactId(arguments);
             Long tagId = extractTagId(arguments);
 
-            return monicaClient.delete("/contacts/" + contactId + "/unsetTag/" + tagId)
+            // Monica API has no individual tag removal endpoint (DELETE /contacts/{id}/unsetTag/{tagId} returns 404).
+            // Strategy: fetch current tags, filter out the target tag, then POST remaining names to setTags.
+            return monicaClient.get("/contacts/" + contactId + "/tags", null)
+                .flatMap(tagsResponse -> {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> currentTags = (List<Map<String, Object>>) tagsResponse.get("data");
+                    if (currentTags == null) {
+                        currentTags = List.of();
+                    }
+
+                    // Filter out the tag to remove, collect remaining names
+                    final Long tagIdFinal = tagId;
+                    List<String> remainingTagNames = currentTags.stream()
+                        .filter(tag -> {
+                            Object id = tag.get("id");
+                            if (id instanceof Number) {
+                                return !tagIdFinal.equals(((Number) id).longValue());
+                            }
+                            return !tagIdFinal.toString().equals(String.valueOf(id));
+                        })
+                        .map(tag -> (String) tag.get("name"))
+                        .filter(Objects::nonNull)
+                        .toList();
+
+                    log.info("Removing tag {} from contact {}. Remaining tags: {}", tagId, contactId, remainingTagNames);
+
+                    Map<String, Object> apiRequest = new HashMap<>();
+                    apiRequest.put("tags", remainingTagNames);
+                    return monicaClient.post("/contacts/" + contactId + "/setTags", apiRequest);
+                })
                 .map(response -> {
                     String formattedContent = contentFormatter.formatOperationResult(
                         "Detach", "Contact Tag", tagId, true,

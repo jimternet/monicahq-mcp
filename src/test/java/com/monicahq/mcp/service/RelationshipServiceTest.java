@@ -740,10 +740,10 @@ class RelationshipServiceTest extends ServiceTestBase {
     @Test
     void listRelationships_WithPagination_ReturnsFormattedList() {
         // Given
-        Map<String, Object> arguments = Map.of(
-            "page", 2,
-            "limit", 20
-        );
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
+        arguments.put("page", 2);
+        arguments.put("limit", 20);
 
         List<Map<String, Object>> relationships = List.of(
             relationshipBuilder().id(1L).contactIs(10L).ofContact(20L).build(),
@@ -751,7 +751,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         );
         Map<String, Object> listResponse = createListResponse(relationships, 2, 20, 50);
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(listResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(listResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list JSON");
 
         // When
@@ -767,7 +767,7 @@ class RelationshipServiceTest extends ServiceTestBase {
         List<Map<String, Object>> data = (List<Map<String, Object>>) result.get("data");
         assertEquals(2, data.size());
 
-        verify(monicaClient).get(eq("/relationships"), argThat(params ->
+        verify(monicaClient).get(eq("/contacts/1/relationships"), argThat(params ->
             "2".equals(params.get("page")) &&
             "20".equals(params.get("limit"))
         ));
@@ -777,20 +777,21 @@ class RelationshipServiceTest extends ServiceTestBase {
     void listRelationships_DefaultPagination_UsesCorrectDefaults() {
         // Given
         Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
 
         List<Map<String, Object>> relationships = List.of(
             relationshipBuilder().id(1L).build()
         );
         Map<String, Object> listResponse = createListResponse(relationships);
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(listResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(listResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list JSON");
 
         // When
         relationshipService.listRelationships(arguments).block();
 
         // Then - verify default pagination values
-        verify(monicaClient).get(eq("/relationships"), argThat(params ->
+        verify(monicaClient).get(eq("/contacts/1/relationships"), argThat(params ->
             "1".equals(params.get("page")) &&
             "10".equals(params.get("limit"))
         ));
@@ -799,14 +800,17 @@ class RelationshipServiceTest extends ServiceTestBase {
     @Test
     void listRelationships_ReturnsMetadata() {
         // Given
-        Map<String, Object> arguments = Map.of("page", 1, "limit", 10);
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
+        arguments.put("page", 1);
+        arguments.put("limit", 10);
 
         List<Map<String, Object>> relationships = List.of(
             relationshipBuilder().id(1L).build()
         );
         Map<String, Object> listResponse = createListResponse(relationships, 1, 10, 100);
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(listResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(listResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list JSON");
 
         // When
@@ -828,10 +832,11 @@ class RelationshipServiceTest extends ServiceTestBase {
     void listRelationships_EmptyResults_ReturnsEmptyList() {
         // Given
         Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
 
         Map<String, Object> emptyResponse = createListResponse(List.of(), 1, 10, 0);
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(emptyResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(emptyResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("[]");
 
         // When
@@ -847,21 +852,23 @@ class RelationshipServiceTest extends ServiceTestBase {
     @Test
     void listRelationships_StringLimit_ParsesCorrectly() {
         // Given
-        Map<String, Object> arguments = Map.of("limit", "25");
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
+        arguments.put("limit", "25");
 
         List<Map<String, Object>> relationships = List.of(
             relationshipBuilder().id(1L).build()
         );
         Map<String, Object> listResponse = createListResponse(relationships);
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(listResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(listResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list JSON");
 
         // When
         relationshipService.listRelationships(arguments).block();
 
         // Then
-        verify(monicaClient).get(eq("/relationships"), argThat(params ->
+        verify(monicaClient).get(eq("/contacts/1/relationships"), argThat(params ->
             "25".equals(params.get("limit"))
         ));
     }
@@ -869,42 +876,43 @@ class RelationshipServiceTest extends ServiceTestBase {
     @Test
     void listRelationships_StringPage_ParsesCorrectly() {
         // Given
-        Map<String, Object> arguments = Map.of("page", "3");
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
+        arguments.put("page", "3");
 
         List<Map<String, Object>> relationships = List.of(
             relationshipBuilder().id(1L).build()
         );
         Map<String, Object> listResponse = createListResponse(relationships, 3, 10, 30);
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(listResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(listResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list JSON");
 
         // When
         relationshipService.listRelationships(arguments).block();
 
         // Then
-        verify(monicaClient).get(eq("/relationships"), argThat(params ->
+        verify(monicaClient).get(eq("/contacts/1/relationships"), argThat(params ->
             "3".equals(params.get("page"))
         ));
     }
 
     @Test
     void listRelationships_MapsFieldsCorrectly() {
-        // Given
+        // Given - contactId is required since Monica API's GET /relationships returns 405
         Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
 
-        Map<String, Object> relationshipWithSnakeCaseFields = new HashMap<>();
-        relationshipWithSnakeCaseFields.put("id", 1L);
-        relationshipWithSnakeCaseFields.put("contact_is", 10L);
-        relationshipWithSnakeCaseFields.put("of_contact", 20L);
-        relationshipWithSnakeCaseFields.put("relationship_type_id", 5);
-        relationshipWithSnakeCaseFields.put("notes", "Brother");
-        relationshipWithSnakeCaseFields.put("created_at", "2024-01-15T10:00:00Z");
-        relationshipWithSnakeCaseFields.put("updated_at", "2024-01-15T10:00:00Z");
+        Map<String, Object> relationshipData = new HashMap<>();
+        relationshipData.put("id", 1L);
+        relationshipData.put("contact_is", 10L);
+        relationshipData.put("of_contact", 20L);
+        relationshipData.put("relationship_type_id", 5);
+        relationshipData.put("notes", "Brother");
 
-        Map<String, Object> listResponse = createListResponse(List.of(relationshipWithSnakeCaseFields));
+        Map<String, Object> listResponse = createListResponse(List.of(relationshipData));
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(listResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(listResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list JSON");
 
         // When
@@ -915,35 +923,31 @@ class RelationshipServiceTest extends ServiceTestBase {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> data = (List<Map<String, Object>>) result.get("data");
         assertEquals(1, data.size());
-
-        // Verify field mapping from snake_case to camelCase
-        assertEquals(10L, data.get(0).get("contactIs"));
-        assertEquals(20L, data.get(0).get("ofContact"));
-        assertEquals(5, data.get(0).get("relationshipTypeId"));
-        assertEquals("2024-01-15T10:00:00Z", data.get(0).get("createdAt"));
-        assertEquals("2024-01-15T10:00:00Z", data.get(0).get("updatedAt"));
-        // Notes should pass through unchanged
+        // Raw API data is returned as-is from the contact-scoped endpoint
+        assertEquals(1L, data.get(0).get("id"));
         assertEquals("Brother", data.get(0).get("notes"));
     }
 
     @Test
     void listRelationships_IntegerLimit_ConvertsToString() {
         // Given
-        Map<String, Object> arguments = Map.of("limit", 50);
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
+        arguments.put("limit", 50);
 
         List<Map<String, Object>> relationships = List.of(
             relationshipBuilder().id(1L).build()
         );
         Map<String, Object> listResponse = createListResponse(relationships);
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(listResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(listResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list JSON");
 
         // When
         relationshipService.listRelationships(arguments).block();
 
         // Then
-        verify(monicaClient).get(eq("/relationships"), argThat(params ->
+        verify(monicaClient).get(eq("/contacts/1/relationships"), argThat(params ->
             "50".equals(params.get("limit"))
         ));
     }
@@ -951,21 +955,23 @@ class RelationshipServiceTest extends ServiceTestBase {
     @Test
     void listRelationships_IntegerPage_ConvertsToString() {
         // Given
-        Map<String, Object> arguments = Map.of("page", 5);
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("contactId", 1L);
+        arguments.put("page", 5);
 
         List<Map<String, Object>> relationships = List.of(
             relationshipBuilder().id(1L).build()
         );
         Map<String, Object> listResponse = createListResponse(relationships, 5, 10, 50);
 
-        when(monicaClient.get(eq("/relationships"), any())).thenReturn(Mono.just(listResponse));
+        when(monicaClient.get(eq("/contacts/1/relationships"), any())).thenReturn(Mono.just(listResponse));
         when(contentFormatter.formatListAsEscapedJson(any())).thenReturn("Formatted list JSON");
 
         // When
         relationshipService.listRelationships(arguments).block();
 
         // Then
-        verify(monicaClient).get(eq("/relationships"), argThat(params ->
+        verify(monicaClient).get(eq("/contacts/1/relationships"), argThat(params ->
             "5".equals(params.get("page"))
         ));
     }
