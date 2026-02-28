@@ -363,20 +363,6 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
                 "company", Map.of(
                     "type", "string",
                     "description", "Company name"
-                ),
-                "startDate", Map.of(
-                    "type", "string",
-                    "format", "date",
-                    "description", "Start date in YYYY-MM-DD format"
-                ),
-                "endDate", Map.of(
-                    "type", "string",
-                    "format", "date",
-                    "description", "End date in YYYY-MM-DD format (optional)"
-                ),
-                "salary", Map.of(
-                    "type", "string",
-                    "description", "Salary information"
                 )
             ),
             "required", List.of("id")

@@ -1200,8 +1200,7 @@ class ContactServiceTest extends ServiceTestBase {
             Map<String, Object> arguments = Map.of(
                 "id", 1L,
                 "jobTitle", "Software Engineer",
-                "company", "TechCorp",
-                "startDate", "2023-01-15"
+                "company", "TechCorp"
             );
 
             Map<String, Object> careerResponse = createSingleEntityResponse(
@@ -1253,9 +1252,6 @@ class ContactServiceTest extends ServiceTestBase {
             arguments.put("id", 1L);
             arguments.put("jobTitle", "Senior Developer");
             arguments.put("company", "TechCorp");
-            arguments.put("startDate", "2020-01-01");
-            arguments.put("endDate", "2023-12-31");
-            arguments.put("salary", "100000");
 
             Map<String, Object> careerResponse = createSingleEntityResponse(Map.of("id", 1L));
             when(monicaClient.put(eq("/contacts/1/work"), any())).thenReturn(Mono.just(careerResponse));
@@ -1266,10 +1262,7 @@ class ContactServiceTest extends ServiceTestBase {
             // Then
             verify(monicaClient).put(eq("/contacts/1/work"), argThat(data ->
                 "Senior Developer".equals(data.get("job")) &&
-                "TechCorp".equals(data.get("company")) &&
-                "2020-01-01".equals(data.get("start_date")) &&
-                "2023-12-31".equals(data.get("end_date")) &&
-                "100000".equals(data.get("salary"))
+                "TechCorp".equals(data.get("company"))
             ));
         }
     }

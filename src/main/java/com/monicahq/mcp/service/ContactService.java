@@ -313,11 +313,8 @@ public class ContactService extends AbstractCrudService<Contact> {
      * </ul>
      * Optional arguments:
      * <ul>
-     *   <li>jobTitle - The job title</li>
+     *   <li>jobTitle - The job title (maps to "job" in Monica API)</li>
      *   <li>company - The company name</li>
-     *   <li>startDate - Employment start date</li>
-     *   <li>endDate - Employment end date</li>
-     *   <li>salary - Salary information</li>
      * </ul>
      * </p>
      *
@@ -338,16 +335,6 @@ public class ContactService extends AbstractCrudService<Contact> {
             if (arguments.containsKey("company")) {
                 careerData.put("company", arguments.get("company"));
             }
-            if (arguments.containsKey("startDate")) {
-                careerData.put("start_date", arguments.get("startDate"));
-            }
-            if (arguments.containsKey("endDate")) {
-                careerData.put("end_date", arguments.get("endDate"));
-            }
-            if (arguments.containsKey("salary")) {
-                careerData.put("salary", arguments.get("salary"));
-            }
-
             return monicaClient.put("/contacts/" + contactId + "/work", careerData)
                 .map(this::formatSingleResponse)
                 .doOnSuccess(result -> log.info("Contact career updated successfully: {}", contactId))
@@ -403,11 +390,11 @@ public class ContactService extends AbstractCrudService<Contact> {
      * Required arguments:
      * <ul>
      *   <li>contactId - The contact ID</li>
-     *   <li>isFirstMetDateKnown - Whether the first met date is known (boolean, required)</li>
+     *   <li>isDateKnown - Whether the first met date is known (boolean, required)</li>
      * </ul>
      * Optional arguments:
      * <ul>
-     *   <li>information - How you met description (max 65535 characters)</li>
+     *   <li>generalInformation - How you met description (maps to general_information, max 65535 characters)</li>
      *   <li>firstMetThroughContactId - ID of contact who introduced you</li>
      *   <li>firstMetDate - Date when you first met (YYYY-MM-DD format)</li>
      * </ul>
@@ -439,15 +426,14 @@ public class ContactService extends AbstractCrudService<Contact> {
                 throw new IllegalArgumentException("contactId is required");
             }
 
-            // Validate required field (corrected field name)
+            // Validate required field
             if (!arguments.containsKey("isDateKnown")) {
                 throw new IllegalArgumentException("isDateKnown is required");
             }
 
-            // Build introduction data (map from camelCase to snake_case with CORRECT API field names)
+            // Build introduction data (map from camelCase to snake_case per Monica API)
             Map<String, Object> introductionData = new HashMap<>();
 
-            // Map generalInformation to general_information (NOT information)
             if (arguments.containsKey("generalInformation")) {
                 introductionData.put("general_information", arguments.get("generalInformation"));
             }
@@ -480,7 +466,7 @@ public class ContactService extends AbstractCrudService<Contact> {
                 }
             }
 
-            // Required field - map isDateKnown to is_date_known (NOT is_first_met_date_known)
+            // Required field - map isDateKnown to is_date_known (Monica API field name)
             introductionData.put("is_date_known", arguments.get("isDateKnown"));
 
             log.debug("Sending introduction update request for contact {} with data: {}", contactId, introductionData);

@@ -43,20 +43,17 @@ class ContactCareerValidationTest {
         Map<String, Object> arguments = Map.of(
             "id", 123L,
             "jobTitle", "Senior Developer",
-            "company", "Tech Corp",
-            "startDate", "2023-01-15",
-            "endDate", "2024-12-31"
+            "company", "Tech Corp"
         );
-        
+
         Map<String, Object> mockResponse = Map.of(
             "data", Map.of(
                 "id", 1L,
-                "job_title", "Senior Developer",
-                "company", "Tech Corp",
-                "start_date", "2023-01-15"
+                "job", "Senior Developer",
+                "company", "Tech Corp"
             )
         );
-        
+
         when(monicaClient.put(eq("/contacts/123/work"), any())).thenReturn(Mono.just(mockResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted single JSON content");
 
@@ -67,13 +64,11 @@ class ContactCareerValidationTest {
         assertNotNull(result);
         assertTrue(result.containsKey("data"));
         assertTrue(result.containsKey("content"));
-        
+
         // Verify request body formatting
         verify(monicaClient).put(eq("/contacts/123/work"), argThat(data -> {
             return "Senior Developer".equals(data.get("job")) &&
-                   "Tech Corp".equals(data.get("company")) &&
-                   "2023-01-15".equals(data.get("start_date")) &&
-                   "2024-12-31".equals(data.get("end_date"));
+                   "Tech Corp".equals(data.get("company"));
         }));
     }
 
