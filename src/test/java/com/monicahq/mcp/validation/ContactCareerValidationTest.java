@@ -70,7 +70,7 @@ class ContactCareerValidationTest {
         
         // Verify request body formatting
         verify(monicaClient).put(eq("/contacts/123/work"), argThat(data -> {
-            return "Senior Developer".equals(data.get("job_title")) &&
+            return "Senior Developer".equals(data.get("job")) &&
                    "Tech Corp".equals(data.get("company")) &&
                    "2023-01-15".equals(data.get("start_date")) &&
                    "2024-12-31".equals(data.get("end_date"));
@@ -113,8 +113,8 @@ class ContactCareerValidationTest {
 
         // Then
         assertNotNull(result);
-        verify(monicaClient).put(eq("/contacts/456/work"), argThat(data -> 
-            "Designer".equals(data.get("job_title"))
+        verify(monicaClient).put(eq("/contacts/456/work"), argThat(data ->
+            "Designer".equals(data.get("job"))
         ));
     }
 }

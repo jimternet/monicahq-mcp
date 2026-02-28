@@ -1223,7 +1223,7 @@ class ContactServiceTest extends ServiceTestBase {
             assertTrue(result.containsKey("content"));
 
             verify(monicaClient).put(eq("/contacts/1/work"), argThat(data ->
-                "Software Engineer".equals(data.get("job_title")) &&
+                "Software Engineer".equals(data.get("job")) &&
                 "TechCorp".equals(data.get("company"))
             ));
         }
@@ -1265,7 +1265,7 @@ class ContactServiceTest extends ServiceTestBase {
 
             // Then
             verify(monicaClient).put(eq("/contacts/1/work"), argThat(data ->
-                "Senior Developer".equals(data.get("job_title")) &&
+                "Senior Developer".equals(data.get("job")) &&
                 "TechCorp".equals(data.get("company")) &&
                 "2020-01-01".equals(data.get("start_date")) &&
                 "2023-12-31".equals(data.get("end_date")) &&

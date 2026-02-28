@@ -75,14 +75,14 @@ public class DomainToolRegistryTest {
     }
 
     @Test
-    @DisplayName("Total tools across all registries should equal 171")
+    @DisplayName("Total tools across all registries should equal 172")
     void shouldHaveCorrectTotalToolCount() {
         int totalTools = domainRegistries.stream()
             .mapToInt(registry -> registry.getTools().size())
             .sum();
 
-        assertEquals(171, totalTools,
-            "Expected 171 total tools across all domain registries (154 Phase 1 + 17 Phase 2: 4 ContactFieldType CRUD + 13 contact-scoped lists), but found: " + totalTools);
+        assertEquals(172, totalTools,
+            "Expected 172 total tools across all domain registries (154 Phase 1 + 17 Phase 2 + 1 introduction tool), but found: " + totalTools);
     }
 
     @Test
@@ -113,10 +113,10 @@ public class DomainToolRegistryTest {
         }
 
         @Test
-        @DisplayName("Should register 9 contact tools")
+        @DisplayName("Should register 10 contact tools")
         void shouldRegisterCorrectToolCount() {
-            assertEquals(9, contactToolRegistry.getToolCount(),
-                "ContactToolRegistry should have 9 tools");
+            assertEquals(10, contactToolRegistry.getToolCount(),
+                "ContactToolRegistry should have 10 tools");
         }
 
         @Test
@@ -133,6 +133,7 @@ public class DomainToolRegistryTest {
             assertTrue(supportedTools.contains("contact_career_update"));
             assertTrue(supportedTools.contains("contact_audit_logs"));
             assertTrue(supportedTools.contains("contacts_by_tag"));
+            assertTrue(supportedTools.contains("update_contact_introduction"));
         }
 
         @Test

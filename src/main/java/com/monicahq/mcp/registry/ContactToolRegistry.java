@@ -108,6 +108,13 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
             createContactsByTagSchema(),
             CATEGORY
         );
+
+        registerTool(
+            "update_contact_introduction",
+            "[Contact] Update how you met information for a contact",
+            createContactIntroductionSchema(),
+            CATEGORY
+        );
     }
 
     @Override
@@ -122,6 +129,7 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
             case "contact_career_update" -> contactService.updateContactCareer(arguments);
             case "contact_audit_logs" -> contactService.getContactAuditLogs(arguments);
             case "contacts_by_tag" -> tagService.listContactsByTag(arguments);
+            case "update_contact_introduction" -> contactService.updateContactIntroduction(arguments);
             default -> Mono.error(new UnsupportedOperationException(
                 "Tool '" + toolName + "' is not implemented in " + DOMAIN + " domain registry"));
         };
@@ -428,6 +436,68 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
                 )
             ),
             "required", List.of("tagId")
+        );
+    }
+
+    /**
+     * Creates the schema for updating contact introduction (how you met) information.
+     * Uses the dedicated /contacts/{id}/introduction endpoint.
+     */
+    private Map<String, Object> createContactIntroductionSchema() {
+        Map<String, Object> properties = new HashMap<>();
+
+        properties.put("contactId", Map.of(
+            "type", "integer",
+            "description", "Contact ID (required)"
+        ));
+
+        properties.put("generalInformation", Map.of(
+            "type", "string",
+            "description", "How you met this contact (optional, max 65535 characters)",
+            "maxLength", 65535
+        ));
+
+        properties.put("firstMetThroughContactId", Map.of(
+            "type", "integer",
+            "description", "ID of the contact who introduced you (optional)"
+        ));
+
+        properties.put("firstMetDate", Map.of(
+            "type", "string",
+            "format", "date",
+            "description", "Date when you first met in YYYY-MM-DD format (optional). Will be parsed into day/month/year."
+        ));
+
+        properties.put("day", Map.of(
+            "type", "integer",
+            "description", "Day of first met date (1-31, optional, alternative to firstMetDate)",
+            "minimum", 1,
+            "maximum", 31
+        ));
+
+        properties.put("month", Map.of(
+            "type", "integer",
+            "description", "Month of first met date (1-12, optional, alternative to firstMetDate)",
+            "minimum", 1,
+            "maximum", 12
+        ));
+
+        properties.put("year", Map.of(
+            "type", "integer",
+            "description", "Year of first met date (optional, alternative to firstMetDate)",
+            "minimum", 1900
+        ));
+
+        properties.put("isDateKnown", Map.of(
+            "type", "boolean",
+            "description", "Whether the first met date is known (required)",
+            "default", false
+        ));
+
+        return Map.of(
+            "type", "object",
+            "properties", properties,
+            "required", List.of("contactId", "isDateKnown")
         );
     }
 }

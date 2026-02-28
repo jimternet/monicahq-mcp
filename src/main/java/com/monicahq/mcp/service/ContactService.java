@@ -145,9 +145,8 @@ public class ContactService extends AbstractCrudService<Contact> {
                     if (!updateData.containsKey("lastName") && existingData.containsKey("last_name")) {
                         updateData.put("lastName", existingData.get("last_name"));
                     }
-                    if (!updateData.containsKey("genderId") && existingData.containsKey("gender_id")) {
-                        updateData.put("genderId", existingData.get("gender_id"));
-                    }
+                    // Note: gender_id is NOT preserved from existing contact to avoid propagating invalid values
+                    // Users must explicitly provide genderId in updates if they want to change it
 
                     // Handle birthdate logic - if birthdate is provided, automatically set isBirthdateKnown to true
                     if (updateData.containsKey("birthdate") && updateData.get("birthdate") != null
@@ -334,7 +333,7 @@ public class ContactService extends AbstractCrudService<Contact> {
             // Create career update data
             Map<String, Object> careerData = new HashMap<>();
             if (arguments.containsKey("jobTitle")) {
-                careerData.put("job_title", arguments.get("jobTitle"));
+                careerData.put("job", arguments.get("jobTitle"));
             }
             if (arguments.containsKey("company")) {
                 careerData.put("company", arguments.get("company"));
@@ -391,6 +390,108 @@ public class ContactService extends AbstractCrudService<Contact> {
 
         } catch (IllegalArgumentException e) {
             log.error("Invalid arguments for contact audit logs: {}", e.getMessage());
+            return Mono.error(e);
+        }
+    }
+
+    /**
+     * Updates contact introduction (how you met) information.
+     * <p>
+     * Uses the dedicated /contacts/{id}/introduction endpoint.
+     * </p>
+     * <p>
+     * Required arguments:
+     * <ul>
+     *   <li>contactId - The contact ID</li>
+     *   <li>isFirstMetDateKnown - Whether the first met date is known (boolean, required)</li>
+     * </ul>
+     * Optional arguments:
+     * <ul>
+     *   <li>information - How you met description (max 65535 characters)</li>
+     *   <li>firstMetThroughContactId - ID of contact who introduced you</li>
+     *   <li>firstMetDate - Date when you first met (YYYY-MM-DD format)</li>
+     * </ul>
+     * </p>
+     *
+     * @param arguments the introduction update arguments
+     * @return a Mono containing the updated contact data
+     */
+    public Mono<Map<String, Object>> updateContactIntroduction(Map<String, Object> arguments) {
+        log.info("Updating contact introduction with arguments: {}", arguments);
+
+        try {
+            // Extract contactId (using "contactId" instead of "id" per schema)
+            Long contactId;
+            if (arguments.containsKey("contactId")) {
+                Object idValue = arguments.get("contactId");
+                if (idValue instanceof Number) {
+                    contactId = ((Number) idValue).longValue();
+                } else if (idValue instanceof String) {
+                    try {
+                        contactId = Long.parseLong((String) idValue);
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("contactId must be a valid number");
+                    }
+                } else {
+                    throw new IllegalArgumentException("contactId must be a number");
+                }
+            } else {
+                throw new IllegalArgumentException("contactId is required");
+            }
+
+            // Validate required field (corrected field name)
+            if (!arguments.containsKey("isDateKnown")) {
+                throw new IllegalArgumentException("isDateKnown is required");
+            }
+
+            // Build introduction data (map from camelCase to snake_case with CORRECT API field names)
+            Map<String, Object> introductionData = new HashMap<>();
+
+            // Map generalInformation to general_information (NOT information)
+            if (arguments.containsKey("generalInformation")) {
+                introductionData.put("general_information", arguments.get("generalInformation"));
+            }
+
+            if (arguments.containsKey("firstMetThroughContactId")) {
+                introductionData.put("first_met_through_contact_id", arguments.get("firstMetThroughContactId"));
+            }
+
+            // Handle date: parse YYYY-MM-DD string OR use individual day/month/year fields
+            if (arguments.containsKey("firstMetDate")) {
+                String dateStr = arguments.get("firstMetDate").toString();
+                String[] parts = dateStr.split("-");
+                if (parts.length == 3) {
+                    introductionData.put("year", Integer.parseInt(parts[0]));
+                    introductionData.put("month", Integer.parseInt(parts[1]));
+                    introductionData.put("day", Integer.parseInt(parts[2]));
+                } else {
+                    throw new IllegalArgumentException("firstMetDate must be in YYYY-MM-DD format");
+                }
+            } else {
+                // Use individual date fields if provided
+                if (arguments.containsKey("day")) {
+                    introductionData.put("day", arguments.get("day"));
+                }
+                if (arguments.containsKey("month")) {
+                    introductionData.put("month", arguments.get("month"));
+                }
+                if (arguments.containsKey("year")) {
+                    introductionData.put("year", arguments.get("year"));
+                }
+            }
+
+            // Required field - map isDateKnown to is_date_known (NOT is_first_met_date_known)
+            introductionData.put("is_date_known", arguments.get("isDateKnown"));
+
+            log.debug("Sending introduction update request for contact {} with data: {}", contactId, introductionData);
+
+            return monicaClient.put("/contacts/" + contactId + "/introduction", introductionData)
+                .map(this::formatSingleResponse)
+                .doOnSuccess(result -> log.info("Contact introduction updated successfully: {}", contactId))
+                .doOnError(error -> log.error("Failed to update contact introduction {}: {}", contactId, error.getMessage()));
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid arguments for contact introduction update: {}", e.getMessage());
             return Mono.error(e);
         }
     }

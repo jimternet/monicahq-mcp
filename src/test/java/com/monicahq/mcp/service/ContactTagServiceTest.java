@@ -61,6 +61,7 @@ class ContactTagServiceTest extends ServiceTestBase {
         arguments.put("contactId", 10L);
         arguments.put("tagId", 1L);
 
+        when(monicaClient.get(eq("/tags/1"), isNull())).thenReturn(Mono.just(mockApiResponse));
         when(monicaClient.post(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted contact tag JSON");
 
@@ -88,17 +89,19 @@ class ContactTagServiceTest extends ServiceTestBase {
         arguments.put("contactId", 10L);
         arguments.put("tagId", 5L);
 
+        Map<String, Object> tagResponse = createSingleEntityResponse(tagBuilder().id(5L).name("Work").build());
+        when(monicaClient.get(eq("/tags/5"), isNull())).thenReturn(Mono.just(tagResponse));
         when(monicaClient.post(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted JSON");
 
         // When
         contactTagService.attachTag(arguments).block();
 
-        // Then - verify tagId is converted to tags array format
+        // Then - verify tagId is resolved to tag name in tags array
         verify(monicaClient).post(eq("/contacts/10/setTags"), argThat(data -> {
             @SuppressWarnings("unchecked")
             List<Object> tags = (List<Object>) data.get("tags");
-            return tags != null && tags.size() == 1 && tags.get(0).equals(5L);
+            return tags != null && tags.size() == 1 && "Work".equals(tags.get(0));
         }));
     }
 
@@ -109,6 +112,7 @@ class ContactTagServiceTest extends ServiceTestBase {
         arguments.put("contactId", "10");
         arguments.put("tagId", 1L);
 
+        when(monicaClient.get(eq("/tags/1"), isNull())).thenReturn(Mono.just(mockApiResponse));
         when(monicaClient.post(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted JSON");
 
@@ -127,6 +131,7 @@ class ContactTagServiceTest extends ServiceTestBase {
         arguments.put("contactId", 10);
         arguments.put("tagId", 1L);
 
+        when(monicaClient.get(eq("/tags/1"), isNull())).thenReturn(Mono.just(mockApiResponse));
         when(monicaClient.post(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted JSON");
 
@@ -240,19 +245,18 @@ class ContactTagServiceTest extends ServiceTestBase {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("contactId", 10L);
         arguments.put("tagId", 1L);
-        arguments.put("customField", "customValue");
 
+        when(monicaClient.get(eq("/tags/1"), isNull())).thenReturn(Mono.just(mockApiResponse));
         when(monicaClient.post(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted JSON");
 
         // When
         contactTagService.attachTag(arguments).block();
 
-        // Then - verify contactId and tagId are not in request body, but custom field is
+        // Then - verify contactId and tagId are not in request body
         verify(monicaClient).post(eq("/contacts/10/setTags"), argThat(data ->
             !data.containsKey("contactId") &&
-            !data.containsKey("tagId") &&
-            "customValue".equals(data.get("customField"))
+            !data.containsKey("tagId")
         ));
     }
 
@@ -425,6 +429,8 @@ class ContactTagServiceTest extends ServiceTestBase {
         arguments.put("contactId", 10L);
         arguments.put("tagId", 5L);
 
+        Map<String, Object> tagResponse = createSingleEntityResponse(tagBuilder().id(5L).name("Work").build());
+        when(monicaClient.get(eq("/tags/5"), isNull())).thenReturn(Mono.just(tagResponse));
         when(monicaClient.put(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted contact tag JSON");
 
@@ -446,17 +452,19 @@ class ContactTagServiceTest extends ServiceTestBase {
         arguments.put("contactId", 10L);
         arguments.put("tagId", 7L);
 
+        Map<String, Object> tagResponse = createSingleEntityResponse(tagBuilder().id(7L).name("Friends").build());
+        when(monicaClient.get(eq("/tags/7"), isNull())).thenReturn(Mono.just(tagResponse));
         when(monicaClient.put(eq("/contacts/10/setTags"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted JSON");
 
         // When
         contactTagService.updateContactTags(arguments).block();
 
-        // Then - verify tagId is converted to tags array format
+        // Then - verify tagId is resolved to tag name in tags array
         verify(monicaClient).put(eq("/contacts/10/setTags"), argThat(data -> {
             @SuppressWarnings("unchecked")
             List<Object> tags = (List<Object>) data.get("tags");
-            return tags != null && tags.size() == 1 && tags.get(0).equals(7L);
+            return tags != null && tags.size() == 1 && "Friends".equals(tags.get(0));
         }));
     }
 
@@ -467,6 +475,7 @@ class ContactTagServiceTest extends ServiceTestBase {
         arguments.put("contactId", "25");
         arguments.put("tagId", 1L);
 
+        when(monicaClient.get(eq("/tags/1"), isNull())).thenReturn(Mono.just(mockApiResponse));
         when(monicaClient.put(eq("/contacts/25/setTags"), any())).thenReturn(Mono.just(mockApiResponse));
         when(contentFormatter.formatAsEscapedJson(any())).thenReturn("Formatted JSON");
 
