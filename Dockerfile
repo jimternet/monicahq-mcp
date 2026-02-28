@@ -1,22 +1,24 @@
 # Multi-stage Dockerfile for MonicaHQ MCP Server
 # Uses OpenJDK 21 Alpine for optimal size and security
 
-# Build stage
-FROM gradle:8.10-jdk21-alpine AS build
+# Build stage - use JDK image and Gradle wrapper for version consistency
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
-# Copy Gradle files for dependency caching
-COPY build.gradle settings.gradle ./
+# Copy Gradle wrapper and build files for dependency caching
+COPY gradlew ./
 COPY gradle/ ./gradle/
+COPY build.gradle settings.gradle ./
+RUN chmod +x ./gradlew
 
 # Download dependencies (cached layer if no dependency changes)
-RUN gradle dependencies --no-daemon
+RUN ./gradlew dependencies --no-daemon
 
 # Copy source code
 COPY src/ ./src/
 
 # Build the application
-RUN gradle clean bootJar --no-daemon
+RUN ./gradlew clean bootJar --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
