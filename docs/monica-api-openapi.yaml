@@ -1817,14 +1817,14 @@ paths:
             default: 10
         - name: sort
           in: query
-          description: Sort order for contacts (e.g., "firstnameAZ", "firstnameZA", "lastnameAZ", "lastnameZA")
+          description: Sort order for contacts. Use -created_at for newest first (default), -updated_at for recently modified first.
           schema:
             type: string
             enum:
-              - firstnameAZ
-              - firstnameZA
-              - lastnameAZ
-              - lastnameZA
+              - created_at
+              - -created_at
+              - updated_at
+              - -updated_at
       responses:
         '200':
           description: List of contacts
