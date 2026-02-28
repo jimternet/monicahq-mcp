@@ -43,8 +43,7 @@ public class ContactCareerUpdateTest {
                 "arguments", Map.of(
                     "id", 1L,
                     "jobTitle", "Senior Software Engineer",
-                    "company", "TechCorp Inc.",
-                    "startDate", "2023-01-15"
+                    "company", "TechCorp Inc."
                 )
             ),
             "id", "test-career-update"
@@ -123,7 +122,7 @@ public class ContactCareerUpdateTest {
                 "arguments", Map.of(
                     "id", 1L,
                     "jobTitle", "Lead Developer"
-                    // company and startDate omitted
+                    // company omitted
                 )
             ),
             "id", "test-partial-update"

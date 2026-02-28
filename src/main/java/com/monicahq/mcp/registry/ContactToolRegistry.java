@@ -363,20 +363,6 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
                 "company", Map.of(
                     "type", "string",
                     "description", "Company name"
-                ),
-                "startDate", Map.of(
-                    "type", "string",
-                    "format", "date",
-                    "description", "Start date in YYYY-MM-DD format"
-                ),
-                "endDate", Map.of(
-                    "type", "string",
-                    "format", "date",
-                    "description", "End date in YYYY-MM-DD format (optional)"
-                ),
-                "salary", Map.of(
-                    "type", "string",
-                    "description", "Salary information"
                 )
             ),
             "required", List.of("id")
@@ -451,7 +437,7 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
             "description", "Contact ID (required)"
         ));
 
-        properties.put("generalInformation", Map.of(
+        properties.put("information", Map.of(
             "type", "string",
             "description", "How you met this contact (optional, max 65535 characters)",
             "maxLength", 65535
@@ -488,7 +474,7 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
             "minimum", 1900
         ));
 
-        properties.put("isDateKnown", Map.of(
+        properties.put("isFirstMetDateKnown", Map.of(
             "type", "boolean",
             "description", "Whether the first met date is known (required)",
             "default", false
@@ -497,7 +483,7 @@ public class ContactToolRegistry extends AbstractDomainToolRegistry {
         return Map.of(
             "type", "object",
             "properties", properties,
-            "required", List.of("contactId", "isDateKnown")
+            "required", List.of("contactId", "isFirstMetDateKnown")
         );
     }
 }
