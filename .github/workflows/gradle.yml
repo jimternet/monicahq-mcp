@@ -45,7 +45,7 @@ jobs:
         distribution: 'temurin'
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5.0.1
+      uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
       with:
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
@@ -61,7 +61,7 @@ jobs:
         reporter: java-junit
 
     - name: Upload test results
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: test-results
@@ -85,7 +85,7 @@ jobs:
         distribution: 'temurin'
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5.0.1
+      uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
       with:
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
@@ -93,7 +93,7 @@ jobs:
       run: ./gradlew bootJar
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: jar-artifact
         path: build/libs/*.jar
@@ -221,7 +221,7 @@ jobs:
         distribution: 'temurin'
 
     - name: Generate and submit dependency graph
-      uses: gradle/actions/dependency-submission@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5.0.1
+      uses: gradle/actions/dependency-submission@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
   openapi-validation:
     name: OpenAPI Validation
@@ -243,7 +243,7 @@ jobs:
         distribution: 'temurin'
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5.0.1
+      uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
       with:
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
@@ -272,7 +272,7 @@ jobs:
       continue-on-error: true  # TODO: Update docs/monica-api-openapi.yaml to match MCP server endpoints
 
     - name: Upload OpenAPI Spec Artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: openapi-spec
