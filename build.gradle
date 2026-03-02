@@ -90,7 +90,7 @@ dependencies {
 
 	// OpenAPI Documentation (WebFlux variant - CRITICAL for Spring WebFlux)
 	// Note: springdoc 3.x requires Spring Boot 4.x
-	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.1'
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.2'
 
 	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
