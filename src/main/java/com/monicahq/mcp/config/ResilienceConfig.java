@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 
 @Configuration
@@ -35,6 +37,8 @@ public class ResilienceConfig {
 
     @Bean
     public WebClient webClient() {
+        validateApiUrl(apiUrl);
+
         return WebClient.builder()
             .baseUrl(apiUrl)
             .filter(authInterceptor.addAuthentication())
@@ -43,6 +47,25 @@ public class ResilienceConfig {
             .filter(authInterceptor.handleErrors())
             .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024)) // 1MB
             .build();
+    }
+
+    private void validateApiUrl(String configuredApiUrl) {
+        if (configuredApiUrl == null || configuredApiUrl.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "Invalid MONICA_API_URL: value is empty. Expected an absolute URL like https://app.monicahq.com/api");
+        }
+
+        try {
+            URI uri = new URI(configuredApiUrl.trim());
+            if (uri.getScheme() == null || uri.getHost() == null) {
+                throw new IllegalStateException(
+                    "Invalid MONICA_API_URL: '" + configuredApiUrl + "'. Expected an absolute URL with scheme and host, for example https://app.monicahq.com/api or http://monica-app/api");
+            }
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(
+                "Invalid MONICA_API_URL: '" + configuredApiUrl + "'. Expected an absolute URL like https://app.monicahq.com/api",
+                e);
+        }
     }
 
     @Bean
