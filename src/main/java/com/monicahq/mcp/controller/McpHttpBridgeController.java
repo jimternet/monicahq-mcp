@@ -65,6 +65,11 @@ public class McpHttpBridgeController {
             
             // Process through the MCP message handler with auth context
             Map<String, Object> response = messageHandler.handleMessage(jsonMessage, authHeader);
+
+            // JSON-RPC notifications do not require a response body
+            if (response == null) {
+                return Mono.just(ResponseEntity.noContent().build());
+            }
             
             // Return HTTP 200 OK for valid MCP responses, including "resource not found" scenarios
             // Return HTTP 400 Bad Request for JSON-RPC protocol validation errors (-32600) and tool parameter validation errors (-32602)
@@ -95,15 +100,15 @@ public class McpHttpBridgeController {
             log.error("Error processing HTTP MCP request: {}", e.getMessage(), e);
             
             // Return error response
-            Map<String, Object> errorResponse = Map.of(
-                "jsonrpc", "2.0",
-                "error", Map.of(
-                    "code", -32700,
-                    "message", "Parse error",
-                    "data", e.getMessage()
-                ),
-                "id", null
-            );
+            Map<String, Object> error = new HashMap<>();
+            error.put("code", -32700);
+            error.put("message", "Parse error");
+            error.put("data", e.getMessage());
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("jsonrpc", "2.0");
+            errorResponse.put("error", error);
+            errorResponse.put("id", null);
             
             return Mono.just(ResponseEntity.badRequest().body(errorResponse));
         }
