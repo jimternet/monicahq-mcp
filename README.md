@@ -330,6 +330,7 @@ curl http://localhost:8080/actuator/health
 
 **Required Variables:**
 - `MONICA_API_URL`: Your MonicaHQ API URL (e.g., `https://monica.example.com/api`)
+- `MONICA_API_URL` must be an absolute URL with scheme and host (e.g., `https://app.monicahq.com/api` or `http://monica:80/api`).
 - `MONICA_API_TOKEN`: OAuth2 Bearer token for authentication
 
 **Optional Configuration:**
